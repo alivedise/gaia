@@ -21,12 +21,22 @@ contacts.List = (function() {
   }
 
   var load = function load(contacts) {
+    var onSuccess = function() {
+      var figures = document.querySelectorAll('#groups-container img');
+      for (var i = 0; i < figures.length; i++) {
+        var figure = figures[i];
+        var src = figure.dataset.src;
+        if (src && src !== 'null') {
+          figure.src = src;
+        }
+      }
+    }
 
     var onError = function() {
       console.log('ERROR Retrieving contacts');
     }
 
-    getContactsByGroup(onError, contacts);
+    getContactsByGroup(onSuccess, onError, contacts);
   };
 
   var iterateOverGroup = function iterateOverGroup(group, contacts) {
@@ -39,7 +49,6 @@ contacts.List = (function() {
       showGroup(group);
     }
   };
-
 
   var buildContacts = function buildContacts(contacts) {
     var group = null;
@@ -68,9 +77,9 @@ contacts.List = (function() {
     }
   }
 
-  var getContactsByGroup = function gCtByGroup(errorCb, contacts) {
+  var getContactsByGroup = function gCtByGroup(successCb, errorCb, contacts) {
     if (typeof contacts !== 'undefined') {
-      buildContacts(contacts, successCb);
+      buildContacts(contacts);
       return;
     }
 
@@ -82,6 +91,7 @@ contacts.List = (function() {
     var request = navigator.mozContacts.find(options);
     request.onsuccess = function findCallback() {
       buildContacts(request.result);
+      successCb();
     };
 
     request.onerror = errorCb;
@@ -108,20 +118,14 @@ contacts.List = (function() {
   var addToList = function addToList(contact) {
     var newLi;
     var group = getGroupName(contact);
-    var cName = getStringToBeOrdered(contact);
-
+    var cName = contact.familyName[0] + contact.givenName[0];
     var list = groupsList.querySelector('#contacts-list-' + group);
     var liElems = list.getElementsByTagName('li');
     var len = liElems.length;
     for (var i = 1; i < len; i++) {
       var liElem = liElems[i];
-      var familyName = liElem.querySelector('strong > b').textContent.trim();
-      var givenName = liElem.querySelector('strong');
-      givenName = givenName.childNodes[0].nodeValue.trim();
-      var name = getStringToBeOrdered({
-        familyName: [familyName],
-        givenName: [givenName]
-      });
+      var name = liElem.querySelector('b').textContent +
+                 liElem.querySelector('strong').textContent;
       if (name >= cName) {
         newLi = utils.templates.render(liElems[0], contact);
         list.insertBefore(newLi, liElem);
@@ -159,17 +163,8 @@ contacts.List = (function() {
     }
   }
 
-  var getStringToBeOrdered = function getStringToBeOrdered(contact) {
-    var ret = [];
-
-    ret.push(contact.familyName ? contact.familyName[0] : '');
-    ret.push(contact.givenName ? contact.givenName[0] : '');
-
-    return ret.join('');
-  }
-
   var getGroupName = function getGroupName(contact) {
-    var ret = getStringToBeOrdered(contact);
+    var ret = contact.familyName[0] + contact.givenName[0];
 
     ret = ret.charAt(0).toUpperCase();
     ret = ret.replace(/[ÁÀ]/ig, 'A');
@@ -182,6 +177,7 @@ contacts.List = (function() {
     if (code < 65 || code > 90) {
       ret = 'und';
     }
+
     return ret;
   }
 
@@ -203,18 +199,21 @@ contacts.List = (function() {
 
   function onClickHandler(evt) {
     var dataset = evt.target.dataset;
-    if (dataset && 'uuid' in dataset) {
-      callbacks.forEach(function(callback) {
-        callback(dataset.uuid);
+    if (!dataset || !('uuid' in dataset))
+      return;
+
+    getContactById(dataset.uuid, function(contact) {
+      callbacks.forEach(function onclickListener(callback) {
+        callback(contact);
       });
-    }
+    });
   }
 
   return {
     'init': init,
     'load': load,
     'refresh': refresh,
-    'getContactById': getContactById,
     'handleClick': handleClick
   };
 })();
+

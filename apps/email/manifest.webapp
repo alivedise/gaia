@@ -7,7 +7,7 @@
     "url": "https://github.com/mozilla-b2g/gaia"
   },
   "locales": {
-    "de": {
+    "en-US": {
       "name": "E-Mail",
       "description": "Gaia E-Mail"
     }

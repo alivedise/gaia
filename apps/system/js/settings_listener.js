@@ -41,4 +41,3 @@ var SettingsListener = {
 };
 
 SettingsListener.init();
-

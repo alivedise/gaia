@@ -25,12 +25,10 @@
     <article id="call-screen" class="grid">
       <header id="cs-header" class="grid-row">
         <div class="grid-wrapper grid">
-          <article id="contact-info" class="grid-cell grid-v-align">
-            <section class="contact-info-wrapper">
-              <input id="contact-primary-info" type="text" readonly="readonly" class="contact-primary-info font-light">
-              <div id="fake-contact-primary-info"></div>
+          <article id="cs-h-info" class="grid-cell grid-v-align">
+            <section id="cs-h-info-primary" class="contact-primary-info font-light cs-h-info"> 
             </section>
-            <section id="contact-secondary-info" class="contact-secondary-info font-light contact-info">
+            <section id="cs-h-info-secondary" class="contact-secondary-info font-light cs-h-info">
               Unknown carrier
             </section>
           </article>
@@ -39,12 +37,9 @@
       <article id="call-container" class="grid-row">
         <div class="grid-wrapper grid">
           <section id="call-info" class="grid-row">
-             <div class="grid-wrapper ">
-                <div id="call-duration" class="call-duration-style font-light">
+             <div class="grid-wrapper grid">
+                <div id="call-duration" class="grid-cell grid-v-align call-duration-style font-light">
                 </div>
-                <span id="call-direction">
-                  <div id="icon-call-direction"></div>
-                </span>
              </div>
           </section>
           <footer id="call-options" class="grid-row">
@@ -59,7 +54,7 @@
                   </span>
                   <span class="grid-cell options-column">
                     <button id="keypad-visibility" class="co-advanced-option grid-wraper grid center">
-                      <span class="icon-keypad-visibility">
+                      <span class="icon-keypad">
                       </span>
                     </button>
                   </span>
@@ -70,18 +65,20 @@
                     </button>
                   </span>
               </section>
-              <footer id="callbar">
-                <div id="callbar-hang-up">
-                  <span role="button" id="callbar-hang-up-action" class="callbar-button">
-                    <div>
+              <footer id="co-basic" class="grid-row">
+                <div id="co-basic-wrapper" class="grid-wrapper grid">
+                  <section id="co-basic-answer" class="grid-cell  co-basic-option co-basic-botton-start">
+                    <div class="grid-wrapper">
+                      <div class="icon-hangup">
+                      </div>
                     </div>
-                  </span>
-                </div>
-                <div id="callbar-answer">
-                  <span role="button" id="callbar-start-call-action" class="callbar-button">
-                    <div>
+                  </section>
+                  <section id="co-basic-reject" class="grid-cell co-basic-option co-basic-botton-hangup">
+                    <div class="grid-wrapper">
+                      <div class="icon-start-call">
+                      </div>
                     </div>
-                  </span>
+                  </section>
                 </div>
               </footer>
             </div>
@@ -133,9 +130,8 @@
               <div class="keypad-key">
                 <div class="keypad-key-label-container">
                   <div class="keypad-key-label keypad-key-label-centered" data-value="*">
-                    <span>
-                      <div class="asterisk"></div>
-                    </span>
+                    <span class="keypad-number font-light">*</span>
+                    <span class="keypad-text font-semibold"></span>
                   </div>
                 </div>
               </div>
@@ -169,7 +165,7 @@
                 <div class="keypad-key-label-container">
                   <div class="keypad-key-label" data-value="0">
                     <span class="keypad-number font-light">0</span>
-                    <span class="keypad-text font-semibold font-size-plus">+</span>
+                    <span class="keypad-text font-semibold">+</span>
                   </div>
                 </div>
               </div>
@@ -202,40 +198,25 @@
               <div class="keypad-key">
                 <div class="keypad-key-label-container">
                   <div class="keypad-key-label  keypad-key-label-centered" data-type="dial" data-value="#">
-                    <span>
-                      <div class="sharp"></div>
-                    </span>
+                    <span class="keypad-number font-light">#</span>
+                    <span  class="keypad-text font-semibold"></span>
                   </div>
                 </div>
               </div>
             </div>
           </section>
           <section id="keypad-callbar">
-            <div>
-              <span role="button" id="keypad-callbar-add-contact" data-type="action" data-value="add-contact" >
-                <div class="icon-add-contact"></div>
-              </span>
-            </div>
-            <div>
-              <span role="button" id="keypad-callbar-call-action" data-type="action" data-value="make-call">
-                <div>
-                </div>
-              </span>
-            </div>
-          </section>
-          <section id="keypad-hidebar">
-            <div id="keypad-hidebar-hang-up-action-wrapper">
-              <span role="button" id="keypad-hidebar-hang-up-action" class="keypad-hidebar-button">
-                <div>
-                </div>
-              </span>
-            </div>
-            <div id="keypad-hidebar-hide-keypad-action-wrapper">
-              <span role="button" id="keypad-hidebar-hide-keypad-action" class="keypad-hidebar-button">
-                <div>
-                </div>
-              </span>
-            </div>
+            <span role="button" id="keypad-callbar-add-contact"  data-type="action" data-value="add-contact" >
+              <div class="icon-add-contact"></div>
+            </span>
+            <span role="button" id="keypad-callbar-call-action"  data-type="action" data-value="make-call">
+              <div>
+              </div>
+            </span>
+            <span role="button" id="keypad-callbar-back-action"  data-type="action" data-value="back"  class="hide">
+              <div>
+              </div>
+            </span>
           </section>
         </article>
       </article>

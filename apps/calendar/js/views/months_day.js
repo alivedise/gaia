@@ -18,9 +18,7 @@
       }
     }
 
-    this.element = document.querySelector('#months-day-view');
     this._initEvents();
-
   }
 
   function getEl(selectorName, elName) {
@@ -33,8 +31,6 @@
   }
 
   Day.prototype = {
-
-    __proto__: Calendar.View.prototype,
 
     /**
      * Hack this should be localized.
@@ -208,8 +204,6 @@
     }
 
   };
-
-  Day.prototype.onfirstseen = Day.prototype.render;
 
   Calendar.Views.MonthsDay = Day;
 

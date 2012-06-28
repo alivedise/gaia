@@ -1,16 +1,3 @@
-// TODO:
-// - Get orientation working when leaving fullscreen
-// - Don't say "no photos" on startup... say "scanning" and localize it.
-// - Don't show wrong photo when panning at edges
-// - retain scroll position in thumbnail view
-// - put most recent photos (or screenshots) first
-// - in landscape mode, the 'no photos' message is too low
-// - get Back button (and slideshow) showing again?
-// - match visual design and wireframes better
-// - add delete capability
-// - add filter effects
-
-
 'use strict';
 
 /*
@@ -152,90 +139,119 @@ var transitioning = false;
 // This will be set to "ltr" or "rtl" when we get our localized event
 var languageDirection;
 
-var photodb = new MediaDB('pictures', metadataParser, {
-  indexes: ['metadata.date'],
-  mimeTypes: ['image/jpeg', 'image/png']
+
+// When the app starts, we scan device storage for photos.
+// For now, we just do this each time. But we really need to store
+// filenames and image metadata (including thumbnails) in a database.
+var storages = navigator.getDeviceStorage('pictures');
+
+storages.forEach(function(storage, storageIndex) {
+  try {
+    var cursor = storage.enumerate();
+    cursor.onerror = function() {
+      console.error('Error in DeviceStorage.enumerate()', cursor.error.name);
+    };
+
+    cursor.onsuccess = function() {
+      if (!cursor.result)
+        return;
+      var file = cursor.result;
+
+      // If this isn't a jpeg or png image, skip it
+      if (file.type !== 'image/jpeg' && file.type !== 'image/png') {
+        cursor.continue();
+        return;
+      }
+
+      var imagedata = {
+        storageIndex: storageIndex,  // XXX Use storage.type instead?
+        name: file.name,                  // so we can look it up again
+        size: file.size                  // for detecting changes
+      };
+
+      // Get metadata for the image and then move on to the next image
+      if (file.type === 'image/png') {
+        var testimg = document.createElement('img');
+        var url = URL.createObjectURL(file);
+        testimg.src = url;
+        testimg.onload = function() {
+          try {
+            URL.revokeObjectURL(url);
+            imagedata.width = testimg.width;
+            imagedata.height = testimg.height;
+            addImage(imagedata);
+          }
+          catch (e) {
+            console.error(e);
+          }
+          finally {
+            cursor.continue();
+          }
+        };
+      }
+      else if (file.type === 'image/jpeg') {
+        // XXX
+        // Rather than trying to read the metadata, I could also just
+        // put the jpeg image into an <img> tag to get its width
+        // and height. I'll need to do this anyway if I want to create
+        // a thumbnail for it, so maybe that would be good enough for now?
+        // Sorting by file modified date might be good enough, if I
+        // can get that.
+        readJPEGMetadata(file,
+                         function(metadata) {
+                           try {
+                             imagedata.width = metadata.width;
+                             imagedata.height = metadata.height;
+                             imagedata.thumbnail = metadata.thumbnail || null;
+                             imagedata.date = null;
+                             if (metadata.exif) {
+                               imagedata.date =
+                                 parseDate(metadata.exif.DateTimeOriginal ||
+                                           metadata.exif.DateTime ||
+                                           null);
+                             }
+
+                             // add this image and its metadata to our list
+                             addImage(imagedata);
+                           }
+                           catch (e) {
+                             console.log(e);
+                           }
+                           finally {
+                             cursor.continue();
+                           }
+
+                           // Utility function for converting EXIF date strings
+                           // to ISO date strings to timestamps
+                           function parseDate(s) {
+                             if (!s)
+                               return null;
+                             // Replace the first two colons with dashes and
+                             // replace the first space with a T
+                             return Date.parse(s.replace(':', '-')
+                                               .replace(':', '-')
+                                               .replace(' ', 'T'));
+                           }
+                         },
+                         function() {
+                           // Error reading jpeg
+                           console.warn('Malformed JPEG image', file.name);
+                           cursor.continue();
+                         });
+      }
+    };
+  }
+  catch (e) {
+    console.error('Exception while enumerating files:', e);
+  }
 });
-photodb.onready = function() {
-  buildUI();  // List files we already know about
-  photodb.scan();    // Go look for more.
 
-  // Since DeviceStorage doesn't send notifications yet, we're going
-  // to rescan the files every time our app becomes visible again.
-  // This means that if we switch to camera and take a photo, then when
-  // we come back to gallery we should be able to find the new photo.
-  // Eventually DeviceStorage will do notifications and MediaDB will
-  // report them so we don't need to do this.
-  document.addEventListener('mozvisibilitychange', function visibilityChange() {
-    if (!document.mozHidden) {
-      photodb.scan();
-    }
-  });
-};
-photodb.onchange = function(type, files) {
-  rebuildUI();
-};
 
+// An array of image data structures that represents all the photos we
+// found in device storage, along with the metadata we've extracted
 var images = [];
 
-function destroyUI() {
-  images = [];
-  try {
-    var items = thumbnails.querySelectorAll('li');
-    for (var i = 0; i < items.length; i++) {
-      var thumbnail = items[i];
-      var backgroundImage = thumbnail.style.backgroundImage;
-      if (backgroundImage)
-        URL.revokeObjectURL(backgroundImage.slice(5, -2));
-      thumbnails.removeChild(thumbnail);
-    }
-    
-    document.getElementById('nophotos').classList.remove('hidden');
-  }
-  catch(e) {
-    console.error("destroyUI", e);
-  }
-}
-
-function buildUI() {
-  // Enumerate existing image entries in the database and add thumbnails
-  // List the all, and sort them in descending order by date.
-  photodb.enumerate('metadata.date', null, 'prev', addImage);
-}
-
-//
-// XXX
-// This is kind of a hack. Our onchange handler is dumb and just
-// tears down and rebuilds the UI on every change. But rebuilding
-// does an async enumerate, and sometimes we get two changes in 
-// a row, so these flags prevent two enumerations from happening in parallel.
-// Ideally, we'd just handle the changes individually.
-// 
-var buildingUI = false;
-var needsRebuild = false;
-function rebuildUI() {
-  if (buildingUI) {
-    needsRebuild = true;
-    return;
-  }
-  
-  buildingUI = true;
-  destroyUI();
-  // This is asynchronous, but will set buildingUI to false when done
-  buildUI();
-    
-}
-
 function addImage(imagedata) {
-  if (imagedata === null) { // No more images
-    buildingUI = false;
-    if (needsRebuild) {
-      needsRebuild = false;
-      rebuildUI();
-    }
-    return;
-  }
-
   // If this is the first image we've found,
   // remove the "no images" message
   if (images.length === 0)
@@ -249,6 +265,9 @@ function addImage(imagedata) {
 //
 // Create the <img> elements for the thumbnails
 //
+// XXX: this doesn't work. Need to figure out what the
+// appropriate argumetns are, and store the entire
+// photo with thumnail, size, etc.
 function addThumbnail(imagenum) {
   var li = document.createElement('li');
   li.dataset.index = imagenum;
@@ -256,11 +275,18 @@ function addThumbnail(imagenum) {
   thumbnails.appendChild(li);
 
   var imagedata = images[imagenum];
-  // XXX When is it save to revoke this url?
-  // Can't do it on load as I would with an <img>
-  // Currently doing it in destroyUI()
-  var url = URL.createObjectURL(imagedata.metadata.thumbnail);
-  li.style.backgroundImage = 'url("' + url + '")';
+  if (imagedata.thumbnail) {
+    var url = URL.createObjectURL(imagedata.thumbnail.blob);
+    li.style.backgroundImage = 'url("' + url + '")';
+  }
+  else {
+    var request = storages[imagedata.storageIndex].get(imagedata.name);
+    request.onsuccess = function() {
+      var file = request.result;
+      var url = URL.createObjectURL(file);
+      li.style.backgroundImage = 'url("' + url + '")';
+    }
+  }
 }
 
 //
@@ -348,8 +374,7 @@ window.addEventListener('resize', function resizeHandler(evt) {
       return;
 
     var imagedata = images[n];
-    var fit = fitImageToScreen(imagedata.metadata.width,
-                               imagedata.metadata.height);
+    var fit = fitImageToScreen(imagedata.width, imagedata.height);
     var style = img.style;
     style.width = fit.width + 'px';
     style.height = fit.height + 'px';
@@ -498,15 +523,12 @@ function displayImageInFrame(n, frame) {
 
   // Asynchronously set the image url
   var imagedata = images[n];
-  photodb.getFile(imagedata.name, function(file) {
-    var url = URL.createObjectURL(file);
-    img.src = url;
-    img.onload = function() { URL.revokeObjectURL(url); };
-  });
+  storages[imagedata.storageIndex].get(imagedata.name).onsuccess = function(e) {
+    img.src = URL.createObjectURL(e.target.result);
+  };
 
   // Figure out the size and position of the image
-  var fit = fitImageToScreen(images[n].metadata.width,
-                             images[n].metadata.height);
+  var fit = fitImageToScreen(images[n].width, images[n].height);
   var style = img.style;
   style.width = fit.width + 'px';
   style.height = fit.height + 'px';
@@ -558,9 +580,7 @@ function showPhoto(n) {
 
   // Create the PhotoState object that stores the photo pan/zoom state
   // And use it to apply CSS styles to the photo and photo frames.
-  photoState = new PhotoState(currentPhoto,
-                              images[n].metadata.width,
-                              images[n].metadata.height);
+  photoState = new PhotoState(currentPhoto, images[n].width, images[n].height);
   photoState.setFrameStyles(currentPhotoFrame,
                             previousPhotoFrame,
                             nextPhotoFrame);
@@ -611,8 +631,8 @@ function nextPhoto(time) {
   // Start with default pan and zoom state for the new photo
   // And also reset the translation caused by swiping the photos
   photoState = new PhotoState(currentPhoto,
-                              images[currentPhotoIndex].metadata.width,
-                              images[currentPhotoIndex].metadata.height);
+                              images[currentPhotoIndex].width,
+                              images[currentPhotoIndex].height);
   photoState.setFrameStyles(currentPhotoFrame,
                             previousPhotoFrame,
                             nextPhotoFrame);
@@ -673,8 +693,8 @@ function previousPhoto(time) {
 
   // Create a new photo state
   photoState = new PhotoState(currentPhoto,
-                              images[currentPhotoIndex].metadata.width,
-                              images[currentPhotoIndex].metadata.height);
+                              images[currentPhotoIndex].width,
+                              images[currentPhotoIndex].height);
   photoState.setFrameStyles(currentPhotoFrame,
                             previousPhotoFrame,
                             nextPhotoFrame);

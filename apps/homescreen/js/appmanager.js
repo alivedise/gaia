@@ -41,9 +41,7 @@ var Applications = (function() {
       var icon = getIcon(app.origin);
       // No need to put data: URIs in the cache
       if (icon && icon.indexOf('data:') == -1) {
-        try {
-          window.applicationCache.mozAdd(icon);
-        } catch (e) {}
+        window.applicationCache.mozAdd(icon);
       }
 
       callbacks.forEach(function(callback) {
@@ -113,21 +111,19 @@ var Applications = (function() {
     return app ? app.manifest : null;
   };
 
-  // Core applications should be flagged at some point. Not sure how?
+  // This is a cool hack ;) The idea is to set this info in the manifest
+  // vn: I'm worried about adding that in the manifest because any
+  // application will be able to said that it is a core application.
   var host = document.location.host;
   var domain = host.replace(/(^[\w\d]+\.)?([\w\d]+\.[a-z]+)/, '$2');
 
   var coreApplications = [
     'dialer', 'sms', 'settings', 'camera', 'gallery', 'browser',
-    'contacts', 'music', 'clock', 'email', 'fm', 'calculator',
-    'calendar', 'video', 'fm'
+    'market', 'comms', 'music', 'clock', 'email'
   ];
-
   coreApplications = coreApplications.map(function mapCoreApp(name) {
     return 'http://' + name + '.' + domain;
   });
-
-  coreApplications.push('https://marketplace-dev.allizom.org');
 
   /*
    *  Returns true if it's a core application

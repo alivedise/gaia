@@ -1,10 +1,8 @@
-/* -*- Mode: js; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 'use strict';
 
 var KeyboardManager = (function() {
 
-  var KEYBOARD_ID = 'keyboard-frame';
+  var KEYBOARD_ID = 'keyboardFrame';
 
   // XXX TODO: Retrieve it from Settings, allowing 3rd party keyboards
   var host = document.location.host;
@@ -27,40 +25,26 @@ var KeyboardManager = (function() {
     window.addEventListener('message', function receiver(evt) {
       var message = JSON.parse(evt.data);
 
-      if (!message.action) {
-        console.log('Cannot get message.action');
+      if (message.action !== 'updateHeight')
         return;
-      }
 
-      switch (message.action) {
+      var app = WindowManager.getDisplayedApp();
 
-        case 'updateHeight':
-          var app = WindowManager.getDisplayedApp();
+      if (!app)
+        return;
 
-          if (!app)
-            return;
+      // Reset the height of the app
+      WindowManager.setAppSize(app);
+      var currentApp = WindowManager.getAppFrame(app);
 
-          // Reset the height of the app
-          WindowManager.setAppSize(app);
-          var currentApp = WindowManager.getAppFrame(app);
-
-          if (!message.hidden) {
-            currentApp.style.height =
-            (parseInt(currentApp.style.height) - message.keyboardHeight) + 'px';
-            currentApp.classList.add('keyboardOn');
-          } else {
-            currentApp.classList.remove('keyboardOn');
-          }
-          break;
-
-        case 'showKeyboard':
-          keyboardFrame.classList.remove('hide');
-          break;
-
-        case 'hideKeyboard':
-          keyboardFrame.classList.add('hide');
-          break;
-
+      if (!message.hidden) {
+        currentApp.style.height =
+          (parseInt(currentApp.style.height) - message.keyboardHeight) + 'px';
+        currentApp.classList.add('keyboardOn');
+        keyboardFrame.classList.remove('hide');
+      } else {
+        currentApp.classList.remove('keyboardOn');
+        keyboardFrame.classList.add('hide');
       }
     });
   };

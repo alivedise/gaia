@@ -98,15 +98,15 @@ span[role="button"].icon-delete {
 }
 
 span[role="button"].icon-call {
-  background-image: url(../../gphx/bitmap/default/buttons/call.png);
+  background-color: rgba(0, 0, 0, 0.5);
 }
 
 span[role="button"].icon-message {
-  background-image: url(../../gphx/bitmap/default/buttons/sms.png);
+  background-color: rgba(0, 0, 0, 0.5);
 }
 
 span[role="button"].icon-email {
-  background-image: url(../../gphx/bitmap/default/buttons/mail.png);
+  background-color: rgba(0, 0, 0, 0.5);
 }
 
 /* arrows */

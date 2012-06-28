@@ -13,8 +13,7 @@ function summarizeDaysOfWeek(bitStr) {
   if (bitStr == '')
     return 'None';
 
-  var _ = navigator.mozL10n.get;
-
+  var dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   // Formate bits: 0123456(0000000)
   // Case: Everyday:  1111111
   // Case: Weekdays:  1111100
@@ -26,25 +25,22 @@ function summarizeDaysOfWeek(bitStr) {
   switch (bitStr)
   {
   case '1111111':
-    summary = _('everyday');
+    summary = 'Everyday';
     break;
   case '1111100':
-    summary = _('weekdays');
+    summary = 'Weekdays';
     break;
   case '0000011':
-    summary = _('weekends');
+    summary = 'Weekends';
     break;
   case '0000000':
-    summary = _('never');
+    summary = 'Never';
     break;
   default:
-    var weekdays = [];
     for (var i = 0; i < bitStr.length; i++) {
-      if (bitStr.substr(i, 1) == '1') {
-        weekdays.push(_('dayofweek-' + i + '-abbr'));
-      }
+      summary += (bitStr.substr(i, 1) == '1') ? dayNames[i] + ', ' : '';
     }
-    summary = weekdays.join(', ');
+    summary = summary.slice(0, summary.lastIndexOf(','));
   }
   return summary;
 }

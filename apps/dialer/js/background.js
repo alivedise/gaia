@@ -36,7 +36,7 @@
   telephony.addEventListener('callschanged', function bs_incomingHandler(evt) {
     var call = null;
     telephony.calls.some(function(aCall) {
-      if (aCall.state == 'incoming' || aCall.state == 'dialing') {
+      if (aCall.state == 'incoming') {
         call = aCall;
         return true;
       }
@@ -44,13 +44,6 @@
     });
 
     if (!call)
-      return;
-
-    var host = document.location.host;
-    window.open('http://' + host + '/oncall.html#' + call.state,
-                'call_screen', 'attention');
-
-    if (call.state != 'incoming')
       return;
 
     var vibrateInterval = 0;
@@ -65,6 +58,10 @@
     if (activePhoneSound && selectedPhoneSound) {
       ringtonePlayer.play();
     }
+
+    var host = document.location.host;
+    window.open('http://' + host + '/oncall.html#incoming',
+                'dialer_incoming', 'attention');
 
     call.onstatechange = function callStateChange() {
       call.onstatechange = null;
@@ -81,7 +78,7 @@
 
           var notiClick = function() {
             // Asking to launch itself
-            app.launch('#recents-view');
+            app.launch();
           };
 
           var title = 'Missed call';

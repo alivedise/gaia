@@ -1,7 +1,5 @@
 'use strict';
 
-var _ = navigator.mozL10n.get;
-
 var ClockView = {
 
   get time() {
@@ -33,8 +31,7 @@ var ClockView = {
       hour = 12;
     this.time.textContent = hour + d.toLocaleFormat(':%M');
     this.hourState.textContent = d.toLocaleFormat('%p');
-    var format = navigator.mozL10n.get('daydateFormat');
-    this.daydate.textContent = d.toLocaleFormat(format);
+    this.daydate.textContent = d.toLocaleFormat('%A, %B %e');
 
     var self = this;
     this._timeout = window.setTimeout(function cv_clockTimeout() {
@@ -382,10 +379,10 @@ var AlarmEditView = {
     this.enableInput.checked = alarm.enabled;
 
     if (alarm.id) {
-      this.alarmTitle.innerHTML = _('editAlarm');
+      this.alarmTitle.innerHTML = 'Edit Alarm';
       this.deleteElement.hidden = false;
     } else {
-      this.alarmTitle.innerHTML = _('newAlarm');
+      this.alarmTitle.innerHTML = 'New Alarm';
       this.deleteElement.hidden = true;
     }
     this.refreshRepeatMenu();
@@ -405,7 +402,7 @@ var AlarmEditView = {
   },
 
   refreshSnoozeMenu: function aev_refreshSnoozeMenu() {
-    this.snoozeMenu.innerHTML = _('nMinutes', {n: this.alarm.snooze});
+    this.snoozeMenu.innerHTML = this.alarm.snooze + ' ' + 'minutes';
   },
 
   refreshColorMenu: function aev_refreshColorMenu() {
@@ -427,13 +424,13 @@ var AlarmEditView = {
     this.alarm.enabled = this.enableInput.checked;
 
     if (!this.alarm.label) {
-      this.labelInput.nextElementSibling.textContent = _('required');
+      this.labelInput.nextElementSibling.textContent = 'Required';
       error = true;
     }
 
     if (this.alarm.hour > 24 ||
       (this.alarm.hour == 24 && this.alarm.minute != 0)) {
-      this.hourInput.nextElementSibling.textContent = _('invalid');
+      this.hourInput.nextElementSibling.textContent = 'Invalid';
       error = true;
     }
 

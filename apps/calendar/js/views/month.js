@@ -17,8 +17,6 @@
     var self = this,
         key;
 
-    Calendar.View.call(this);
-
     if (typeof(options) === 'undefined') {
       options = {};
     }
@@ -31,13 +29,14 @@
 
     this.selectedDay = null;
     this.children = {};
-    this.element = document.querySelector('#month-view');
+
+    Calendar.Responder.call(this);
 
     this._initEvents();
   };
 
   var proto = Month.prototype = Object.create(
-    Calendar.View.prototype
+    Calendar.Responder.prototype
   );
 
   /**
@@ -54,6 +53,19 @@
    * @type {String}
    */
   proto.currentMonthSelector = '#current-month-year';
+
+  /**
+   * Hack this should be localized.
+   */
+  proto.dayNames = [
+    'sun',
+    'mon',
+    'tue',
+    'wed',
+    'thu',
+    'fri',
+    'sat'
+  ];
 
   /**
    * Hack this should be localized.
@@ -110,15 +122,15 @@
     new GestureDetector(months).startDetecting();
 
     months.addEventListener('swipe', function(data) {
-      self._onswipe.apply(self, arguments);
+      self._onSwipe.apply(self, arguments);
     });
 
     months.addEventListener('tap', function(data) {
-      self._ontap.apply(self, arguments);
+      self._onTap.apply(self, arguments);
     }, false);
   };
 
-  proto._ontap = function(event) {
+  proto._onTap = function(event) {
     var target = event.target,
         id,
         date,
@@ -139,7 +151,7 @@
 
   };
 
-  proto._onswipe = function(event) {
+  proto._onSwipe = function(event) {
     var direction = event.detail.direction;
     if (direction === 'right') {
       this.previous();
@@ -272,8 +284,6 @@
 
     this.controller.setCurrentMonth(now);
   }
-
-  proto.onfirstseen = proto.render;
 
   Calendar.Views.Month = Month;
 

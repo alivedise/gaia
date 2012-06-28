@@ -1,36 +1,30 @@
 {
   "name": "Contacts",
-  "description": "Default Contacts application",
+  "description": "OWD contacts",
   "developer": {
     "name": "Telefonica PDI - OWD Team",
     "url": "http://openwebdevice.com"
   },
   "permissions": [
-    "contacts",
-    "mozApps"
+    "contacts"
   ],
   "locales": {
-    "de": {
-      "name": "Kontakte",
-      "description": "Gaia Kontakte"
-    },
     "en-US": {
       "name": "Contacts",
-      "description": "Gaia Contacts"
-    },
-    "es": {
-      "name": "Contactos",
-      "description": "Contactos de Gaia"
+      "description": "Default Contacts application"
     },
     "fr": {
       "name": "Contacts",
-      "description": "Contacts Gaia"
+      "description": "Application de contacts par défaut"
+    },
+    "es": {
+      "name": "Contactos",
+      "description": "Aplicación de contactos por defecto"
     }
   },
   "default_locale": "en-US",
   "icons": {
     "120": "/style/icons/Contacts.png",
     "60": "/style/icons/60/Contacts.png"
-  },
-  "orientation": "portrait-primary"
+  }
 }

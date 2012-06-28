@@ -10,9 +10,9 @@
     "mozFM"
   ],
   "locales": {
-    "de": {
-      "name": "FM-Radio",
-      "description": "Gaia FM-Radio"
+    "en-US": {
+      "name": "FM Radio",
+      "description": "Gaia FM Radio"
     },
     "zh-CN": {
       "name": "收音机",

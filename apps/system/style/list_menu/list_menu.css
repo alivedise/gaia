@@ -66,6 +66,10 @@
   border-bottom: 1px solid hsla(0, 0%, 0%,0.4);
 }
 
+div.list-menu-container div a:active {
+  outline: none;
+}
+
 div.list-menu-container div a {
   display: block;
   text-decoration: none;

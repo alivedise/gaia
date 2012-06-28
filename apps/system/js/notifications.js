@@ -78,16 +78,14 @@ var NotificationScreen = {
         target = target.parentNode;
       }
 
-      var notificationID = target.dataset.notificationID;
+      self.removeNotification(target);
 
       var event = document.createEvent('CustomEvent');
       event.initCustomEvent('mozContentEvent', true, true, {
         type: 'desktop-notification-' + (closing ? 'close' : 'click'),
-        id: notificationID
+        id: target.dataset.notificationID
       });
       window.dispatchEvent(event);
-
-      self.removeNotification(target);
 
       // And hide the Utility Tray
       if (!closing) {

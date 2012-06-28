@@ -12,36 +12,36 @@
 .rtl .day-events section > h4 {
   -moz-box-ordinal-group: 2;
   text-aligh: left;
-  padding-left: 0.52rem;
+  padding-left: 1.4mozmm;
 }
 
 .ltr .day-events section > h4 {
   text-align: right;
-  padding-right: 0.52rem;
+  padding-right: 1.4mozmm;
 }
 
 .ltr .day-events section > ol li {
-  padding-left: 0.37rem;
+  padding-left: 1.0mozmm;
 }
 
 .rtl .day-events section > ol li {
-  padding-right: 0.37rem;
+  padding-right: 1.0mozmm;
 }
 
 .day-events section > h4,
 .day-events section > ol li {
-  padding-top: 0.56rem;
+  padding-top: 1.5mozmm;
 }
 
 .day-events section > h4 {
   background-color: #E2E2E2;
   font-size:  90%;
-  width: 3.22rem;
+  width: 8.7mozmm;
 }
 
 .day-events section > ol,
 .day-events section > ol li  {
-  height: 3.5rem;
+  height: 9.5mozmm;
 }
 
 .day-events section > ol {
@@ -57,15 +57,14 @@
 }
 
 .day-events section > ol h5 {
-  padding-top: 0.18rem;
+  padding-top: 0.5mozmm;
 }
 
 .day-events section > ol .details {
-  display: block;
-  padding-top: 0.25rem;
+  padding-top: 1.3mozmm;
   color: #B3B3B3;
 }
 
 .attendee {
-  padding-right: 0.3rem;
+  padding-right: 4px;
 }

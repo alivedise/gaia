@@ -111,13 +111,6 @@ var WindowManager = (function() {
     return runningApps.hasOwnProperty(origin);
   }
 
-  function getAppFrame(origin) {
-    if (isRunning(origin))
-      return runningApps[origin].frame;
-    else
-      return null;
-  }
-
   // Set the size of the app's iframe to match the size of the screen.
   // We have to call this on resize events (which happen when the
   // phone orientation is changed). And also when an app is launched
@@ -286,7 +279,7 @@ var WindowManager = (function() {
   }
 
   // Switch to a different app
-  function setDisplayedApp(origin, callback, url) {
+  function setDisplayedApp(origin, callback) {
     var currentApp = displayedApp, newApp = origin;
 
     // There are four cases that we handle in different ways:
@@ -314,12 +307,6 @@ var WindowManager = (function() {
     }
     // Case 4: app-to-app transition
     else {
-      // XXX Note: Hack for demo when current app want to set specific hash
-      //           url in newApp(e.g. contact trigger SMS message list page).
-      var frame = runningApps[newApp].frame;
-      if (url && frame.src != url) {
-        frame.src = url;
-      }
       setAppSize(newApp);
       updateLaunchTime(newApp);
       openWindow(newApp, function() {
@@ -360,7 +347,7 @@ var WindowManager = (function() {
     }
   }
 
-  function appendFrame(origin, url, name, manifest, manifestURL, background) {
+  function appendFrame(origin, url, name, manifest, manifestURL) {
     var frame = document.createElement('iframe');
     frame.id = 'appframe' + nextAppId++;
     frame.className = 'appWindow';
@@ -504,12 +491,6 @@ var WindowManager = (function() {
 
     numRunningApps++;
 
-    // Launching this application without bring it to the foreground
-    if (background) {
-      frame.src = url;
-      return;
-    }
-
     // Now animate the window opening and actually set the iframe src
     // when that is done.
     setDisplayedApp(origin, function() {
@@ -539,60 +520,19 @@ var WindowManager = (function() {
     app.launch();
   }
 
-  // There are two types of mozChromeEvent we need to handle
-  // in order to launch the app for Gecko
+  // The mozApps API launch() method generates an event that we handle
+  // here to do the actual launching of the app
   window.addEventListener('mozChromeEvent', function(e) {
-    var origin = e.detail.origin;
-    switch (e.detail.type) {
-      // mozApps API is asking us to launch the app
-      // We will launch it in foreground
-      case 'webapps-launch':
-        if (isRunning(origin)) {
-          setDisplayedApp(origin, null, e.detail.url);
-          return;
-        }
+    if (e.detail.type === 'webapps-launch') {
+      var origin = e.detail.origin;
+      if (isRunning(origin)) {
+        setDisplayedApp(origin);
+        return;
+      }
 
-        var app = Applications.getByOrigin(origin);
-        if (!app)
-          return;
-
-        appendFrame(origin, e.detail.url,
-                    app.manifest.name, app.manifest, app.manifestURL, false);
-        break;
-
-      // System Message Handler API is asking us to open the specific URL
-      // that handles the pending system message.
-      // We will launch it in background.
-      case 'open-app':
-        if (isRunning(origin)) {
-          var frame = getAppFrame(origin);
-          // If the app is opened and it is loaded to the correct page,
-          // then there is nothing to do.
-          if (frame.src === e.detail.url)
-            return;
-
-          // If the app is in foreground, it's too risky to change it's
-          // URL. We'll ignore this request.
-          if (displayedApp === origin)
-            return;
-
-          // Rewrite the URL of the app frame to the requested URL.
-          // XXX: We could ended opening URls not for the app frame
-          // in the app frame. But we don't care.
-          frame.src = e.detail.url;
-          return;
-        }
-
-        var app = Applications.getByOrigin(origin);
-        if (!app)
-          return;
-
-        // XXX: We could ended opening URls not for the app frame
-        // in the app frame. But we don't care.
-        appendFrame(origin, e.detail.url,
-                    app.manifest.name, app.manifest, app.manifestURL, true);
-
-        break;
+      var app = Applications.getByOrigin(origin);
+      appendFrame(origin, e.detail.url,
+                  app.manifest.name, app.manifest, app.manifestURL);
     }
   });
 
@@ -778,14 +718,18 @@ var WindowManager = (function() {
     getDisplayedApp: getDisplayedApp,
     setOrientationForApp: setOrientationForApp,
     setAppSize: setAppSize,
-    getAppFrame: getAppFrame,
+    getAppFrame: function(origin) {
+      if (isRunning(origin))
+        return runningApps[origin].frame;
+      else
+        return null;
+    },
     getNumberOfRunningApps: function() {
       return numRunningApps;
     },
     getRunningApps: function() {
        return runningApps;
-    },
-    setDisplayedApp: setDisplayedApp
+     }
   };
 }());
 

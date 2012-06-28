@@ -229,16 +229,18 @@ var SleepMenu = {
 
       // About silent and silentOff
       // * Turn on silent mode will cause:
-      //   * Turn off ringtone no matter if ring is on or off
-      //   * for sms and incoming calls.
+      //   * Turn off ringtone no matter if ring is on or off.
+      //   * Turn on vibration no matter if vibration is on or off.
       // * Turn off silent mode will cause:
-      //   * Turn on ringtone no matter if ring is on or off
-      //   * for sms and incoming calls.
+      //   * Turn on ringtone no matter if ring is on or off.
+      //   * Turn off vibration no matter if vibration is on or off.
       case 'silent':
         var settings = window.navigator.mozSettings;
         if (settings) {
-          settings.getLock().set({'phone.ring.incoming': false});
-          settings.getLock().set({'sms.ring.received': false});
+          settings.getLock().set({
+            'phone.ring.incoming': false,
+            'phone.vibration.incoming': true
+          });
           this.isSilentModeEnabled = true;
         }
         break;
@@ -246,8 +248,10 @@ var SleepMenu = {
       case 'silentOff':
         var settings = window.navigator.mozSettings;
         if (settings) {
-          settings.getLock().set({'phone.ring.incoming': true});
-          settings.getLock().set({'sms.ring.received': true});
+          settings.getLock().set({
+            'phone.ring.incoming': true,
+            'phone.vibration.incoming': false
+          });
           this.isSilentModeEnabled = false;
         }
         break;

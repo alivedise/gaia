@@ -10,10 +10,6 @@
   -moz-box-sizing: border-box;
 }
 
-input:-moz-placeholder {
-  color: #5b5b5b;
-}
-
 .textfield:focus {
   border-color: #7a7a7a;
 }
@@ -44,26 +40,11 @@ textarea.textfield {
   text-transform: uppercase;
 }
 
-.setbox-title label {
-  position: relative;
-  display: block;
-}
-
-.setbox-title input {
-  border: none;
-  background: none;
-  display: block;
-  width: 100%;
-  font-size: 1.2rem;
-  line-height: 1.6rem;
-  text-transform: uppercase;
-}
-
 .setbox-title a {
   color: #333;
 }
 
-.setbox-title a, .setbox-title:before, .setbox-title label {
+.setbox-title a, .setbox-title:before {
   display: inline-block;
   vertical-align: middle;
 }
@@ -73,7 +54,7 @@ textarea.textfield {
   width: 1px;
   height: 100%;
   min-height: 4rem;
-  margin-left: -0.44rem;
+  margin-left: -1px;
 }
 
 .setbox-icon {
@@ -82,7 +63,7 @@ textarea.textfield {
   top: 50%;
 }
 
-.setbox .setbox-icon.icon-arrow[role="button"] {
+.setbox-icon.icon-arrow {
   margin-top: -0.2rem;
 }
 
@@ -109,7 +90,7 @@ textarea.textfield {
 
 /* FILL FLOW: general components for helping in defining basic flows in forms; */
 .fill-flow {
-  padding-right: 0;
+  padding-right: 1rem;
 }
 
 /* ROW: horizontal separation for elements; */
@@ -137,7 +118,7 @@ textarea.textfield {
 .fillflow-media img {
   width: 100%;
   height: 100%;
-  background: #fff no-repeat center center;
+  background: transparent no-repeat center center;
   background-size: 100% auto; 
 }
 

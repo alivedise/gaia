@@ -115,28 +115,6 @@ const GridManager = (function() {
   }
 
   /*
-   * Navigates to one page
-   */
-  function goTo(index, transEndCallbck) {
-    var currentPage = pages.current;
-
-    if (currentPage !== index) {
-      if (currentPage < index) {
-        pageHelper.getCurrent().moveToBegin();
-      } else {
-        pageHelper.getCurrent().moveToEnd();
-      }
-      pages.current = index;
-
-      pageHelper.getCurrent().moveToCenter(transEndCallbck);
-
-      updatePaginationBar();
-    } else {
-      transEndCallbck();
-    }
-  }
-
-  /*
    * Navigates to next page
    */
   function goNext(transEndCallbck) {
@@ -358,25 +336,6 @@ const GridManager = (function() {
   /*
    * Checks empty pages and deletes them
    */
-  function checkFirstPageWithGap() {
-    var index = 0;
-    var total = pages.total;
-
-    var maxPerPage = pageHelper.getMaxPerPage();
-    while (index < total) {
-      var page = pages.list[index];
-      if (page.getNumApps() < maxPerPage) {
-        break;
-      }
-      index++;
-    }
-
-    return index;
-  }
-
-  /*
-   * Checks empty pages and deletes them
-   */
   function checkEmptyPages() {
     var index = 0;
     var total = pages.total;
@@ -452,7 +411,7 @@ const GridManager = (function() {
      *
      * @param {Array} initial list of apps or icons
      */
-    push: function(apps, appsFromMarket) {
+    push: function(apps) {
       var index = this.total();
       var page = new Page(index);
 
@@ -461,21 +420,16 @@ const GridManager = (function() {
       container.appendChild(pageElement);
 
       page.render(apps, pageElement);
-
-      if (!appsFromMarket) {
-        if (index === 0) {
-          page.moveToCenter();
-        } else {
-          page.moveToEnd();
-        }
+      if (index === 0) {
+        page.moveToCenter();
+      } else {
+        page.moveToEnd();
       }
 
       pages.list.push(page);
       pages.total = index + 1;
 
-      if (!appsFromMarket) {
-        updatePaginationBar();
-      }
+      updatePaginationBar();
     },
 
     /*
@@ -649,7 +603,6 @@ const GridManager = (function() {
      */
     start: function(elem) {
       this.dragging = true;
-      container.dataset.dragging = true;
       draggableIconOrigin = elem.dataset.origin;
       draggableIcon = pageHelper.getCurrent().getIcon(draggableIconOrigin);
       draggableIcon.onDragStart(status.iCoords.x, status.iCoords.y);
@@ -664,7 +617,6 @@ const GridManager = (function() {
       clearTimeout(this.translatingTimeout);
       this.isTranslatingPages = false;
       this.dragging = false;
-      delete container.dataset.dragging;
       draggableIcon.onDragStop();
       // When the drag&drop is finished we need to check empty pages
       // and overflows
@@ -772,25 +724,15 @@ const GridManager = (function() {
      * {Object} moz app
      */
     install: function gm_install(app) {
-      var index = checkFirstPageWithGap();
-      var origin = Applications.getOrigin(app);
-      Applications.getManifest(origin).hidden = true;
-
-      if (index < pages.total) {
-        pages.list[index].append(app);
+      var lastPage = pageHelper.getLast();
+      if (lastPage.getNumApps() < pageHelper.getMaxPerPage()) {
+        lastPage.append(app);
       } else {
-        pageHelper.push([app], true);
+        pageHelper.push([app]);
       }
 
-      goTo(index, function() {
-        setTimeout(function() {
-          pageHelper.getCurrent().
-              applyInstallingEffect(Applications.getOrigin(app));
-        }, 200);
-      });
-
-      // Saving the page
-      pageHelper.save(index);
+      // Saving the last page
+      pageHelper.save(pages.total - 1);
     },
 
     /*

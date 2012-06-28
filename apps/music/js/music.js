@@ -205,8 +205,7 @@ var ListView = {
   },
 
   updateList: function lv_updateList(songData) {
-    var songTitle = (songData.title) ? songData.title :
-        navigator.mozL10n.get('unknownTitle');
+    var songTitle = (songData.title) ? songData.title : 'Unknown';
 
     var li = document.createElement('li');
     li.className = 'song';
@@ -336,12 +335,9 @@ var PlayerView = {
       var targetIndex = parseInt(target.dataset.index);
       var songData = songs[targetIndex];
 
-      TitleBar.changeTitleText((songData.title) ?
-        songData.title : navigator.mozL10n.get('unknownTitle'));
-      this.artist.textContent = (songData.artist) ?
-        songData.artist : navigator.mozL10n.get('unknownArtist');
-      this.album.textContent = (songData.album) ?
-        songData.album : navigator.mozL10n.get('unknownAlbum');
+      TitleBar.changeTitleText((songData.title) ? songData.title : 'Unknown');
+      this.artist.textContent = (songData.artist) ? songData.artist : 'Unknown';
+      this.album.textContent = (songData.album) ? songData.album : 'Unknown';
       this.currentIndex = targetIndex;
 
       // An object URL must be released by calling window.URL.revokeObjectURL()

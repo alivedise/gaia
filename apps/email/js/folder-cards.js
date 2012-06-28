@@ -62,6 +62,8 @@ AccountPickerCard.prototype = {
    * Clicking a different account changes the list of folders displayed.  We
    * then trigger a select of the inbox for that account because otherwise
    * things get permutationally complex.
+   *
+   * UXXX get signoff on this behavior (e-mail out)
    */
   onClickAccount: function(accountNode, event) {
    var oldAccount = this.curAccount,
@@ -105,8 +107,6 @@ function FolderPickerCard(domNode, mode, args) {
 
   domNode.getElementsByClassName('fld-accounts-btn')[0]
     .addEventListener('click', this.onShowAccounts.bind(this), false);
-  domNode.getElementsByClassName('fld-nav-settings-btn')[0]
-    .addEventListener('click', this.onShowSettings.bind(this), false);
 
   // - DOM!
   this.updateSelfDom();
@@ -116,11 +116,6 @@ function FolderPickerCard(domNode, mode, args) {
 FolderPickerCard.prototype = {
   onShowAccounts: function() {
     Cards.moveToCard(['account-picker', 'default']);
-  },
-
-  onShowSettings: function() {
-    Cards.pushCard(
-      'settings-main', 'default', 'animate', {}, 'left');
   },
 
   onFoldersSplice: function(index, howMany, addedItems,

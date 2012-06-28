@@ -61,42 +61,6 @@ function bindContainerHandler(containerNode, eventName, func) {
   }, false);
 }
 
-/**
- * Bind both 'click' and 'contextmenu' (synthetically created by b2g), plus
- * handling click suppression that is currently required because we still
- * see the click event.  We also suppress contextmenu's default event so that
- * we don't trigger the browser's right-click menu when operating in firefox.
- */
-function bindContainerClickAndHold(containerNode, clickFunc, holdFunc) {
-  // Rather than tracking suppressClick ourselves in here, we maintain the
-  // state globally in Cards.  The rationale is that popup menus will be
-  // triggered on contextmenu, which transfers responsibility of the click
-  // event to the popup handling logic.  There is also no chance for multiple
-  // contextmenu events overlapping (that we would consider reasonable).
-  bindContainerHandler(
-    containerNode, 'click',
-    function(node, event) {
-      if (Cards._suppressClick) {
-        Cards._suppressClick = false;
-        return;
-      }
-      clickFunc(node, event);
-    });
-  bindContainerHandler(
-    containerNode, 'contextmenu',
-    function(node, event) {
-      // Always preventDefault, as this terminates processing of the click as a
-      // drag event.
-      event.preventDefault();
-      // suppress the subsequent click if this was actually a left click
-      if (event.button === 0) {
-        Cards._suppressClick = true;
-      }
-
-      return holdFunc(node, event);
-    });
-}
-
 const UI_WIDTH = 320, UI_HEIGHT = 480;
 
 /**
@@ -148,7 +112,7 @@ var Cards = {
    * }
    */
   _cardStack: [],
-  activeCardIndex: null,
+  _activeCardIndex: null,
 
   /**
    * The DOM node that contains the _containerNode ("#cardContainer") and which
@@ -178,12 +142,6 @@ var Cards = {
    */
   _animatingDeadDomNodes: [],
 
-
-  /**
-   * Annoying logic related to contextmenu event handling; search for the uses
-   * for more info.
-   */
-  _suppressClick: false,
   /**
    * Is a tray card visible, suggesting that we need to intercept clicks in the
    * tray region so that we can transition back to the thing visible because of
@@ -240,13 +198,6 @@ var Cards = {
    * back to the visible thing (which must be to our right currently.)
    */
   _onMaybeIntercept: function(event) {
-    // Contextmenu-derived click suppression wants to gobble an explicitly
-    // expected event, and so takes priority over other types of suppression.
-    if (event.type === 'click' && this._suppressClick) {
-      this._suppressClick = false;
-      event.stopPropagation();
-      return;
-    }
     if (this._eatingEventsUntilNextCard) {
       event.stopPropagation();
       return;
@@ -260,7 +211,7 @@ var Cards = {
         (event.clientX >
          this._containerNode.offsetWidth - this.TRAY_GUTTER_WIDTH)) {
       event.stopPropagation();
-      this.moveToCard(this.activeCardIndex + 1);
+      this.moveToCard(this._activeCardIndex + 1);
     }
   },
 
@@ -322,20 +273,9 @@ var Cards = {
    *     An arguments object to provide to the card's constructor when
    *     instantiating.
    *   }
-   *   @param[placement #:optional @oneof[
-   *     @case[undefined]{
-   *       The card gets pushed onto the end of the stack.
-   *     }
-   *     @case['left']{
-   *       The card gets inserted to the left of the current card.
-   *     }
-   *     @case['right']{
-   *       The card gets inserted to the right of the current card.
-   *     }
-   *   }
    * ]
    */
-  pushCard: function(type, mode, showMethod, args, placement) {
+  pushCard: function(type, mode, showMethod, args) {
     var cardDef = this._cardDefs[type];
     if (!cardDef)
       throw new Error('No such card def type: ' + type);
@@ -352,35 +292,17 @@ var Cards = {
       modeDef: modeDef,
       cardImpl: cardImpl,
     };
-    var cardIndex, insertBuddy;
-    if (!placement) {
-      cardIndex = this._cardStack.length;
-      insertBuddy = null;
-    }
-    else if (placement === 'left') {
-      cardIndex = this.activeCardIndex++;
-      insertBuddy = this._cardsNode.children[cardIndex];
-    }
-    else if (placement === 'right') {
-      cardIndex = this.activeCardIndex + 1;
-      if (cardIndex >= this._cardStack.length)
-        insertBuddy = null;
-      else
-        insertBuddy = this._cardsNode.children[cardIndex];
-    }
-    this._cardStack.splice(cardIndex, 0, cardInst);
-    this._cardsNode.insertBefore(domNode, insertBuddy);
+    var cardIndex = this._cardStack.length;
+    this._cardStack.push(cardInst);
+    this._cardsNode.appendChild(domNode);
     this._adjustCardSizes();
     if ('postInsert' in cardImpl)
       cardImpl.postInsert();
 
+    // XXX for now, always animate... (Need to disable 'left' as an animatable
+    // property, set left, and then re-enable.  Need to trigger one or more
+    // reflows for that to work right.)
     if (showMethod !== 'none') {
-      // If we want to animate and we just inserted the card to the left, then
-      // we need to update our position so that the user perceives animation.
-      // (Otherwise our offset is already showing the new card.)
-      if (showMethod === 'animate' && placement === 'left')
-        this._showCard(this.activeCardIndex, 'immediate');
-
       this._showCard(cardIndex, showMethod);
     }
   },
@@ -415,8 +337,8 @@ var Cards = {
       return this._findCardUsingImpl(query);
   },
 
-  moveToCard: function(query, showMethod) {
-    this._showCard(this._findCard(query), showMethod || 'animate');
+  moveToCard: function(query) {
+    this._showCard(this._findCard(query), 'animate');
   },
 
   tellCard: function(query, what) {
@@ -551,25 +473,14 @@ var Cards = {
    *       or more cards and the last card will use a transition of 'immediate'.
    *     }
    *   ]]
-   *   @param[numCards #:optional Number]{
-   *     The number of cards to remove.  If omitted, all the cards to the right
-   *     of this card are removed as well.
-   *   }
-   *   @param[nextCardSpec #:optional]{
-   *     If a showMethod is not 'none', the card to show after removal.
-   *   }
    * ]
    */
-  removeCardAndSuccessors: function(cardDomNode, showMethod, numCards,
-                                    nextCardSpec) {
+  removeCardAndSuccessors: function(cardDomNode, showMethod) {
     if (!this._cardStack.length)
       return;
 
     var firstIndex, iCard, cardInst;
-    if (cardDomNode === undefined) {
-      throw new Error('undefined is not a valid card spec!');
-    }
-    else if (cardDomNode === null) {
+    if (cardDomNode == null) {
       firstIndex = 0;
     }
     else {
@@ -583,11 +494,9 @@ var Cards = {
       if (firstIndex === undefined)
         throw new Error('No card represented by that DOM node');
     }
-    if (!numCards)
-      numCards = this._cardStack.length - firstIndex;
 
     var deadCardInsts = this._cardStack.splice(
-                          firstIndex, numCards);
+                          firstIndex, this._cardStack.length - firstIndex);
     for (iCard = 0; iCard < deadCardInsts.length; iCard++) {
       cardInst = deadCardInsts[iCard];
       try {
@@ -608,9 +517,7 @@ var Cards = {
     }
     if (showMethod !== 'none') {
       var nextCardIndex = null;
-      if (nextCardSpec)
-        nextCardIndex = this._findCard(nextCardSpec);
-      else if (this._cardStack.length)
+      if (this._cardStack.length)
         nextCardIndex = this._cardStack.length - 1;
       this._showCard(nextCardIndex, showMethod);
     }
@@ -621,12 +528,12 @@ var Cards = {
 
     var targetLeft;
     if (cardInst)
-      targetLeft = 'translateX(' + (-cardInst.left) + 'px)';
+      targetLeft = (-cardInst.left) + 'px';
     else
-      targetLeft = 'translateX(0px)';
+      targetLeft = '0px';
 
     var cardsNode = this._cardsNode;
-    if (cardsNode.style.MozTransform !== targetLeft) {
+    if (cardsNode.style.left !== targetLeft) {
       if (showMethod === 'immediate') {
         // XXX cross-platform support.
         cardsNode.style.MozTransitionProperty = 'none';
@@ -638,14 +545,14 @@ var Cards = {
       else {
         this._eatingEventsUntilNextCard = true;
       }
-      cardsNode.style.MozTransform = targetLeft;
+
+      cardsNode.style.left = targetLeft;
 
       if (showMethod === 'immediate') {
         // make sure the instantaneous transition is seen before we turn
         // transitions back on.
         cardsNode.clientWidth;
-        // CROSS-BROWSER-TODO
-        cardsNode.style.MozTransitionProperty = '-moz-transform';
+        cardsNode.style.MozTransitionProperty = 'left';
       }
     }
     else {
@@ -653,7 +560,7 @@ var Cards = {
       this._eatingEventsUntilNextCard = false;
     }
 
-    this.activeCardIndex = cardIndex;
+    this._activeCardIndex = cardIndex;
     if (cardInst)
       this._trayActive = cardInst.modeDef.tray;
   },
@@ -666,10 +573,6 @@ var Cards = {
         if (domNode.parentNode)
           domNode.parentNode.removeChild(domNode);
       });
-      // Our coordinate space may have been affected, so update and re-show
-      // the current card.
-      this._adjustCardSizes();
-      this._showCard(this.activeCardIndex, 'immediate');
     }
   },
 
