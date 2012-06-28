@@ -116,6 +116,36 @@ var SleepMenu = {
       items.push(options.silentOff);
     }
 
+    /* REMOVE: test nested menu */
+    var test = {
+      label: 'test_submenu',
+      value: 'test',
+      type: 'menu',
+      items: [
+        {
+          label: 'test',
+          value: 'test'
+        },
+        {
+          label: 'test',
+          value: 'test'
+        },
+        {
+          label: '111111',
+          value: 't',
+          type: 'menu',
+          items: [
+            {
+              label: 'ttt',
+              value: 'ttt'
+            }
+          ]
+        }
+      ]
+    };
+    items.push(test);
+    /* END OF REMOVE */
+
     items.push(options.restart);
     items.push(options.power);
 

@@ -15,25 +15,14 @@
   display: block;
 }
 
-#listmenu-table {
-  display: table;
-  height: 100%;
-  width: 100%;
-}
-
-#listmenu-tablecell {
-  display: table-cell;
-  height: 100%;
-  width: 100%;
-  vertical-align: middle;
-  text-align: center;
-}
-
 .list-menu {
-  display: inline-block;
-  background: -moz-linear-gradient(center top , rgb(244, 244, 244), rgb(234, 234, 234)) repeat scroll 0% 0% white;
+  display: block;
   border-radius: 8px;
   border: 1px solid hsla(0,0%,0%,0);
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  overflow-x: hidden;
 }
 
 /* 320x480 phones */
@@ -41,10 +30,11 @@
        (orientation: landscape) and (width: 480px) {
   .list-menu {
     width: 280px;
-    max-height: 300px;
-    overflow-y: auto;
+    height: 300px;
+    overflow-y: hidden;
+    margin-left: -140px;
   }
-  .list-menu > div > div {
+  .list-menu div.list-menu-container div {
     height: 49px;
     line-height: 49px;
     font-size: 16px;
@@ -56,10 +46,11 @@
        (orientation: landscape) and (width: 800px) {
   .list-menu {
     width: 400px;
-    max-height: 300px;
-    overflow-y: auto;
+    height: 300px;
+    overflow-y: hidden;
+    margin-left: -200px;
   }
-  .list-menu > div > div {
+  .list-menu div.list-menu-container div {
     height: 73px;
     line-height: 73px;
     font-size: 26px;
@@ -67,12 +58,28 @@
 }
 
 
-.list-menu > div > div {
+.list-menu div.list-menu-container div {
   padding: 0 15px 0 66px;
   text-align: left;
   color: #778;
   border-top: 1px solid hsla(0, 0%, 100%,0.2);
   border-bottom: 1px solid hsla(0, 0%, 0%,0.4);
+}
+
+div.list-menu-container div a {
+  display: block;
+  text-decoration: none;
+  background: url(images/header-right-arrow.png) no-repeat 100% 50%;
+  color:#778 !important;
+}
+
+div.list-menu-container div.back {
+  background: url(images/header-left-arrow.png) no-repeat 10px 50% black;
+  color: white;
+}
+
+div.list-menu-container div.back a {
+  background: none;
 }
 
 .list-menu div[data-value] {
@@ -92,17 +99,35 @@
 }
 
 .list-menu-container {
-  -moz-transition: -moz-transform 0.5s ease, width 0s linear 0.5s;
-  -moz-transform: translateX(100%);
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 0;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  background: -moz-linear-gradient(center top , rgb(244, 244, 244), rgb(234, 234, 234)) repeat scroll 0% 0% white;
 }
 
+/* XXX */
+.list-menu-container {
+  -moz-transition: -moz-transform 0.5s ease, width 0s linear 0.5s;
+  -moz-transform: translateX(100%);
+  width: 0;
+}
+
+#list-menu-root {
+  width: 100%;
+  -moz-transform: none;
+  -moz-transition: none;
+}
+
+
+/* root is default target */
+#list-menu-root:target,
 .list-menu-container:target {
   -moz-transition: -moz-transform 0.5s ease, width 0s linear 0s;
   -moz-transform: none;
   width: 100%;
 }
 
-.list-menu-container.list-menu-root,
-.list-menu-container.passby {
-  -moz-transform: translate(-100%);
-}

@@ -35,9 +35,11 @@ var ListMenu = {
     this.currentLevel = 0;
     this.internalList = [];
     this.buildMenu(list_items);
+    //this.internalList.reverse();
     this.internalList.forEach(function render_item(item) {
       console.log('======',item.id);
       this.container.appendChild(item);
+      console.log('========',item.outerHTML);
     }, this);
 
     if (handler) {
@@ -51,18 +53,30 @@ var ListMenu = {
 
   buildMenu: function lm_buildMenu(items) {
     var container_div = document.createElement('div');
-    container_div.id = 'list-menu-'+this.internalList.length;
+    
+    container_div.classList.add('list-menu-container');
+    if (this.currentLevel === 0) {
+      container_div.classList.add('list-menu-root');
+      this.previousNode = container_div;
+      this.root = this.previousNode;
+      container_div.id = 'list-menu-root';
+    } else {
+      container_div.id = 'list-menu-'+this.internalList.length;
+    }
+    this.internalList.push(container_div);
+    
     if (this.currentLevel > 0) {
       var back_div = document.createElement('div');
       var link = document.createElement('a');
-      a.textContext = 'back';
-      a.href = '#' + this.currentParent.id;
+      link.textContent = 'back';
+      link.href = '#' + this.currentParent;
       back_div.classList.add('back');
       back_div.appendChild(link);
       container_div.appendChild(back_div);
     }
     items.forEach(function traveseItems(item) {
       var item_div = document.createElement('div');
+      dump('=======',container_div.id,item.type,item.label);
       if (item.type && item.type == 'menu') {
         this.currentLevel += 1;
         this.currentParent = container_div.id;
@@ -71,7 +85,9 @@ var ListMenu = {
         item_div.classList.add('submenu');
         
         var link = document.createElement('a');
-        link.href = '#' + this.currentChild.id;
+        link.href = '#' + this.currentChild;
+        link.textContent = item.label;
+        item_div.appendChild(link);
       } else {
         item_div.dataset.value = item.value;
         item_div.textContent = item.label;
@@ -82,14 +98,9 @@ var ListMenu = {
       }
       container_div.appendChild(item_div);
     }, this);
-    if (this.currentLevel === 0) {
-      container_div.classList.add('list-menu-root');
-      this.previousNode = container_div;
-      this.root = this.previousNode;
-    }
+
     container_div.dataset.level = this.currentLevel;
-    this.currentChild = container_div;
-    this.internalList.push(container_div);
+    this.currentChild = container_div.id;
   },
 
   show: function lm_show() {
@@ -131,16 +142,26 @@ var ListMenu = {
 
       case 'transitionend':
         // Determine the movement is go up or go down the tree
+        console.log(this.previousNode.id, this.previousNode.dataset.level, '======');
+        console.log(evt.target.id, evt.target.dataset.level, '======');
         if (this.previousNode.dataset.level > evt.target.dataset.level) {
           // Go up
-          console.log('====go up the tree');
+          console.log(evt.target.id, '====go up the tree');
           evt.target.classList.remove('passby');
+          if (this.previousNode.id != 'list-menu-root') {
+        //    this.previousNode.style.MozTransition = 'none';
+          //  this.previousNode.style.MozTransform = 'translateX(100%)';
+          }
         } else {
           // Go down
-          console.log('====go down the tree');
+          console.log(evt.target.id, '====go down the tree');
           evt.target.classList.add('passby');
+          if (this.previousNode.id != 'list-menu-root') {
+           // this.previousNode.style.MozTransition = 'none';
+            //this.previousNode.style.MozTransform = 'translateX(-100%)';
+          }
         }
-        this.previousNode = ev.target;
+        this.previousNode = evt.target;
         break;
     }
   }
