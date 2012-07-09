@@ -13,7 +13,7 @@
     <h1>Alert/Prompt/Confirm</h1>
 
     <h2>Call on mozbrowser frame:</h2>
-    <p><button onclick="window.parent.alert('Hello world!')">Alert</button></p>
+    <p><button onclick="window.parent.alert('Hello\u20AC<br/>world!\n11111')">Alert</button></p>
     <p><button onclick="window.parent.alert(window.parent.confirm('Hello world?'))">Confirm</button></p>
     <p><button onclick="window.parent.alert(window.parent.prompt('Hello world:', 'initial value'))">Prompt</button></p>
 

@@ -58,7 +58,7 @@
   -moz-box-sizing: border-box;
 }
 
-#modal-dialog-prompt-message {
+.modal-dialog-message {
   display: block;
 }
 
