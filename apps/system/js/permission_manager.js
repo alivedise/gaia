@@ -4,8 +4,23 @@
 'use strict';
 
 var PermissionManager = (function() {
+  // Records current origin
+  var currentOrigin = null;
+
+  // Records all permission events
+  var currentEvents = {};
+
   window.addEventListener('mozChromeEvent', function pm_chromeEventHandler(e) {
     var detail = e.detail;
+    var origin = e.target.dataset.frameOrigin;
+    if (currentEvents[origin] && currentEvents[origin].length > 0)
+      currentEvents[origin].push(e);
+    else
+      currentEvents[origin] = [e];
+    
+    if (origin !== WindowManager.getDisplayedApp())
+      return;
+
     switch (detail.type) {
       case 'webapps-ask-install':
         handleInstallationPrompt(detail);
@@ -18,6 +33,27 @@ var PermissionManager = (function() {
         break;
     }
   });
+
+  window.addEventListener('appopen', function(e){
+    var firstPermission = currentEvents[e.detail.origin];
+    if (!firstPermission || !firstPermission[0])
+      return;
+
+    showPermissionPrompt(e.detail.origin);
+  });
+  
+  window.addEventListener('appwillclose', function(e){
+    if (evt.detail.origin !== currentOrigin)
+      return;
+
+    hidePermissionPrompt();
+  });
+
+  var show = function(origin) {
+  };
+
+  var hide = function() {
+  }
 
   var fullscreenRequest = undefined;
 
