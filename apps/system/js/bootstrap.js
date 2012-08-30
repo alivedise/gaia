@@ -60,7 +60,8 @@ window.addEventListener('localized', function onlocalized() {
 // Define the default background to use for all homescreens
 SettingsListener.observe(
   'homescreen.wallpaper', 'default.png', function setWallpaper(value) {
-  var url = 'url(resources/images/backgrounds/' + value + ')';
+    var url = 'url(resources/images/backgrounds/OWD_12_Background_vpg_v01_0' +
+              value + '.png)';
   document.getElementById('screen').style.backgroundImage = url;
 });
 

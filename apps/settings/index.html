@@ -7,6 +7,10 @@
     <link rel="stylesheet" type="text/css" media="screen" href="style/lists.css"/>
     <link rel="stylesheet" type="text/css" media="screen" href="style/dialogs.css"/>
     <link rel="stylesheet" type="text/css" media="screen" href="style/settings.css"/>
+    <link rel="stylesheet" type="text/css" media="screen" href="style/wallpaper.css"/>
+    <link rel="stylesheet" type="text/css" media="screen" href="style/bb/menus_dialogs/core.css"/>
+    <link rel="stylesheet" type="text/css" media="screen" href="style/bb/menus_dialogs/menus.css"/>
+    <link rel="stylesheet" type="text/css" media="screen" href="style/bb/widgets/buttons/style.css"/>
     <!-- Localization -->
     <link rel="resource" type="application/l10n" href="locales/locales.ini"/>
     <!-- Shared code -->
@@ -16,8 +20,9 @@
     <script type="application/javascript" defer src="js/data.js"></script>
     <script type="application/javascript" defer src="js/wifi.js"></script>
     <script type="application/javascript" defer src="js/bluetooth.js"></script>
+    <script type="application/javascript" defer src="js/wallpaper.js"></script>
   </head>
-  <body class="hidden">
+  <body class="hidden" role="application">
 
     <!-- Main List -->
     <section role="document" id="root">
@@ -556,69 +561,33 @@
         </h1>
       </header>
 
-      <h2 data-l10n-id="lockScreen">Lock Screen</h2>
-      <ul>
-        <li>
-          <label>
-            <input type="radio" name="lockscreen.wallpaper" value="default.png" checked />
-            <span></span>
-          </label>
-          <a data-l10n-id="default">Default</a>
+      <ul class="wallpaper">
+        <li class="wallpaper-node">
+          <a data-index='1' style="background:url('style/images/wallpaper/OWD_12_Background_vpg_v01_01.png')"></img></a>
         </li>
-        <li>
-          <label>
-            <input type="radio" name="lockscreen.wallpaper" value="balloon.png"/>
-            <span></span>
-          </label>
-          <a data-l10n-id="balloon">Balloon</a>
+        <li class="wallpaper-node">
+          <a data-index='2' style="background:url('style/images/wallpaper/OWD_12_Background_vpg_v01_02.png')"></img></a>
         </li>
-        <li>
-          <label>
-            <input type="radio" name="lockscreen.wallpaper" value="water.png"/>
-            <span></span>
-          </label>
-          <a data-l10n-id="water">Water</a>
+        <li class="wallpaper-node">
+          <a data-index='3' style="background:url('style/images/wallpaper/OWD_12_Background_vpg_v01_03.png')"></img></a>
         </li>
-        <li>
-          <label>
-            <input type="radio" name="lockscreen.wallpaper" value="leaves.png"/>
-            <span></span>
-          </label>
-          <a data-l10n-id="leaves">Leaves</a>
+        <li class="wallpaper-node">
+          <a data-index='4' style="background:url('style/images/wallpaper/OWD_12_Background_vpg_v01_04.png')"></img></a>
+        </li>
+        <li class="wallpaper-node">
+          <a data-index='5' style="background:url('style/images/wallpaper/OWD_12_Background_vpg_v01_05.png')"></img></a>
+        </li>
+        <li class="wallpaper-node">
+          <a data-index='6' style="background:url('style/images/wallpaper/OWD_12_Background_vpg_v01_06.png')"></img></a>
+        </li>
+        <li class="wallpaper-node">
+          <a data-index='7' style="background:url('style/images/wallpaper/OWD_12_Background_vpg_v01_07.png')"></img></a>
         </li>
       </ul>
 
-      <h2 data-l10n-id="homeScreen">Home Screen</h2>
-      <ul>
-        <li>
-          <label>
-            <input type="radio" name="homescreen.wallpaper" value="default.png" checked />
-            <span></span>
-          </label>
-          <a data-l10n-id="default">Default</a>
-        </li>
-        <li>
-          <label>
-            <input type="radio" name="homescreen.wallpaper" value="balloon.png"/>
-            <span></span>
-          </label>
-          <a data-l10n-id="balloon">Balloon</a>
-        </li>
-        <li>
-          <label>
-            <input type="radio" name="homescreen.wallpaper" value="water.png"/>
-            <span></span>
-          </label>
-          <a data-l10n-id="water">Water</a>
-        </li>
-        <li>
-          <label>
-            <input type="radio" name="homescreen.wallpaper" value="leaves.png"/>
-            <span></span>
-          </label>
-          <a data-l10n-id="leaves">Leaves</a>
-        </li>
-      </ul>
+      <menu hidden>
+        <button data-l10n-id="cancel">Cancel</button>
+      </menu>
     </section>
 
     <!-- [TODO] Personalization :: Time & Date -->
