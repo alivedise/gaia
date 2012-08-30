@@ -35,6 +35,7 @@ var Wallpaper = {
     if (!target.dataset || !target.dataset.index)
       return;
 
+    target.parentNode.classList.add('selected');
     this.settings.getLock().set({ 'homescreen.wallpaper': target.dataset.index });
   }
 };

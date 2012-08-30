@@ -1,14 +1,56 @@
+#wallpaper {
+  overflow: hidden;
+}
+
+#wallpaper ul.wallpaper {
+  position: relative;
+  height: 100%;
+}
+
 #wallpaper ul.wallpaper li {
-  width: 25%;
-  height: 60px;
   float: left;
   display: inline-block;
   border: 2px solid grey;
   -moz-box-sizing: border-box;
+  z-index: 0;
+}
+
+/* 320x480 phones */
+@media (orientation: portrait) and (width: 320px),
+       (orientation: landscape) and (width: 480px) {
+  #wallpaper ul.wallpaper li {
+    width: 107px;
+    height: 107px;
+  }
+}
+
+/* 480x800 phones portrait */
+@media (orientation: portrait) and (width: 480px),
+       (orientation: landscape) and (width: 800px) {
+    #wallpaper ul.wallpaper li {
+        width: 160px;
+        height: 160px;
+    }
 }
 
 #wallpaper ul.wallpaper li a {
   padding: 0;
   margin: 0;
+  width: 100%;
+  height: 100%;
+  display: inline-block;
   -moz-box-sizing: border-box;
+  background-size: 320px 480px;
+}
+
+#wallpaper ul.wallpaper li.selected {
+  z-index: 1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+#wallpaper ul.wallpaper li a:active {
+  border-color: #00ABCD;
 }
