@@ -8,21 +8,29 @@ var PopupManager = {
   _endTimes: 0,
   _startTimes: 0,
 
+  throbber: document.getElementById('popup-throbber'),
+
   overlay: document.getElementById('dialog-overlay'),
 
-  container: document.getElementById('popup-container'),
+  popupContainer: document.getElementById('popup-container'),
+
+  container: document.getElementById('frame-container'),
 
   screen: document.getElementById('screen'),
+
+  closeButton: document.getElementById('popup-close'),
 
   loadingIcon: document.getElementById('statusbar-loading'),
 
   init: function pm_init() {
+    this.origin = document.getElementById('popup-origin');
     window.addEventListener('mozbrowseropenwindow', this);
     window.addEventListener('mozbrowserclose', this);
     window.addEventListener('appwillclose', this);
     window.addEventListener('home', this);
     window.addEventListener('keyboardhide', this);
     window.addEventListener('keyboardchange', this);
+    this.closeButton.addEventListener('click', this);
   },
 
   _showWait: function pm_showWait() {
@@ -51,6 +59,10 @@ var PopupManager = {
       WindowManager.setDisplayedApp(null);
     }
 
+    this.popupContainer.dataset.trusty = trust;
+
+    this.origin.textContent = origin;
+
     // Reset overlay height
     this.setHeight(window.innerHeight - StatusBar.height);
 
@@ -75,11 +87,12 @@ var PopupManager = {
         evt.target.dataset.frameType !== 'popup'))
       return;
 
-    this.screen.classList.remove('popup');
 
     var self = this;
-    this.container.addEventListener('transitionend', function trWait() {
-      self.container.removeEventListener('transitionend', trWait);
+    this.popupContainer.addEventListener('animationend', function trWait(event) {
+      self.popupContainer.removeEventListener('animationend', trWait);
+      self.screen.classList.remove('popup');
+      self.popupContainer.classList.remove('disappearing');
       self.container.removeChild(self._currentPopup);
       self._currentPopup = null;
 
@@ -93,6 +106,8 @@ var PopupManager = {
       if (callback)
         callback();
     });
+
+    this.popupContainer.classList.add('disappearing');
 
     // We just removed the focused window leaving the system
     // without any focused window, let's fix this.
@@ -119,7 +134,7 @@ var PopupManager = {
       }
   },
 
-  backHandling: function pm_backHandling(evt) {
+  backHandling: function pm_backHandling() {
     if (!this._currentPopup)
       return;
 
@@ -137,10 +152,15 @@ var PopupManager = {
 
   handleEvent: function pm_handleEvent(evt) {
     switch (evt.type) {
+      case 'click':
+        this.backHandling();
+        break;
       case 'mozbrowserloadstart':
+        this.throbber.classList.add('loading');
         this.handleLoadStart(evt);
         break;
       case 'mozbrowserloadend':
+        this.throbber.classList.remove('loading');
         this.handleLoadEnd(evt);
         break;
       case 'mozbrowseropenwindow':
@@ -157,6 +177,7 @@ var PopupManager = {
             }
           });
         } else {
+          this.throbber.classList.remove('loading');
           this.open(detail.name, detail.frameElement,
                     evt.target.dataset.frameOrigin, false);
         }
@@ -167,7 +188,7 @@ var PopupManager = {
       case 'home':
         // Reset overlay height before hiding
         this.setHeight(window.innerHeight - StatusBar.height);
-        this.backHandling(evt);
+        this.backHandling();
         break;
       case 'appwillclose':
         if (!this._currentPopup)
