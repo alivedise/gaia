@@ -88,13 +88,13 @@ var PermissionManager = (function() {
   var pending = [];
 
   // Div over in which the permission UI resides.
-  var overlay = null;
-  var dialog = null;
-  var message = null;
+  var overlay = document.getElementById('permission-screen');
+  var dialog = document.getElementById('permission-dialog');
+  var message = document.getElementById('permission-message');
 
   // "Yes"/"No" buttons on the permission UI.
-  var yes = null;
-  var no = null;
+  var yes = document.getElementById('permission-yes');
+  var no = document.getElementById('permission-no');
 
   // The ID of the next permission request. This is incremented by one
   // on every request, modulo some large number to prevent overflow problems.
@@ -171,39 +171,10 @@ var PermissionManager = (function() {
   var showPermissionPrompt = function(id, msg,
                                       yescallback, nocallback,
                                       yesText, noText) {
-    if (overlay === null) {
-      overlay = document.createElement('div');
-      overlay.id = 'permission-screen';
-      overlay.dataset.zIndexLevel = 'permission-screen';
-
-      dialog = document.createElement('div');
-      dialog.id = 'permission-dialog';
-      overlay.appendChild(dialog);
-
-      message = document.createElement('div');
-      message.id = 'permission-message';
-      dialog.appendChild(message);
-
-      yes = document.createElement('button');
-      yes.appendChild(document.createTextNode(yesText ? yesText : 'Yes'));
-      yes.id = 'permission-yes';
-      dialog.appendChild(yes);
-
-      no = document.createElement('button');
-      no.appendChild(document.createTextNode(noText ? noText : 'No'));
-      no.id = 'permission-no';
-      dialog.appendChild(no);
-
-      // Note that 'overlay' needs to be the last child in 'screen' otherwise
-      // its zIndex value won't override the zIndex value of the element
-      // before it in the DOM, i.e. the permission prompt won't appear over
-      // top of the fullscreen window!
-      document.getElementById('screen').appendChild(overlay);
-    }
-
     // Put the message in the dialog.
     // Note plain text since this may include text from
     // untrusted app manifests, for example.
+    console.log(msg, '========');
     message.textContent = msg;
 
     currentRequestId = id;
