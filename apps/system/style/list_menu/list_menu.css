@@ -1,5 +1,20 @@
 #listmenu {
+  position: absolute;
+  left: 0;
+  top: 20px;
+  height: -moz-calc(100% - 20px);
+  width: 100%;
   visibility: hidden;
+}
+
+#screen.fullscreen-app #listmenu {
+  top: 0;
+  height: 100%;
+}
+
+#screen.attention #listmenu {
+  top: 40px;
+  height: -moz-calc(100% - 40px);
 }
 
 #listmenu.visible {

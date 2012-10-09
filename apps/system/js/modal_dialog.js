@@ -61,8 +61,10 @@ var ModalDialog = {
 
     for (var id in elements) {
       var tagName = elements[id].tagName.toLowerCase();
-      if (tagName == 'button' || tagName == 'ul') {
+      if (tagName == 'button') {
         elements[id].addEventListener('click', this);
+      } else if (tagName == 'form') {
+        elements[id].addEventListener('submit', this);
       }
     }
   },
@@ -71,6 +73,11 @@ var ModalDialog = {
   handleEvent: function md_handleEvent(evt) {
     var elements = this.elements;
     switch (evt.type) {
+      case 'submit':
+        // If we don't interrupt the submit, gecko would reopen system app.
+        evt.preventDefault();
+        break;
+
       case 'mozbrowsererror':
       case 'mozbrowsershowmodalprompt':
         if (evt.target.dataset.frameType != 'window')

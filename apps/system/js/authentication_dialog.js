@@ -59,8 +59,11 @@ var AuthenticationDialog = {
     window.addEventListener('keyboardhide', this);
 
     for (var id in elements) {
-      if (elements[id].tagName.toLowerCase() == 'button') {
+      var tagName = elements[id].tagName.toLowerCase();
+      if (tagName == 'button') {
         elements[id].addEventListener('click', this);
+      } else if (tagName == 'form') {
+        elements[id].addEventListener('submit', this);
       }
     }
   },
@@ -69,6 +72,11 @@ var AuthenticationDialog = {
   handleEvent: function ad_handleEvent(evt) {
     var elements = this.elements;
     switch (evt.type) {
+      case 'submit':
+        // If we don't interrupt the submit, gecko would reopen system app.
+        evt.preventDefault();
+        break;
+
       case 'mozbrowserusernameandpasswordrequired':
         if (evt.target.dataset.frameType != 'window')
           return;
