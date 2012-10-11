@@ -158,6 +158,10 @@
     <link rel="resource" type="application/l10n" href="locales/locales.ini">
     <link rel="resource" type="application/l10n" href="shared/locales/date.ini">
 
+    <!-- include building blocks -->
+    <!-- XXX: Should be removed if value selector BB goes stable -->
+    <link rel="stylesheet" type="text/css" href="style/bb/value_selector.css">
+
     <!-- Payment -->
     <script defer src="js/payment.js"></script>
 
@@ -321,8 +325,8 @@
               </p>
             </section>
             <menu>
-              <button id="authentication-dialog-http-authentication-cancel" data-l10n-id="cancel">Cancel</button>
-              <button id="authentication-dialog-http-authentication-ok" data-l10n-id="login" class="affirmative">Login</button>
+              <button id="authentication-dialog-http-authentication-cancel" data-l10n-id="cancel" type="reset">Cancel</button>
+              <button id="authentication-dialog-http-authentication-ok" data-l10n-id="login" type="submit">Login</button>
             </menu>
           </form>
         </div>
@@ -392,7 +396,7 @@
       <!-- value selector -->
       <div id="value-selector" hidden data-z-index-level="value-selector">
         <!-- popup of options for select element -->
-        <form id="select-option-popup" role="dialog" onsubmit="return false;">
+        <form id="select-option-popup" role="dialog" data-type="selector" onsubmit="return false;">
           <section id="value-selector-container" onmousedown="return false;">
             <h1 data-l10n-id="choose-option">Choose your option</h1>
             <ol role="listbox">

@@ -8,11 +8,6 @@
   display: none;
 }
 
-#dialog-overlay,
-#modal-dialog-confirm {
-  display: block;
-}
-
 #authentication-dialog input,
 #modal-dialog input {
   border-radius: 2px 2px 2px 2px;
