@@ -25,6 +25,7 @@
     <link rel="stylesheet" type="text/css" href="shared/style/action_menu.css">
     <link rel="stylesheet" type="text/css" href="shared/style/buttons.css">
     <link rel="stylesheet" type="text/css" href="shared/style/switches.css">
+    <link rel="stylesheet" type="text/css" href="shared/style/status.css">
 
     <!-- applications.js must not be deferred
          in order to catch webapps-registry-ready mozChromeEvent -->
@@ -306,7 +307,7 @@
         <div id="authentication-dialog">
           <!--div id="authentication-dialog-ftp" role="dialog">
           </div-->
-          <form id="authentication-dialog-http-authentication" role="dialog">
+          <form id="authentication-dialog-http-authentication" role="dialog" data-type="confirm">
             <section class="authentication-dialog-message-container">
               <h3 id="authentication-dialog-title"></h3>
               <p>
@@ -326,7 +327,7 @@
           </form>
         </div>
         <div id="modal-dialog">
-          <form id="modal-dialog-alert" role="dialog">
+          <form id="modal-dialog-alert" role="dialog" data-type="confirm">
             <section class="modal-dialog-message-container">
               <p>
                 <span id="modal-dialog-alert-message"></span>
@@ -337,7 +338,7 @@
             </menu>
           </form>
 
-          <form id="modal-dialog-confirm" role="dialog">
+          <form id="modal-dialog-confirm" role="dialog" data-type="confirm">
             <section class="modal-dialog-message-container">
               <p>
                 <span id="modal-dialog-confirm-message"></span>
@@ -349,7 +350,7 @@
             </menu>
           </form>
 
-          <form id="modal-dialog-prompt" role="dialog">
+          <form id="modal-dialog-prompt" role="dialog" data-type="confirm">
             <section class="modal-dialog-message-container">
               <p>
                 <span id="modal-dialog-prompt-message"></span>
@@ -362,7 +363,7 @@
             </menu>
           </form>
 
-          <form id="modal-dialog-error" role="dialog">
+          <form id="modal-dialog-error" role="dialog" data-type="confirm">
             <section class="modal-dialog-message-container">
               <p>
                 <h3 data-l10n-id="error-title">Hmm, the app is having problems.</h3>
@@ -373,6 +374,17 @@
             <menu>
               <button id="modal-dialog-error-back" data-l10n-id="back">Back</button>
               <button id="modal-dialog-error-reload" data-l10n-id="reload">Try Reloading</button>
+            </menu>
+          </form>
+          </div>
+
+          <form id="modal-dialog-select-one" role="dialog" data-type="confirm">
+            <div class="modal-dialog-message-container inner">
+              <h3 id="modal-dialog-select-one-title"></h3>
+              <ul id="modal-dialog-select-one-menu"></ul>
+            </div>
+            <menu>
+              <button id="modal-dialog-select-one-cancel" data-l10n-id="cancel">Cancel</button>
             </menu>
           </form>
         </div>
@@ -539,10 +551,10 @@
         <div id="toaster-detail"></div>
       </div>
 
-      <div id="listmenu" data-z-index-level="list-menu" role="dialog">
+      <form id="listmenu" data-z-index-level="list-menu" role="dialog" data-type="action">
         <menu class="actions">
         </menu>
-      </div>
+      </form>
 
       <div id="keyboard-overlay" data-z-index-level="keyboard-overlay"></div>
 
@@ -565,7 +577,7 @@
         </menu>
       </div>
 
-      <section id="system-banner" role="dialog" class="banner"
+      <section id="system-banner" role="status" class="banner"
           data-z-index-level="system-notification-banner">
         <p></p>
       </section>
