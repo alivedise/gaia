@@ -28,13 +28,13 @@ var ListMenu = {
   // Pass an array of list items and handler for clicking on the items
   // Modified to fit contextmenu use case, loop into the menu items
   request: function lm_request(listItems, title, successCb, errorCb) {
-    this.container.innerHTML = '';
+    this.element.innerHTML = '';
     this.currentLevel = 0;
     this.internalList = [];
     this.setTitle(title);
     this.buildMenu(listItems);
     this.internalList.forEach(function render_item(item) {
-      this.container.appendChild(item);
+      this.element.appendChild(item);
     }, this);
 
     this.onreturn = successCb || function() {};
@@ -44,27 +44,24 @@ var ListMenu = {
   },
 
   buildMenu: function lm_buildMenu(items) {
-    var containerDiv = document.createElement('ul');
+    var container = document.createElement('menu');
     var _ = navigator.mozL10n.get;
 
     if (this.currentLevel === 0) {
-      containerDiv.classList.add('list-menu-root');
-      containerDiv.id = 'list-menu-root';
+      container.classList.add('list-menu-root');
+      container.id = 'list-menu-root';
     } else {
-      containerDiv.id = 'list-menu-' + this.internalList.length;
+      container.id = 'list-menu-' + this.internalList.length;
     }
-    this.internalList.push(containerDiv);
+    this.internalList.push(container);
 
     items.forEach(function traveseItems(item) {
-      var item_div = document.createElement('li');
-      var button = document.createElement('a');
-      button.setAttribute('role', 'button');
+      var button = document.createElement('button');
       if (item.type && item.type == 'menu') {
         this.currentLevel += 1;
-        this.currentParent = containerDiv.id;
+        this.currentParent = container.id;
         this.buildMenu(item.items);
         this.currentLevel -= 1;
-        item_div.classList.add('submenu');
 
         button.href = '#' + this.currentChild;
         button.textContent = item.label;
@@ -76,34 +73,27 @@ var ListMenu = {
         button.textContent = item.label;
       }
 
-      item_div.appendChild(button);
       if (item.icon) {
         button.style.backgroundImage = 'url(' + item.icon + ')';
         button.classList.add('icon');
       }
-      containerDiv.appendChild(item_div);
+      container.appendChild(button);
     }, this);
 
     if (this.currentLevel > 0) {
-      var back = document.createElement('li');
-      var button = document.createElement('a');
-      button.setAttribute('role', 'button');
+      var button = document.createElement('button');
       button.textContent = _('back');
       button.href = '#' + this.currentParent;
-      back.classList.add('back');
-      back.appendChild(button);
-      containerDiv.appendChild(back);
+      container.appendChild(button);
     } else {
-      var cancel = document.createElement('li');
-      var button = document.createElement('button');
-      button.textContent = _('cancel');
-      button.dataset.action = 'cancel';
-      cancel.appendChild(button);
-      containerDiv.appendChild(cancel);
+      var cancel = document.createElement('button');
+      cancel.textContent = _('cancel');
+      cancel.dataset.action = 'cancel';
+      container.appendChild(cancel);
     }
 
-    containerDiv.dataset.level = this.currentLevel;
-    this.currentChild = containerDiv.id;
+    container.dataset.level = this.currentLevel;
+    this.currentChild = container.id;
   },
 
   setTitle: function lm_setTitle(title) {
@@ -112,7 +102,7 @@ var ListMenu = {
 
     var titleElement = document.createElement('h3');
     titleElement.textContent = title;
-    this.container.appendChild(titleElement);
+    this.element.appendChild(titleElement);
   },
 
   show: function lm_show() {

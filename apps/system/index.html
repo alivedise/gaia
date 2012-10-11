@@ -468,6 +468,25 @@
 
       </div>
 
+      <div id="permission-screen" data-z-index-level="permission-screen">
+        <form id="permission-dialog" role="dialog" data-type="confirm">
+          <section>
+            <p id="permission-message">
+            </p>
+            <hr/>
+            <a data-l10n-id="remember-my-choice">Remember my choice</a>
+            <label>
+              <input type="checkbox" id="permission-remember" data-type="switch"></input>
+              <span></span>
+            </label>
+          </section>
+          <menu>
+            <button type="reset" id="permission-no" data-l10n-id="deny">Deny</button>
+            <button type="submit" id="permission-yes" data-l10n-id="allow">Allow</button>
+          </menu>
+        </form>
+      </div>
+
       <div id="lockscreen-camera" data-z-index-level="lockscreen-camera"></div>
 
       <div id="lockscreen" class="uninit" data-panel="main" data-z-index-level="lockscreen">
@@ -554,7 +573,7 @@
         <div id="toaster-detail"></div>
       </div>
 
-      <form id="listmenu" data-z-index-level="list-menu" role="dialog" data-type="action">
+      <form id="listmenu" data-z-index-level="list-menu" role="dialog" data-type="action" onsubmit="return false;">
         <menu class="actions">
         </menu>
       </form>
