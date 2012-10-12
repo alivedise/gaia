@@ -472,13 +472,21 @@
       </div>
 
       <div id="permission-screen" data-z-index-level="permission-screen">
-        <div id="permission-dialog" role="dialog" class="inner">
-          <p id="permission-message">
-          </p>
-          <menu data-items="2">
-            <button id="permission-no" data-l10n-id="cancel">Cancel</button>
-            <button id="permission-yes" class="affirmative" data-l10n-id="ok">Ok</button>
-          </menu>
+        <div id="permission-dialog" role="dialog">
+          <div class="inner">
+            <h2 id="permission-message"></h2>
+            <div id="permission-remember-section">
+              <a data-l10n-id="remember-my-choice" id="permission-remember-label">Remember my choice</a>
+              <label>
+                <input data-type="switch" type="checkbox" id="permission-remember-checkbox" />
+                <span></span>
+              </label>
+            </div>
+            <menu data-items="2">
+              <button id="permission-no" data-l10n-id="deny">Don't allow</button>
+              <button id="permission-yes" class="affirmative" data-l10n-id="allow">Allow</button>
+            </menu>
+          </div>
         </div>
       </div>
 

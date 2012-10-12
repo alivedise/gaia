@@ -8,12 +8,15 @@ var PermissionManager = (function() {
     var detail = e.detail;
     switch (detail.type) {
       case 'webapps-ask-install':
+        delete overlay.dataset.type;
         handleInstallationPrompt(detail);
         break;
       case 'permission-prompt':
+        overlay.dataset.type = detail.permission;
         handlePermissionPrompt(detail);
         break;
       case 'fullscreenoriginchange':
+        delete overlay.dataset.type;
         handleFullscreenOriginChange(detail);
         break;
     }
@@ -43,10 +46,25 @@ var PermissionManager = (function() {
 
   var handlePermissionPrompt = function pm_handlePermissionPrompt(detail) {
     // XXX are going to l10n the permissions name/messages?
-    requestPermission(detail.permission, function pm_permYesCB() {
-      dispatchResponse(detail.id, 'permission-allow');
+    remember.checked = detail.remember ? true : false;
+    var str = '';
+
+    if (detail.isApp) {
+      // App
+      str = navigator.mozL10n.get('permission-ask', {
+        'permission': detail.permission, 'app': detail.appName
+      });
+    } else {
+      // Web content
+      str = navigator.mozL10n.get('permission-ask', {
+        'permission': detail.permission, 'app': detail.origin
+      });
+    }
+
+    requestPermission(str, function pm_permYesCB() {
+      dispatchResponse(detail.id, 'permission-allow', remember.checked);
     }, function pm_permNoCB() {
-      dispatchResponse(detail.id, 'permission-deny');
+      dispatchResponse(detail.id, 'permission-deny', remember.checked);
     });
   };
 
@@ -74,11 +92,14 @@ var PermissionManager = (function() {
     });
   };
 
-  var dispatchResponse = function pm_dispatchResponse(id, type) {
+  var dispatchResponse = function pm_dispatchResponse(id, type, remember) {
     var event = document.createEvent('CustomEvent');
+    remember = remember ? true : false;
+
     event.initCustomEvent('mozContentEvent', true, true, {
       id: id,
-      type: type
+      type: type,
+      remember: remember
     });
     window.dispatchEvent(event);
   };
@@ -95,6 +116,10 @@ var PermissionManager = (function() {
   // "Yes"/"No" buttons on the permission UI.
   var yes = document.getElementById('permission-yes');
   var no = document.getElementById('permission-no');
+
+  // Remember the choice checkbox
+  var remember = document.getElementById('permission-remember-checkbox');
+  var rememberSection = document.getElementById('permission-remember-section');
 
   // The ID of the next permission request. This is incremented by one
   // on every request, modulo some large number to prevent overflow problems.
@@ -174,7 +199,6 @@ var PermissionManager = (function() {
     // Put the message in the dialog.
     // Note plain text since this may include text from
     // untrusted app manifests, for example.
-    console.log(msg, '========');
     message.textContent = msg;
 
     currentRequestId = id;
@@ -210,6 +234,10 @@ var PermissionManager = (function() {
       }
     }
   };
+
+  rememberSection.addEventListener('click', function onLabelClick() {
+    remember.checked = !remember.checked;
+  });
 
 }());
 
