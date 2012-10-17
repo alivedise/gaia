@@ -59,7 +59,7 @@ p#friends-msg {
   width: 90%;
   font-size: 1.5rem;
   margin: 0 auto;
-  font-weight: bold;
+  font-weight: 500;
 }
 
 #curtain > hr {

@@ -22,7 +22,7 @@
     right: 0;
     margin-top: -20px;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 500;
     color: #fff;
     text-shadow: 1px 0 2px rgba(0, 0, 0, .5);
     text-align: center;
@@ -91,7 +91,7 @@
         height: auto;
         color: #b4dae7;
         font-size: 15px;
-        font-weight: 600;
+        font-weight: 500;
         text-shadow: 0 1px 1px #000;
         cursor: pointer;
         z-index: 100;
@@ -178,7 +178,7 @@
             -ms-text-overflow: ellipsis;
             padding: 2px;
             color: #fff;
-            font-weight: 600;
+            font-weight: 500;
             text-shadow: 0 1px 3px rgba(0, 0, 0, .6);
         }
             #evmeContainer #evmeApps ul li b em,
@@ -202,7 +202,7 @@
             cursor: pointer;
             text-align: center;
             border-radius: 18px;
-            font-weight: 600;
+            font-weight: 500;
             font-size: 14px;
             z-index: 0;
             opacity: 0;
@@ -223,7 +223,7 @@
         line-height: 60px;
         color: #fff;
         font-size: 14px;
-        font-weight: 600;
+        font-weight: 500;
         padding: 0;
         margin: 10px 0 0 0;
         z-index: 50;

@@ -106,7 +106,7 @@ button::-moz-focus-inner {
 }
 
 .header-text-noresult {
-  font-family: FontSemibold;
+  font-family: FontMedium;
   font-size: -moz-calc(7 * 0.226rem);
   color: #373E45;
 }

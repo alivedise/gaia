@@ -112,7 +112,7 @@
 
   #firsttime-view .choices li input:checked + span,
   #firsttime-view .choices li[aria-checked="true"] span {
-    font-weight: 600;
+    font-weight: 500;
     padding-right: 0.5rem;
     background: url(../images/app/icons/checked.png) content-box right center no-repeat;
   }

@@ -53,7 +53,7 @@
 }
 .sup-progress-label {
   margin-bottom: 0.5rem;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 1.5rem;
 }
 
@@ -68,7 +68,7 @@
 }
 
 .tng-header-item {
-  font-weight: bold;
+  font-weight: 500;
   background-color: #eee;
 }
 .tng-header-item, .tng-item {

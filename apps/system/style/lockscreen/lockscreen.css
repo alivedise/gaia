@@ -503,7 +503,7 @@
   color: #fff;
   text-shadow: 0 0 3px #333;
   font-size: 4rem;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: -2px;
   line-height: 1.1em;
   text-shadow: 0 0 10px rgba(255, 255, 255, .4), 0 0 3px rgba(255, 255, 255, .3);
@@ -622,7 +622,7 @@
   padding: 0 2rem;
 
   font-size: 3.2rem;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 5rem;
 
   color: #fff;
@@ -668,7 +668,7 @@
 
 #lockscreen-passcode-pad > a.lockscreen-passcode-pad-func {
   font-size: 1.2rem;
-  font-weight: bold;
+  font-weight: 500;
   line-height: 1.6rem;
   padding: 1rem;
   text-align: center;

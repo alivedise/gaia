@@ -28,7 +28,7 @@ button::-moz-focus-inner {
 /* Base font patterns */
 .unit {
   font-size: 1.2rem;
-  font-weight: 600;
+  font-weight: 500;
   color: white;
 }
 
@@ -198,7 +198,7 @@ p.meta {
 }
 
 .data .stats dd {
-  font-weight: 600;
+  font-weight: 500;
   color: #fff;
 }
 

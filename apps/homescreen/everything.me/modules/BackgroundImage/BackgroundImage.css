@@ -80,7 +80,7 @@
         background: rgba(0, 0, 0, .8);
      }
         #bgimage-overlay .content .image-title {
-            font-weight: 600;
+            font-weight: 500;
             color: #b4dae7;
             font-size: 15px;
             height: 17px;
@@ -98,7 +98,7 @@
             line-height: 43px;
         }
         #bgimage-overlay .content .image-source {
-            font-weight: 600;
+            font-weight: 500;
             color: #fff;
             font-size: 13px;
             white-space: nowrap;

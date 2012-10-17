@@ -18,13 +18,14 @@ html * {
   font-family: 'MozTT';
 }
 
-.font-semibold {
+.font-medium {
   font-family: 'MozTT';
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .font-light {
   font-family: 'MozTT';
+  font-weight: 300;
 }
 
 #phone-number-view {
@@ -455,7 +456,7 @@ button[disabled] .icon-keypad-visibility {
   text-align: center;
   font-size: 1.5em;
   line-height: 4rem;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 #incoming-answer,

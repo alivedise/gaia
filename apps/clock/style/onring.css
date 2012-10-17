@@ -80,7 +80,7 @@ html, body {
   border-radius: 0.4rem 0.4rem 0.4rem 0.4rem;
   color: #333333;
   display: inline-block;
-  font: 600 2.6rem/6.5rem 'MozTT', sans-serif;
+  font: 500 2.6rem/6.5rem 'MozTT', sans-serif;
   height: 6.6rem;
   margin: 2.4rem 0 0 2.5rem;
   outline: medium none;
@@ -110,7 +110,7 @@ html, body {
   border-radius: 0.4rem 0.4rem 0.4rem 0.4rem;
   color: #333333;
   display: inline-block;
-  font: 600 2.6rem/6.5rem 'MozTT', sans-serif;
+  font: 500 2.6rem/6.5rem 'MozTT', sans-serif;
   height: 6.6rem;
   margin: 2.4rem 2.5rem 0 1.5rem;
   outline: medium none;
@@ -171,7 +171,7 @@ html, body {
   }
   
   #ring-clock-time {
-    font: bolder 2.2rem/2.2rem 'MozTT', sans-serif;
+    font: 500 2.2rem/2.2rem 'MozTT', sans-serif;
   }
   
   #ring-clock-hour24-state {
@@ -182,7 +182,7 @@ html, body {
     position: absolute;
     top: 6px;
     left: 40px;
-    font: bolder 2.2rem/2.2rem 'MozTT',sans-serif;
+    font: 500 2.2rem/2.2rem 'MozTT',sans-serif;
     color: #00aac8;
   }
   

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>New fonts test</title>
+    <style>
+    button, select {
+      font-size: 25px;
+    }
+    p {
+      font-size: 10px;
+    }
+    p[data-fonttype="truetype"] {
+      font-family: 'MozTT';
+    }
+    p[data-weight="500"] {
+      font-weight: 500;
+    }
+    p[data-weight="600"] {
+      font-weight: 600;
+    }
+    p[data-weight="700"] {
+      font-weight: 700;
+    }
+    p[data-weight="800"] {
+      font-weight: 800;
+    }
+    p[data-weight="500"] {
+      font-weight: 900;
+    }
+    p[data-weight="bold"] {
+      font-weight: bold;
+    }
+    p[data-weight="semibold"] {
+      font-weight: semibold;
+    }
+    p[data-weight="bolder"] {
+      font-weight: bolder;
+    }
+    p[data-weight="lighter"] {
+      font-weight: lighter;
+    }
+    body.swap {
+      color: white;
+      background: black;
+    }
+    </style>
+    <script type="text/javascript">
+      function swapColor() {
+        document.body.classList.toggle('swap');
+      };
+      window.onload = function load() {
+        document.getElementById('selector').onchange = function change() {
+          var selector = document.getElementById('selector');
+          var value = selector.options[selector.selectedIndex].value;
+          document.body.dataset.weight = value;
+        };
+      };
+    </script>
+  </head>
+  <body>
+    <h1>New Font Test</h1>
+    <button onclick="swapColor()">Swap color</button>
+    <section role="region" class="skin-dark">
+      <header>
+        <h1>10pt(3.53mozmm)</h1>
+      </header>
+      <div>font weight = 300; </div>
+      <p data-fonttype="truetype" data-weight=400>
+      the quick brown fox jumps over the lazy dog. THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG?! 0123456789
+      </p>
+      <div>font weight = 400; </div>
+      <p data-fonttype="truetype" data-weight=400>
+      the quick brown fox jumps over the lazy dog. THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG?! 0123456789
+      </p>
+      <div>font weight = 500; </div>
+      <p data-fonttype="truetype" data-weight=500>
+      the quick brown fox jumps over the lazy dog. THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG?! 0123456789
+      </p>
+      <div>font weight = 600; </div>
+      <p data-fonttype="truetype" data-weight=600>
+      the quick brown fox jumps over the lazy dog. THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG?! 0123456789
+      </p>
+      <div>font weight = 700; </div>
+      <p data-fonttype="truetype" data-weight=700>
+      the quick brown fox jumps over the lazy dog. THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG?! 0123456789
+      </p>
+      <div>font weight = 800; </div>
+      <p data-fonttype="truetype" data-weight=800>
+      the quick brown fox jumps over the lazy dog. THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG?! 0123456789
+      </p>
+      <div>font weight = 900; </div>
+      <p data-fonttype="truetype" data-weight=900>
+      the quick brown fox jumps over the lazy dog. THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG?! 0123456789
+      </p>
+      <div>font weight = bold; </div>
+      <p data-fonttype="truetype" data-weight=bold>
+      the quick brown fox jumps over the lazy dog. THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG?! 0123456789
+      </p>
+      <div>font weight = semibold; </div>
+      <p data-fonttype="truetype" data-weight=semibold>
+      the quick brown fox jumps over the lazy dog. THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG?! 0123456789
+      </p>
+      <div>font weight = bolder; </div>
+      <p data-fonttype="truetype" data-weight=bolder>
+      the quick brown fox jumps over the lazy dog. THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG?! 0123456789
+      </p>
+      <div>font weight = lighter; </div>
+      <p data-fonttype="truetype" data-weight=lighter>
+      the quick brown fox jumps over the lazy dog. THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG?! 0123456789
+      </p>
+    </section>
+  </body>
+</html>

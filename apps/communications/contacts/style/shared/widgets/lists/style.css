@@ -83,7 +83,7 @@ body[role="application"] li dl > dt {
 }
 
 body[role="application"] li dl > dt strong {
-  font-weight: 600;
+  font-weight: 500;
   font-family: "MozTT", Sans-serif;
 }
 
@@ -107,7 +107,7 @@ body[role="application"] li dl > dd {
 }
 
 body[role="application"] li dl > dd strong {
-  font-weight: 600;
+  font-weight: 500;
   font-family: "MozTT", Sans-serif;
   color: #000;
 }

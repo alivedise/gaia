@@ -71,7 +71,7 @@
 
   font-size: 1.2em;
   line-height: 30px;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 #notification-bar button {
@@ -107,7 +107,7 @@
   position: relative;
 
   height: 60px;
-  font-weight: 700;
+  font-weight: 500;
 
   background-color: rgba(0, 0, 0, 0.5);
 
@@ -127,7 +127,7 @@
   margin: 14px 0 0 56px;
 
   font-size: 1.2em;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 16px;
   color: #f2f2f2;
 }

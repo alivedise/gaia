@@ -70,12 +70,12 @@ abbr, acronym {
 
 strong {
   font-family: MozTT, Sans-serif;
-  font-weight: bold;
+  font-weight: 500;
 }
 
 b {
   font-family: MozTT, Sans-serif;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 small {
@@ -176,7 +176,7 @@ textarea {
 
 input[type="text"], textarea {
   font: 1.3rem/4rem MozTT, Sans-serif;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 input[type="text"]:focus, textarea:focus {
@@ -679,7 +679,7 @@ button.action b + em, button.action span[role="button"] + b {
   display: block;
   color: #777;
   font-size: 1.3rem;
-  font-weight: bold;
+  font-weight: 500;
   font-style: normal;
   margin-top: 1rem;
 }
@@ -820,7 +820,7 @@ button.action b + em, button.action span[role="button"] + b {
   background: #fff;
   border-bottom: solid 1px #c8c8c8;
   font: 1.4rem/2.6em MozTT, Sans-serif;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .selection-list > li:last-child {

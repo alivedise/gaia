@@ -1167,7 +1167,7 @@ canvas {
   top: 27px;
 }
 #PDFBug button.active {
-  font-weight: bold;
+  font-weight: 500;
 }
 .debuggerShowText {
   background: none repeat scroll 0 0 yellow;
@@ -1184,7 +1184,7 @@ canvas {
   white-space: pre;
 }
 #PDFBug .stats .title {
-    font-weight: bold;
+    font-weight: 500;
 }
 #PDFBug table {
   font-size: 10px;
@@ -1290,7 +1290,7 @@ canvas {
   }
 }
 
-@media all and (max-width: 600px) {
+@media all and (max-width: 500px) {
   #toolbarViewerRight {
     display: none;
   }

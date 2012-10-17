@@ -11,7 +11,7 @@
     text-shadow: 0 1px 3px rgba(0, 0, 0, .3);
     text-align: center;
     font-size: 18px;
-    z-index: 600;
+    z-index: 500;
     opacity: 0;
     pointer-events: none;
     -moz-transition: opacity .4s linear;
@@ -45,7 +45,7 @@
             color: #617075;
             text-shadow: 0 1px 0 rgba(255, 255, 255, .5);
             font-size: 13px;
-            font-weight: 600;
+            font-weight: 500;
             border: 1px solid #82bccf;
             background: #def;
             background: -moz-linear-gradient(center top, #cfe7ef 0, #bfdee9 50%, #b3dae7 50%, #8fc7da 100%);
@@ -93,7 +93,7 @@
 
 #evmeContainer .tip.styled h3 {
     text-align: center;
-    font-weight: 600;
+    font-weight: 500;
     font-size: 100%;
     margin-top: 10px;
 }

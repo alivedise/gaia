@@ -56,7 +56,7 @@
 }
 
 #evmeContainer .arrow-next {
-    font-weight: 600;
+    font-weight: 500;
     font-size: 15px;
     text-shadow: 0 1px 0 rgba(255, 255, 255, .7);
     width: 25px;
@@ -102,7 +102,7 @@
     text-align: center;
     padding: 0 5px;
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 500;
     border: 1px solid #82bccf;
     background: #def;
     background: -moz-linear-gradient(center top, #cfe7ef 0, #bfdee9 50%, #b3dae7 50%, #8fc7da 100%);

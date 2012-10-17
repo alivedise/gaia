@@ -79,7 +79,7 @@ body.test #tests {
 
 .toolbar-title {
   font-size: 26px;
-  font-weight: bold;
+  font-weight: 500;
   margin: 0;
   padding: 0;
   line-height: 64px;
@@ -105,7 +105,7 @@ body.test #tests {
 
   font-size: 26px;
   line-height: 48px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 #test-list > li > a {

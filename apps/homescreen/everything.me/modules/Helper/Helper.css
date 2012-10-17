@@ -15,7 +15,7 @@
     height: 38px;
     line-height: 38px;
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 500;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 1), 0 1px 1px #000;
     cursor: pointer;
     overflow: hidden;
@@ -212,7 +212,7 @@
             white-space: nowrap;
         }
         #helper ul li b {
-            font-weight: 600;
+            font-weight: 500;
         }
         #helper ul li:after {
             content: "";
@@ -225,11 +225,11 @@
             border-radius: 2px;
         }
         #helper ul li:first-child {
-            font-weight: 600;
+            font-weight: 500;
             color: #0485af;
         }
         #helper ul li:first-child b {
-            font-weight: 600;
+            font-weight: 500;
         }
         #helper ul li:nth-child(1):after {
             display: none;
@@ -239,7 +239,7 @@
             color: inherit;
         }
         #helper ul.default li, #helper ul.history li {
-            font-weight: 600;
+            font-weight: 500;
         }
         #helper ul li.label {
             color: #888;
@@ -278,5 +278,5 @@
             color: #999 !important;
         }
         #helper ul li.link.strong {
-            font-weight: 600 !important;
+            font-weight: 500 !important;
         }

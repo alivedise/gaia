@@ -57,7 +57,7 @@ form[role="dialog"].edit header button {
   background: none;
   padding: 0;
   overflow: hidden;
-  font: 600 1.4rem/1.1em "MozTT", Sans-serif;
+  font: 500 1.4rem/1.1em "MozTT", Sans-serif;
   color: #fff;
   border-radius: 0;
 }
@@ -167,7 +167,7 @@ form[role="dialog"] menu button {
   border-radius: 0.3rem;
   font-size: 1.6rem;
   font-family: 'MozTT', Sans-serif;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 3.8rem;
   color: #333;
   text-align: center;

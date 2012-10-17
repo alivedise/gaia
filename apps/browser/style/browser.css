@@ -283,7 +283,7 @@ input[type="image"] {
   margin: 8px 0px 8px 5px;
   padding: 0 0 0 10px;
   background-color: #fff;
-  font-weight: 600;
+  font-weight: 500;
   width: calc(100% - 15px);
 }
 
@@ -700,7 +700,7 @@ li[role="listitem"] small {
 }
 
 .highlight {
-  font-weight: bold;
+  font-weight: 500;
   text-decoration: underline;
 }
 
@@ -789,7 +789,7 @@ li[role="listitem"] small {
   color: #4f5357;
   background-repeat: no-repeat;
   background-position: 5px 20px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 #refresh a {

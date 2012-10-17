@@ -85,7 +85,7 @@ body[role="application"] [role="dialog"]:not(.edit) menu:not([type="toolbar"]) b
   display: inline-block;
   font-family: 'MozTT',Sans-serif;
   font-size: 1.6rem;
-  font-weight: 600;
+  font-weight: 500;
   height: 3.8rem;
   line-height: 3.8rem;
   outline: medium none;

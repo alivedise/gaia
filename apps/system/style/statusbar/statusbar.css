@@ -65,14 +65,14 @@
   padding: 0;
   color: #999;
   font: 14px/14px 'MozTT', sans-serif;
-  font-weight: bold;
+  font-weight: 500;
 }
 
 #statusbar-time {
   padding: 0;
   color: #fff;
   font: 14px/14px 'MozTT', sans-serif;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .sb-icon {
@@ -348,7 +348,7 @@
   top: 0;
   right: 0;
   font: 14px/14px 'MozTT', sans-serif;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 *[dir=rtl] .sb-icon-notification::after {
@@ -373,5 +373,5 @@
   width: 100%;
   text-align: center;
   font: 8px/8px 'MozTT', sans-serif;
-  font-weight: 600;
+  font-weight: 500;
 }

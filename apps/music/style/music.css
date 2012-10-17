@@ -57,7 +57,7 @@ body {
 
 #overlay-title {
   text-align: center;
-  font-weight: bold;
+  font-weight: 500;
   font-size: 26px;
 }
 
@@ -536,7 +536,7 @@ body.player-mode #views {
   padding: 0px;
   border-radius: 35px;
   margin: 0 10px;
-  font-weight: bold;
+  font-weight: 500;
   background-position: center center;
   background-repeat: no-repeat;
 }
@@ -640,7 +640,7 @@ button::-moz-focus-inner {
   height: 100%;
   padding: 0px;
   border-width: 0px;
-  font-weight: bold;
+  font-weight: 500;
   overflow: hidden;
   background-position: center center;
   background-repeat: no-repeat;

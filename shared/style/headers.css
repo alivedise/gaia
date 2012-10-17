@@ -37,7 +37,7 @@ section[role="region"] > header:first-child h1 {
 }
 
 section[role="region"] > header:first-child h1 em {
-  font: bold 1.5rem/1em "MozTT", Sans-serif;
+  font: 500 1.5rem/1em "MozTT", Sans-serif;
 }
 
 section[role="region"] > header:first-child form {

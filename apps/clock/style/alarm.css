@@ -28,7 +28,7 @@ a.button, span.button {
   text-align: center;
   text-decoration: none;
   cursor: pointer;
-  font: bold 2rem 'MozTT', sans-serif;
+  font: 500 2rem 'MozTT', sans-serif;
   line-height: 2.2rem;
   -moz-border-top-colors: #6F6F6F #4D4D4D #4D4D4D #6F6F6F;
   -moz-border-right-colors: #6F6F6F #4D4D4D #4D4D4D #6F6F6F;

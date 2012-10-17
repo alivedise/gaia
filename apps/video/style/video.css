@@ -50,7 +50,7 @@ li p {
 }
 li p.name {
   color: #fff;
-  font-weight: bold;
+  font-weight: 500;
   font-size: 16px;
 }
 li p.time {
@@ -127,7 +127,7 @@ li hr {
 
 #overlay-title {
   text-align: center;
-  font-weight: bold;
+  font-weight: 500;
   font-size: 26px;
 }
 

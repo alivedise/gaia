@@ -196,7 +196,7 @@ html * {
   background: -moz-linear-gradient(center top , #A5A5A5 0pt, #878787 0.1rem, #545454 100%) repeat scroll 0 0 transparent;
   line-height: 15mozmm;
   font-size: 0.2em;
-  font-weight: bold;
+  font-weight: 500;
   text-shadow: 0 0 0.3rem rgba(0, 0, 0, 0.5);
 }
 
@@ -296,7 +296,7 @@ html * {
   color: white;
   text-align: center;
   font-size: 2em;
-  font-weight: bold;
+  font-weight: 500;
   text-shadow: 0 0 0.3rem rgba(0, 0, 0, 0.5);
 }
 

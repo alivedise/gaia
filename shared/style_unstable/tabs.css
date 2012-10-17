@@ -163,7 +163,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   background-color: transparent;
-  font: bold 1.4rem/1em "Open Sans", Sans-serif;
+  font: 500 1.4rem/1em "Open Sans", Sans-serif;
   width: auto;
   float: none;
 }

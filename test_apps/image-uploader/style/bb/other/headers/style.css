@@ -44,7 +44,7 @@ body[role="application"] section[role="region"] > header h1 sup {
 }
 
 body[role="application"] section[role="region"] > header h1 em {
-  font: bold 1.5rem/1em "MozTT", Sans-serif;
+  font: 500 1.5rem/1em "MozTT", Sans-serif;
 }
 
 body[role="application"] section[role="region"] > header form {

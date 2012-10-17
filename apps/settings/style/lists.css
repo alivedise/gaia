@@ -300,7 +300,7 @@ dl > * {
 
 dl dt {
   padding-left: 3rem;
-  font-weight: bold;
+  font-weight: 500;
   border-bottom: 0.1rem solid black;
 }
 
