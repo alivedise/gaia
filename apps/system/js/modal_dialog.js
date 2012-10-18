@@ -21,7 +21,7 @@ var ModalDialog = {
       'prompt', 'prompt-ok', 'prompt-cancel', 'prompt-input', 'prompt-message',
       'confirm', 'confirm-ok', 'confirm-cancel', 'confirm-message',
       'error', 'error-back', 'error-reload', 'select-one', 'select-one-cancel',
-      'select-one-menu', 'select-one-title'];
+      'select-one-menu', 'select-one-title', 'error-title', 'error-message'];
 
     var toCamelCase = function toCamelCase(str) {
       return str.replace(/\-(.)/g, function replacer(str, p1) {
@@ -205,11 +205,34 @@ var ModalDialog = {
 
       // Error
       case 'other':
-        elements.error.classList.add('visible');
+        this.showErrorDialog();
         break;
     }
 
     this.setHeight(window.innerHeight - StatusBar.height);
+  },
+
+  showErrorDialog: function md_showErrorDialog() {
+    var self = this, elements = this.elements;
+    var req = SettingsListener.getSettingsLock().get('ril.radio.enabled');
+    req.onsuccess = function gotWifiDisabledByWakelock() {
+      if (!req.result['ril.radio.enabled'])
+        return;
+
+      var appName = WindowManager.getCurrentDisplayedApp().name;
+
+      if (req.result['ril.radio.enabled']) {
+        elements.errorTitle = _('airplane-is-on');
+        elements.errorMessage = _('airplane-is-turned-on', {app: appName});
+      } else if (!navigator.onLine) {
+        elements.errorTitle = _('network-connection-unavailable');
+        elements.errorMessage = _('network-error', {app: appName});
+      } else {
+        elements.errorTitle = _('error-title', {app: appName});
+        elements.errorMessage = _('error-message', {app: appName});
+      }
+      self.elements.error.classList.add('visible');
+    };
   },
 
   hide: function md_hide() {
