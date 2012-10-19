@@ -215,21 +215,19 @@ var ModalDialog = {
   showErrorDialog: function md_showErrorDialog() {
     var self = this, elements = this.elements;
     var req = SettingsListener.getSettingsLock().get('ril.radio.enabled');
-    req.onsuccess = function gotWifiDisabledByWakelock() {
-      if (!req.result['ril.radio.enabled'])
-        return;
-
+    req.onsuccess = function onSuccess() {
       var appName = WindowManager.getCurrentDisplayedApp().name;
+      console.log(appName,'======',navigator.onLine,req.result['ril.radio.enabled']);
 
-      if (req.result['ril.radio.enabled']) {
-        elements.errorTitle = _('airplane-is-on');
-        elements.errorMessage = _('airplane-is-turned-on', {app: appName});
+      if (!req.result['ril.radio.enabled']) {
+        elements.errorTitle.textContent = _('airplane-is-on');
+        elements.errorMessage.textContent = _('airplane-is-turned-on', {name: appName});
       } else if (!navigator.onLine) {
-        elements.errorTitle = _('network-connection-unavailable');
-        elements.errorMessage = _('network-error', {app: appName});
+        elements.errorTitle.textContent = _('network-connection-unavailable');
+        elements.errorMessage.textContent = _('network-error', {name: appName});
       } else {
-        elements.errorTitle = _('error-title', {app: appName});
-        elements.errorMessage = _('error-message', {app: appName});
+        elements.errorTitle.textContent = _('error-title', {name: appName});
+        elements.errorMessage.textContent = _('error-message', {name: appName});
       }
       self.elements.error.classList.add('visible');
     };
