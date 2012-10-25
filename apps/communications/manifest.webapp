@@ -14,7 +14,8 @@
       "icons": {
         "120": "/style/icons/Dialer.png",
         "60": "/style/icons/60/Dialer.png"
-      }
+      },
+      "fullscreen": true
     },
     "contacts": {
       "launch_path": "/contacts/index.html",
