@@ -186,7 +186,7 @@ var WindowManager = (function() {
       window.innerHeight - StatusBar.height - keyboardHeight + 'px';
 
     if (!screenElement.classList.contains('attention') &&
-        requireFullscreen(origin)) {
+        requireFullscreen(displayedApp)) {
       cssHeight = window.innerHeight - keyboardHeight + 'px';
     }
 
