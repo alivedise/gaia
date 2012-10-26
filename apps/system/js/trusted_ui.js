@@ -33,13 +33,14 @@ var TrustedUIManager = {
   },
 
   open: function trui_open(name, frame, origin, chromeEventId) {
+    var appName = WindowManager.getCurrentDisplayedApp().manifest.name;
     if (this._alreadyExists(this._lastDisplayedApp)) {
       // If already exists a Dialog, swap them
       this.container.removeChild(this._dialogs[this._lastDisplayedApp].frame);
-      this._createDialog(name, frame, this._lastDisplayedApp, chromeEventId);
+      this._createDialog(name, frame, this._lastDisplayedApp, chromeEventId, appName);
     } else {
       WindowManager.hideCurrentApp(function openTrustedUI() {
-        this._createDialog(name, frame, this._lastDisplayedApp, chromeEventId);
+        this._createDialog(name, frame, this._lastDisplayedApp, chromeEventId, appName);
       }.bind(this));
     }
   },
@@ -61,18 +62,18 @@ var TrustedUIManager = {
     window.dispatchEvent(event);
   },
 
-  _createDialog: function trui_createDialog(name, frame, origin, chromeEventId) {
+  _createDialog: function trui_createDialog(name, frame, origin, chromeEventId, title) {
     this._dialogs[origin] = {
       name: name,
       frame: frame,
       chromeEventId: chromeEventId
     };
-    this.dialogTitle.textContent = origin;
+    this.dialogTitle.textContent = title;
     var popup = frame;
     var dataset = popup.dataset;
     dataset.frameType = 'popup';
     dataset.frameName = name;
-    dataset.frameOrigin = origin;
+    dataset.frameTitle = title;
     this.container.appendChild(popup);
     this.screen.classList.add('trustedui');
   },
@@ -128,9 +129,10 @@ var TrustedUIManager = {
           // Reopening an app with trustedUI
           var dialog = this._dialogs[this._lastDisplayedApp];
           this.container.innerHTML = '';
+          var appName = WindowManager.getCurrentDisplayedApp().manifest.name;
           WindowManager.hideCurrentApp(function openTrustedUI() {
             this._createDialog(dialog.name, dialog.frame,
-                               this._lastDisplayedApp, dialog.chromeEventId);
+                               this._lastDisplayedApp, dialog.chromeEventId, appName);
           }.bind(this, dialog));
         }
         break;
