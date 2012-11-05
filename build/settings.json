@@ -6,6 +6,7 @@
  "audio.volume.system": 7,
  "audio.volume.voice_call": 5,
  "audio.volume.fm": 15,
+ "audio.volume.alarm": 15,
  "bluetooth.enabled": false,
  "debug.dev-mode": false,
  "debug.grid.enabled": false,
