@@ -26,7 +26,7 @@
   /**
    * Init
    */
-  var iccMenuItem = document.getElementById('iccMenuItem');
+  var iccMenuItem = document.getElementById('menuItem-icc');
   var iccStkList = document.getElementById('icc-stk-list');
   var iccStkHeader = document.getElementById('icc-stk-header');
   var iccStkSubheader = document.getElementById('icc-stk-subheader');
@@ -80,7 +80,8 @@
    */
   function responseSTKCommand(response, force) {
     if (!force && (!iccLastCommand || !iccLastCommandProcessed)) {
-      return debug('sendStkResponse NO COMMAND TO RESPONSE. Ignoring');
+      debug('sendStkResponse NO COMMAND TO RESPONSE. Ignoring');
+      return;
     }
 
     debug('sendStkResponse to command: ', iccLastCommand);
@@ -148,6 +149,22 @@
         }
         break;
 
+      case icc.STK_CMD_SET_UP_IDLE_MODE_TEXT:
+        iccLastCommandProcessed = true;
+        responseSTKCommand({
+          resultCode: icc.STK_RESULT_OK
+        });
+        displayNotification(command);
+        break;
+
+      case icc.STK_CMD_REFRESH:
+        iccLastCommandProcessed = true;
+        responseSTKCommand({
+          resultCode: icc.STK_RESULT_OK
+        });
+        clearNotification();
+        break;
+
       case icc.STK_CMD_SEND_SMS:
       case icc.STK_CMD_SEND_SS:
       case icc.STK_CMD_SEND_USSD:
@@ -182,8 +199,15 @@
           resultCode: icc.STK_RESULT_OK
         });
         if (confirm(options.confirmMessage)) {
-          openURL(options.url);
+          openLink(options.url);
         }
+        break;
+
+      case icc.STK_CMD_SET_UP_EVENT_LIST:
+        debug(' STK:SetUp Event List. Events list: ' + options.eventList);
+        processSTKEvents(options.eventList);
+        iccLastCommandProcessed = true;
+        responseSTKCommand({ resultCode: icc.STK_RESULT_OK });
         break;
 
       default:
@@ -192,6 +216,36 @@
         responseSTKCommand({
           resultCode: icc.STK_RESULT_OK
         });
+    }
+  }
+
+  /**
+   * Process STK Events
+   */
+  function processSTKEvents(eventList) {
+    for (var evt in eventList) {
+      debug(' STK Registering event: ' + JSON.stringify(eventList[evt]));
+      switch (eventList[evt]) {
+      case icc.STK_EVENT_TYPE_MT_CALL:
+      case icc.STK_EVENT_TYPE_CALL_CONNECTED:
+      case icc.STK_EVENT_TYPE_CALL_DISCONNECTED:
+      case icc.STK_EVENT_TYPE_LOCATION_STATUS:
+      case icc.STK_EVENT_TYPE_USER_ACTIVITY:
+      case icc.STK_EVENT_TYPE_IDLE_SCREEN_AVAILABLE:
+      case icc.STK_EVENT_TYPE_CARD_READER_STATUS:
+      case icc.STK_EVENT_TYPE_LANGUAGE_SELECTION:
+      case icc.STK_EVENT_TYPE_BROWSER_TERMINATION:
+      case icc.STK_EVENT_TYPE_DATA_AVAILABLE:
+      case icc.STK_EVENT_TYPE_CHANNEL_STATUS:
+      case icc.STK_EVENT_TYPE_SINGLE_ACCESS_TECHNOLOGY_CHANGED:
+      case icc.STK_EVENT_TYPE_DISPLAY_PARAMETER_CHANGED:
+      case icc.STK_EVENT_TYPE_LOCAL_CONNECTION:
+      case icc.STK_EVENT_TYPE_NETWORK_SEARCH_MODE_CHANGED:
+      case icc.STK_EVENT_TYPE_BROWSING_STATUS:
+      case icc.STK_EVENT_TYPE_FRAMES_INFORMATION_CHANGED:
+        debug(' [DEBUG] STK TODO event: ' + JSON.stringify(eventList[evt]));
+        break;
+      }
     }
   }
 
@@ -382,6 +436,21 @@
   }
 
   /**
+   * Display text on the notifications bar and Idle screen
+   */
+  function displayNotification(command) {
+    var options = command.options;
+    NotificationHelper.send('STK', options.text);
+  }
+
+  /**
+   * Remove text on the notifications bar and Idle screen
+   */
+  function clearNotification() {
+    // TO-DO
+  }
+
+  /**
    * Auxiliar methods
    */
   function showTitle(title) {
@@ -430,6 +499,5 @@
       app.launch('settings');
     };
   };
-
 })();
 

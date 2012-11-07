@@ -4,14 +4,14 @@
 'use strict';
 
 /**
- * gDeviceList here because child window created for pair request
- * needs to access its method via window.opener
+ * gDeviceList is defined here because the child window created for pairing
+ * requests needs to access its method via window.opener
  */
 
 var gDeviceList = null;
 
-// handle BlueTooth settings
-window.addEventListener('localized', function bluetoothSettings(evt) {
+// handle Bluetooth settings
+onLocalized(function bluetoothSettings() {
   var _ = navigator.mozL10n.get;
   var settings = window.navigator.mozSettings;
   var bluetooth = window.navigator.mozBluetooth;
@@ -78,6 +78,10 @@ window.addEventListener('localized', function bluetoothSettings(evt) {
     };
 
     renameButton.onclick = function renameBtnClicked() {
+      if (myName === '') {
+        myName = visibleName.textContent = defaultAdapter.name;
+      }
+
       var nameEntered = window.prompt(_('change-phone-name'), myName);
       if (!nameEntered || nameEntered === '' || nameEntered === myName)
         return;
@@ -85,7 +89,6 @@ window.addEventListener('localized', function bluetoothSettings(evt) {
       var req = defaultAdapter.setName(nameEntered);
       req.onsuccess = function bt_renameSuccess() {
         myName = visibleName.textContent = defaultAdapter.name;
-        return close();
       }
     };
 
@@ -119,8 +122,11 @@ window.addEventListener('localized', function bluetoothSettings(evt) {
     // when DefaultAdapter is ready.
     function initial() {
       setDiscoverable(visibleCheckBox.checked);
-      myName = visibleName.textContent = defaultAdapter.name;
-      renameButton.disabled = false;
+      // we can't get device name immediately, wait a while
+      setTimeout(function() {
+        myName = visibleName.textContent = defaultAdapter.name;
+        renameButton.disabled = false;
+      }, 1000);
     }
 
     function setDiscoverable(visible) {
@@ -262,7 +268,8 @@ window.addEventListener('localized', function bluetoothSettings(evt) {
       deviceDesc.textContent = desc;
 
       var li = document.createElement('li');
-      li.className = device.icon;
+      li.classList.add('bluetooth-device');
+      li.classList.add('bluetooth-type-' + device.icon);
       li.appendChild(deviceDesc); // should append this first
       li.appendChild(deviceName);
 
@@ -352,14 +359,20 @@ window.addEventListener('localized', function bluetoothSettings(evt) {
             };
             pairList.list.appendChild(aItem);
             pairList.index[device.address] = [device, aItem];
-            // if the device ask for connect when it paired
+            // if the device need to be connected when it just paired
+            // wait for a while so they can have time to communicate
+            // their connect protocol
             if (device.address === connectingAddress) {
-              setDeviceConnect(device);
+              setTimeout(function() {
+                setDeviceConnect(device);
+              }, 5000);
             }
           })(paired[i]);
         }
         var text = paired[0].name;
         if (length > 1) {
+          // FIXME: don't concatenate localized strings
+          // XXX this 'bt-status-pairmore' entity should not exist
           text += _('bt-status-pairmore', {n: length - 1});
         }
         gBluetoothInfoBlock.textContent = text;
@@ -407,9 +420,7 @@ window.addEventListener('localized', function bluetoothSettings(evt) {
           var device = openList.index[pairingAddress][0];
           var item = openList.index[pairingAddress][1];
           openList.list.removeChild(item);
-          // XXX should request connect by default, but get a problem here.
-          // https://bugzilla.mozilla.org/show_bug.cgi?id=797713
-          //connectingAddress = pairingAddress;
+          connectingAddress = pairingAddress;
         }
       } else {
         if (childWindow)
@@ -461,7 +472,6 @@ window.addEventListener('localized', function bluetoothSettings(evt) {
       }
 
       if (connectedAddress && device.address !== connectedAddress) {
-        // XXX need a prompt to confirm user really wants to switch to this one
         setDeviceDisconnect(device);
       }
 
@@ -600,16 +610,19 @@ window.addEventListener('localized', function bluetoothSettings(evt) {
 
   req.onsuccess = function bt_getSettingsSuccess() {
     lastMozSettingValue = req.result['bluetooth.enabled'];
+
+    // if bluetooth is on when booting, the adapter probably is ready.
+    if (lastMozSettingValue)
+      initialDefaultAdapter();
+
     updateBluetoothState(lastMozSettingValue);
 
     gDeviceList.update(lastMozSettingValue);
     gMyDeviceInfo.update(lastMozSettingValue);
   };
 
-
   bluetooth.onadapteradded = function bt_adapterAdded() {
     initialDefaultAdapter();
   };
-
 });
 

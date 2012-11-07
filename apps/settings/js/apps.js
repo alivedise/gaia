@@ -22,7 +22,7 @@ var ApplicationsList = {
   ],
 
   container: document.querySelector('#appPermissions > ul'),
-  detailTitle: document.querySelector('#appPermissionsDetails > header > h1'),
+  detailTitle: document.querySelector('#appPermissions-details > header > h1'),
   developerName: document.querySelector('#developer-infos > a'),
   developerLink: document.querySelector('#developer-infos > small > a'),
   detailPermissionsList: document.querySelector('#permissionsListHeader + ul'),
@@ -45,7 +45,7 @@ var ApplicationsList = {
     navigator.mozApps.mgmt.getAll().onsuccess = function mozAppGotAll(evt) {
       var apps = evt.target.result;
       apps.forEach(function(app) {
-        if (!self._isManageable(app))
+        if (!app.removable)
           return;
 
         self._apps.push(app);
@@ -76,7 +76,7 @@ var ApplicationsList = {
       }
 
       var item = document.createElement('li');
-      item.innerHTML = '<a href="#appPermissionsDetails">' +
+      item.innerHTML = '<a href="#appPermissions-details">' +
                        icon + app.manifest.name + '</a>';
       item.onclick = this.showAppDetails.bind(this, app);
       this.container.appendChild(item);
@@ -85,7 +85,7 @@ var ApplicationsList = {
 
   oninstall: function al_oninstall(evt) {
     var app = evt.application;
-    if (!this._isManageable(app))
+    if (!app.removable)
       return;
 
     this._apps.push(app);
@@ -106,7 +106,7 @@ var ApplicationsList = {
       return false;
     });
 
-    if (!app || !this._isManageable(app))
+    if (!app || !app.removable)
       return;
 
     window.location.hash = '#appPermissions';
@@ -198,12 +198,8 @@ var ApplicationsList = {
 
     if (confirm(_('uninstallConfirm', {app: name}))) {
       this._displayedApp.uninstall();
-      this._displayedAppp = null;
+      this._displayedApp = null;
     }
-  },
-
-  _isManageable: function al_isManageable(app) {
-    return (app.removable && app.manifest.launch_path !== undefined);
   },
 
   _changePermission: function al_removePermission(app, perm, value) {
@@ -221,9 +217,5 @@ var ApplicationsList = {
   }
 };
 
-window.addEventListener('localized', function init(evt) {
-  window.removeEventListener('localized', init);
-
-  ApplicationsList.init();
-});
+onLocalized(ApplicationsList.init.bind(ApplicationsList));
 

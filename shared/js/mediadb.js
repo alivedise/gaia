@@ -376,7 +376,7 @@ var MediaDB = (function() {
       // If the version number changes we just want to start over.
       var existingStoreNames = db.objectStoreNames;
       for (var i = 0; i < existingStoreNames.length; i++) {
-        db.deleteObjectStore(existingStoreNames);
+        db.deleteObjectStore(existingStoreNames[i]);
       }
 
       // Now build the database
@@ -746,7 +746,12 @@ var MediaDB = (function() {
 
         var cursor = cursorRequest.result;
         if (cursor) {
-          callback(cursor.value);
+          try {
+            callback(cursor.value);
+          }
+          catch (e) {
+            console.warn('MediaDB.enumerate(): callback threw', e);
+          }
           cursor.continue();
         }
         else {

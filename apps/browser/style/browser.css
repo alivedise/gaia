@@ -186,12 +186,15 @@ input[type="image"] {
    * underlying problem.
    */
   transform: translateY(0px);
-  transition: transform 0.2s ease-in-out, height 0.2s ease-in-out;
+  transition: transform 0.2s ease-in-out;
 }
 
 #main-screen.address-hidden {
-  height: calc(100% + 50px);
   transform: translateY(-50px);
+}
+
+#main-screen.expanded {
+  height: calc(100% + 50px);
 }
 
 #tabs-badge {
@@ -242,11 +245,12 @@ input[type="image"] {
 
 #toolbar-end {
   display: none;
-  position: absolute;
+  position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   background-image: -moz-linear-gradient(#323639, #272b2e);
+  z-index: 51;
 }
 
 .page-screen #toolbar-start {
@@ -341,18 +345,19 @@ menu[type="toolbar"] {
   padding: 0;
 }
 
-menu button {
+menu[type="toolbar"] button {
   background-color: transparent;
   -moz-appearance: none;
+  background-position: center;
+  background-repeat: no-repeat;
   border: none;
+  border-radius: 0;
   display: block;
   margin: 0;
   padding: 0;
   width: 80px;
   height: 45px;
   float: left;
-  background-position: center;
-  background-repeat: no-repeat;
 }
 
 #back-button {
@@ -569,6 +574,10 @@ a.recommend[role="button"]:active  {
 
 #close-tab {
   float: left;
+}
+
+#close-tab[disabled] {
+  display: none;
 }
 
 #try-reloading {
@@ -818,6 +827,9 @@ li[role="listitem"] small {
 
 #tray-toolbar button {
   width: 60px;
+  background-repeat: no-repeat;
+  background-position: center, left;
+  border-radius: 0;
 }
 
 #settings-button {
@@ -828,7 +840,6 @@ li[role="listitem"] small {
 
 #new-tab-button {
   background-image: url('images/add.png'), url('images/header-divider.png');
-  background-position: center, left;
   float: right;
   height: 50px;
 }
@@ -856,15 +867,9 @@ li[role="listitem"] small {
 }
 
 #settings li button {
-  display: block;
-  color: #333;
-  width: 100%;
-  line-height: 40px;
-  font-size: 16px;
-  border-radius: 5px;
-  border: 1px solid #999;
-  background-image: -moz-linear-gradient(#FAFAFA, #CCC);
+  margin: 0;
 }
+
 
 #settings li#enable-cookies {
   margin-bottom: 20px;

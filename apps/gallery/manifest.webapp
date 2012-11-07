@@ -8,8 +8,8 @@
     "url": "https://github.com/mozilla-b2g/gaia"
   },
   "permissions": {
-    "device-storage:pictures":{},
-    "settings":{}
+    "device-storage:pictures":{ "access": "readwrite" },
+    "settings":{ "access": "readonly" }
   },
   "activities": {
     "browse": {
@@ -28,11 +28,11 @@
     },
     "open": {
       "filters": {
-        "type": "image/jpeg"
+        "type": ["image/jpeg", "image/png"]
        },
       "disposition": "inline",
       "returnValue": true,
-      "href": "/index.html#open"
+      "href": "/open.html"
     }
   },
   "locales": {
@@ -40,45 +40,13 @@
       "name": "إستديو",
       "description": "Gaia إستديو"
     },
-    "ca": {
-      "name": "Galeria",
-      "description": "Galeria del Gaia"
-    },
-    "de": {
-      "name": "Galerie",
-      "description": "Gaia Galerie"
-    },
-    "el": {
-      "name": "Γκαλερί",
-      "description": "Γκαλερί Gaia"
-    },
     "en-US": {
       "name": "Gallery",
       "description": "Gaia Gallery"
     },
-    "es": {
-      "name": "Galería",
-      "description": "Galería de Gaia"
-    },
     "fr": {
       "name": "Galerie",
       "description": "Galerie Gaia"
-    },
-    "it": {
-      "name": "Galleria",
-      "description": "Galleria di Gaia"
-    },
-    "pt-BR": {
-      "name": "Galeria",
-      "description": "Galeria do Gaia"
-    },
-    "ru": {
-      "name": "Галерея",
-      "description": "Галерея Gaia"
-    },
-    "tr": {
-      "name": "Galeri",
-      "description": "Gaia Galeri"
     },
     "zh-TW": {
       "name": "相簿",

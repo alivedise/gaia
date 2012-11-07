@@ -24,8 +24,6 @@
 }
 
 .msg-messages-sync-container {
-  min-height: 4.8rem;
-  height: 4.8rem;
 }
 
 .msg-search-tease-bar {
@@ -52,7 +50,7 @@
   position: relative;
   height: 8rem;
   overflow: hidden;
-  border-bottom: 1px solid gray;
+  border-bottom: 1px solid lightgray;
   vertical-align: 0%;
 }
 .msg-header-item:active {
@@ -77,7 +75,7 @@
   top: 0px;
   left: 3.8rem;
   /* 100% - (unread-section) - (icons-section) - (avatar-section) */
-  width: -moz-calc(100% - 1.9rem - 2rem - 2.8rem);
+  width: -moz-calc(100% - 4rem - 2rem - 2.8rem);
   height: 100%;
   font-size: 1.6rem;
   line-height: 2.0rem;
@@ -146,14 +144,22 @@
   color: #888844;
   font-size: 150%;
 }
-.msg-header-star-starred:after {
-  content: "*";
+.msg-header-star-starred {
+  background: url("images/icons/message-list-star.png") no-repeat scroll center transparent;
+  position: absolute;
+  width: 2rem;
+  height: 2rem;
+  top: 3rem;
 }
 .msg-header-attachments {
   display: block;
 }
-.msg-header-attachments-yes:after {
- content: "&";
+.msg-header-attachments-yes {
+  background: url("images/icons/message-list-attachment.png") no-repeat scroll center transparent;
+  position: absolute;
+  width: 2rem;
+  height: 2rem;
+  top: 5rem;
 }
 
 
@@ -223,12 +229,55 @@
   list-style-type: none;
   height: 4rem;
 }
+.msg-attachment-item[state="downloadable"]  > .msg-attachment-download {
+  display: inline-block;
+}
+.msg-attachment-item[state="downloading"]  > .msg-attachment-downloading {
+  display: inline-block;
+}
+.msg-attachment-item[state="downloaded"]  > .msg-attachment-view {
+  display: inline-block;
+}
 .msg-attachment-icon {
+  background: url("images/icons/message-list-attachment.png") no-repeat scroll center transparent;
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  margin-top: -3.5rem;
+  vertical-align: middle;
 }
 .msg-attachment-filename {
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 12.5rem);
 }
 .msg-attachment-filesize {
   color: gray;
+  display: inline-block;
+  margin-top: -3.5rem;
+  max-width: 4.5rem;
+  vertical-align: middle;
+}
+.msg-attachment-download {
+  display: none;
+  width: 3.5rem;
+  margin-bottom: 0;
+  position: absolute;
+  right: 1rem;
+}
+.msg-attachment-downloading {
+  display: none;
+  margin-bottom: 0;
+  position: absolute;
+  right: 1rem;
+}
+.msg-attachment-view {
+  display: none;
+  width: 4.5rem;
+  margin-bottom: 0;
+  position: absolute;
+  right: 0rem;
 }
 
 .msg-body-content {
@@ -306,7 +355,7 @@
 }
 
 .msg-edit-btn {
-  background: url("images/icons/edit.png") no-repeat scroll center transparent;
+  background: url("images/icons/edit-mode.png") no-repeat scroll center transparent;
   position: absolute;
   left: calc((100% - 6rem)/2);
 }
@@ -354,16 +403,51 @@
   width: -moz-calc(100% - 4rem - 1.9rem - 2rem - 2.8rem);
 }
 
+/*
+  Empty message-list container
+*/
+.msg-list-empty-container {
+  background-image: url('images/mail_watermark.png');
+  background-repeat:no-repeat;
+  background-position: 50% 40%;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.msg-list-empty-message {
+  text-align: center;
+  line-height: 3rem;
+  position: relative;
+  top: 50%;
+  border-top: .1rem solid rgba(96,96,96,.5);
+  width: 27rem;
+  margin: -7rem auto;
+  color: #606060;
+  font-weight: 300;
+  font-size: 2.26rem;
+}
+
 /* PROGRESS LABEL BUILDING BLOCKS EXTENSION */
 .msg-messages-sync-container > p[role="status"],
 .msg-list-empty {
   width: 80%;
-  margin : 0 10%;
+  padding: 2rem 10%;
   text-align: center;
 }
 .msg-list-empty {
   position: absolute;
   top: 40%;
+}
+.msg-messages-sync-more {
+  margin: 3rem 0;
+  border-top: 1px solid lightgray;
+  border-bottom: 1px solid lightgray;
+}
+.msg-messages-sync-more > span {
+  margin: 0 !important;
 }
 /* FILTERS BUILDING BLOCKS COPIED AND PASTED */
 

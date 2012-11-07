@@ -8,36 +8,60 @@ if (typeof Contacts.extFb === 'undefined') {
     var contactId;
 
     var extensionFrame = document.querySelector('#fb-extensions');
+    var oauthFrame = document.querySelector('#fb-oauth');
+    var currentURI, access_token;
+    var canClose = true;
+    var closeRequested = false;
 
     extFb.startLink = function(cid, linked) {
+      canClose = true;
       contactId = cid;
       if (!linked) {
-        open('fb_link.html' + '?contactId=' + contactId);
+        load('fb_link.html' + '?contactId=' + contactId, 'proposal');
       } else {
-        doUnlink(contactId);
+        unlink(contactId);
       }
     }
 
-    extFb.importFB = function() {
-      open('fb_import.html', 'import');
+    extFb.importFB = function(evt) {
+      closeRequested = false;
+      canClose = false;
+      load('fb_import.html?contacts=1', 'friends');
     }
 
-    function open(uri, target) {
-      extensionFrame.addEventListener('transitionend', function topen() {
-        extensionFrame.removeEventListener('transitionend', topen);
-        extensionFrame.src = uri;
-      });
-      extensionFrame.className = (target === 'import') ?
-                                  'openingImport' : 'opening';
+    function open() {
+      extensionFrame.className = 'opening';
     }
 
-    function close(target) {
+    function load(uri, from) {
+      extensionFrame.dataset.animFrom = 'left';
+      window.addEventListener('message', messageHandler);
+      oauthFrame.contentWindow.postMessage({
+        type: 'start',
+        data: {
+          from: from
+        }
+      }, fb.CONTACTS_APP_ORIGIN);
+      currentURI = uri;
+    }
+
+    function unload() {
+      window.removeEventListener('message', messageHandler);
+      extensionFrame.src = null;
+    }
+
+    function close() {
       extensionFrame.addEventListener('transitionend', function tclose() {
         extensionFrame.removeEventListener('transitionend', tclose);
-        extensionFrame.src = null;
+        if (canClose === true) {
+          unload();
+        }
+        else {
+          closeRequested = true;
+        }
+      // Otherwise we do nothing as the sync process will finish sooner or later
       });
-      extensionFrame.className = (target === 'import') ?
-                                  'closingImport' : 'closing';
+      extensionFrame.className = 'closing';
     }
 
     function openURL(url) {
@@ -51,7 +75,7 @@ if (typeof Contacts.extFb === 'undefined') {
         var fbContact = new fb.Contact(req.result);
 
         var uid = fbContact.uid;
-        var profileUrl = 'http://m.facebook.com/' + uid;
+        var profileUrl = 'https://m.facebook.com/' + uid;
 
         openURL(profileUrl);
       }
@@ -162,7 +186,7 @@ if (typeof Contacts.extFb === 'undefined') {
           if (originalFbContact) {
             contacts.List.remove(originalFbContact.id);
           }
-          Contacts.navigation.home();
+          Contacts.showContactDetail(contactId);
         }
 
         req.onerror = function() {
@@ -174,6 +198,26 @@ if (typeof Contacts.extFb === 'undefined') {
          window.console.error('FB: Error while linking contacts',
                               mozContReq.error);
       }
+    }
+
+    function unlink(cid) {
+      var msg = _('social-unlink-confirm-title');
+      var yesObject = {
+        title: _('social-unlink-confirm-accept'),
+        callback: function onAccept() {
+          CustomDialog.hide();
+          doUnlink(cid);
+        }
+      };
+
+      var noObject = {
+        title: _('cancel'),
+        callback: function onCancel() {
+          CustomDialog.hide();
+        }
+      };
+
+      CustomDialog.show(null, msg, noObject, yesObject);
     }
 
     function doUnlink(cid) {
@@ -205,16 +249,42 @@ if (typeof Contacts.extFb === 'undefined') {
 
     // This function can also be executed when other messages arrive
     // That's why we cannot call notifySettings outside the switch block
-    window.addEventListener('message', function(e) {
+    function messageHandler(e) {
       var data = e.data;
 
       switch (data.type) {
+        case 'ready':
+          open();
+        break;
+
+        case 'authenticating':
+          extensionFrame.dataset.animFrom = 'bottom';
+        break;
+
+        case 'authenticated':
+          extensionFrame.src = currentURI;
+          access_token = data.data;
+        break;
+
+        case 'abort':
+          unload();
+        break;
+
         case 'window_close':
-          close(data.from);
+          close();
           if (data.from === 'import') {
             contacts.List.load();
           }
+          notifySettings();
+        break;
 
+        case 'sync_finished':
+          // Sync finished thus the iframe can be safely "removed"
+          canClose = true;
+          if (closeRequested) {
+            unload();
+          }
+          contacts.List.load();
           notifySettings();
         break;
 
@@ -224,9 +294,15 @@ if (typeof Contacts.extFb === 'undefined') {
 
           notifySettings();
         break;
-      }
 
-    });
+        case 'messaging_ready':
+          extensionFrame.contentWindow.postMessage({
+            type: 'token',
+            data: access_token
+          }, fb.CONTACTS_APP_ORIGIN);
+        break;
+      }
+    }
 
   })(document);
 }

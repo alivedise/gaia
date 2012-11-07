@@ -225,15 +225,17 @@ const GridManager = (function() {
 
   function togglePagesVisibility(start, end) {
     for (var i = 0; i < pages.length; i++) {
+      var pagediv = pages[i].container;
       if (i < start || i > end) {
-        pages[i].container.style.display = 'none';
+        pagediv.style.display = 'none';
       } else {
-        pages[i].container.style.display = 'block';
+        pagediv.style.display = 'block';
       }
     }
   }
 
   function goToPage(index, callback) {
+    document.location.hash = (index == 1 ? 'root' : '');
     if (index < 0 || index >= pages.length)
       return;
 
@@ -243,8 +245,8 @@ const GridManager = (function() {
         callback();
       }
 
-      previousPage.container.dispatchEvent(new CustomEvent('pagehide'));
-      newPage.container.dispatchEvent(new CustomEvent('pageshow'));
+      previousPage.container.dispatchEvent(new CustomEvent('gridpagehideend'));
+      newPage.container.dispatchEvent(new CustomEvent('gridpageshowend'));
       togglePagesVisibility(index, index);
     }
 
@@ -278,6 +280,8 @@ const GridManager = (function() {
     // still considered display: none;
     newPage.container.getBoundingClientRect();
 
+    previousPage.container.dispatchEvent(new CustomEvent('gridpagehidestart'));
+    newPage.container.dispatchEvent(new CustomEvent('gridpageshowstart'));
     previousPage.moveByWithEffect(-forward * windowWidth,
                                   kPageTransitionDuration);
     newPage.moveByWithEffect(0, kPageTransitionDuration);
@@ -336,11 +340,19 @@ const GridManager = (function() {
             }
           }
           HomeState.saveShortcuts(init.dock);
+
+          for (var i = apps.length - 1; i >= 0; i--) {
+            if (init.hidden.indexOf(apps[i]['origin']) != -1) {
+              apps.splice(i, 1);
+            }
+          }
+          HomeState.saveHiddens(init.hidden);
+
         } catch (e) {
           dump('Failed parsing homescreen configuration file: ' + e + '\n');
         }
 
-       var max = pageHelper.getMaxPerPage();
+        var max = pageHelper.getMaxPerPage();
         var list = [];
         for (var i = 0; i < apps.length; i++) {
           list.push(apps[i]);
@@ -402,12 +414,25 @@ const GridManager = (function() {
             }
           }
 
-          for (var origin in installedApps) {
-            GridManager.install(installedApps[origin]);
-          }
+          HomeState.getHiddens(function(hidden) {
 
-          updatePaginationBar();
-          finish();
+            if (hidden) {
+              var len = hidden.length;
+              for (var i = 0; i < len; i++) {
+                var origin = hidden[i].origin || hidden[i];
+                if (origin in installedApps) {
+                  delete installedApps[origin];
+                }
+              }
+            }
+
+            for (var origin in installedApps) {
+              GridManager.install(installedApps[origin]);
+            }
+
+            updatePaginationBar();
+            finish();
+          });
         });
       },
       function onerror() {

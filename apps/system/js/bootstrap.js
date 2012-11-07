@@ -4,22 +4,17 @@
 'use strict';
 
 window.addEventListener('load', function startup() {
-  function launchHomescreen() {
-    var activity = new MozActivity({
-      name: 'view',
-      data: { type: 'application/x-application-list' }
-    });
-    activity.onerror = function homescreenLaunchError() {
-      console.error('Failed to launch home screen with activity.');
-    };
+  function firstAppManager(homescreenApp) {
+    // TODO Include algorith for handling which app is the first running app
+    // By now will be homescreen until merging #5883
+    homescreenApp.launch();
   }
-
   if (Applications.ready) {
-    launchHomescreen();
+    WindowManager.retrieveHomescreen(firstAppManager);
   } else {
     window.addEventListener('applicationready', function appListReady(event) {
       window.removeEventListener('applicationready', appListReady);
-      launchHomescreen();
+      WindowManager.retrieveHomescreen(firstAppManager);
     });
   }
 

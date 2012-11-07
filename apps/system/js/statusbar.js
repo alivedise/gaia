@@ -51,6 +51,10 @@ var StatusBar = {
     }
   },
 
+  get notificationsCount() {
+    return this.icons.notification.dataset.num;
+  },
+
   init: function sb_init() {
     this.getAllElements();
 
@@ -252,7 +256,8 @@ var StatusBar = {
       var f = new navigator.mozL10n.DateTimeFormat();
       var now = new Date();
       var sec = now.getSeconds();
-      window.clearTimeout(this._clockTimer);
+      if (this._clockTimer)
+        window.clearTimeout(this._clockTimer);
       this._clockTimer =
         window.setTimeout((this.update.time).bind(this), (59 - sec) * 1000);
 
@@ -326,7 +331,7 @@ var StatusBar = {
 
       } else {
         // "Emergency Calls Only (REASON)" / "Carrier" / "Carrier (Roaming)"
-        icon.dataset.level = Math.floor(voice.relSignalStrength / 20); // 0-5
+        icon.dataset.level = Math.ceil(voice.relSignalStrength / 20); // 0-5
       }
     },
 

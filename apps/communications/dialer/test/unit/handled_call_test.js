@@ -77,7 +77,12 @@ suite('dialer/handled_call', function() {
     fakeNode = document.createElement('section');
     fakeNode.id = 'test';
     fakeNode.innerHTML = [
-      '<div class="number">',
+      '<div class="numberWrapper">',
+        '<div class="number"></div>',
+      '</div>',
+      '<div class="numberWrapper">',
+        '<div class="number">',
+        '</div>',
       '</div>',
       '<div class="fake-number">',
       '</div>',
@@ -128,10 +133,6 @@ suite('dialer/handled_call', function() {
 
     test('node', function() {
       assert.equal(subject.node, fakeNode);
-    });
-
-    test('format phone number', function() {
-      assert.isTrue(MockKeypadManager.mFormatPhoneNumberCalled);
     });
 
     test('duration outgoing', function() {

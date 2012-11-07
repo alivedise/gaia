@@ -1,7 +1,4 @@
-requireCommon('/test/marionette.js');
-require('apps/calendar/test/integration/integration_helper.js');
-require('apps/calendar/test/integration/app.js');
-
+require('/apps/calendar/test/integration/calendar_integration.js');
 /** require calc stuff to make things easier */
 require('apps/calendar/js/calendar.js');
 require('apps/calendar/js/calc.js');
@@ -13,6 +10,7 @@ suite('calendar - modify events', function() {
   var device;
   var helper = IntegrationHelper;
   var app;
+  var subject;
 
   /**
    * Converts a js date object into a HTML input[type="time"] format.
@@ -77,56 +75,26 @@ suite('calendar - modify events', function() {
     yield app.close();
   });
 
-  testSupport.startMarionette(function(driver) {
-    device = driver;
-    app = new CalendarIntegration(device);
+  MarionetteHelper.start(function(driver) {
+    app = new CalendarIntegration(driver);
+    subject = app.modifyEventView;
+    device = app.device;
   });
 
   suiteSetup(function() {
-    yield device.setScriptTimeout(5000);
-    yield helper.importScript(
-      device,
-      '/tests/marionette/gaiatest/gaia_apps.js',
-      MochaTask.nodeNext
-    );
-
     yield app.launch();
   });
 
   teardown(function() {
-    // doing something somewhat sneaky here
-    // we use calendar js methods to force display
-    // of month view. This may be a bad idea later...
-    yield device.executeScript(function() {
-      window.wrappedJSObject.Calendar.App.go('/month/');
-    });
-
-    // don't continue until we know month is displayed...
-    var month = yield app.element('monthView');
-    yield app.waitUntilElement(month, 'displayed');
+    // reset to month view between tests
+    yield app.monthView.navigate();
   });
-
-  function showView(app, next, callback) {
-    var add = yield app.element('addEventBtn');
-
-    yield helper.waitFor(add.displayed.bind(add), next);
-
-    yield add.click(next);
-    // show view
-    var view = yield app.element('modifyEventView');
-    var viewVisible = yield view.displayed();
-
-    // verify visible
-    assert.isTrue(viewVisible, 'shows modify event');
-
-    callback(null, view);
-  };
 
   test('add event - without pre-selected date', function() {
     var now = yield app.remoteDate();
 
-    var view = yield app.task(showView);
-    var values = yield app.formValues('eventFormFields');
+    var element = yield subject.add();
+    var values = yield subject.values();
 
     var start = new Date(now.valueOf());
     start.setHours(start.getHours() + 1);
@@ -147,20 +115,173 @@ suite('calendar - modify events', function() {
     now.setDate(now.getDate() + 1);
 
     // tap the next day in the month view
-    var id = Calendar.Calc.getDayId(now);
-    var month = yield app.element('monthView');
-    var dayEl = yield month.findElement('[data-date="' + id + '"]');
+    var dayEl = yield app.monthView.dateElement(now);
     yield dayEl.click();
 
-    // click create event
-    yield app.task(showView);
+    yield subject.add();
 
-    var values = yield app.formValues('eventFormFields');
+    var values = yield subject.values();
     var end = new Date(now.valueOf());
     end.setHours(end.getHours() + 1);
 
     // should start the times at the selected date
     assertFormDate(values, now, end);
+  });
+
+  test('add/delete event', function() {
+    // setup and show event
+    var now = yield app.remoteDate();
+    var start = new Date(now.valueOf());
+    var end = new Date(now.valueOf());
+    end.setMinutes(start.getMinutes() + 30);
+
+    yield subject.add();
+
+    var newValues = Factory('form.modifyEvent', {
+      title: 'my title',
+      location: 'place',
+      description: 'lengthy thing',
+      start: start,
+      end: end
+    });
+
+    // create the event
+
+    yield subject.update(newValues);
+    yield subject.save();
+
+    var monthView = yield app.element('monthView');
+    yield app.waitUntilElement(monthView, 'displayed');
+
+    assert.isFalse((yield subject.displayed()), 'view is hidden after save');
+
+    // find the event in the months day view
+    var event = yield app.monthsDayView.eventByTitle(
+      newValues.title
+    );
+    yield event.click();
+
+    assert.hasProperties(
+      (yield subject.values()),
+      newValues,
+      'view correctly persists values'
+    );
+
+    // delete the event
+    yield subject.remove();
+
+    // verify its gone
+    yield app.waitUntilElement(monthView, 'displayed');
+    var error;
+
+    //TODO: this is fairly ugly we can improve this
+    try {
+      yield app.monthsDayView.eventByTitle(newValues.title);
+    } catch (e) {
+      error = e;
+    } finally {
+      assert.ok(error);
+      assert.instanceOf(error, Marionette.Error.NoSuchElement);
+    }
+  });
+
+  test('edit event (update time)', function() {
+    yield subject.add();
+    var start = yield app.remoteDate();
+    var end = new Date(start.valueOf());
+    end.setHours(end.getHours() + 1);
+
+    var values = Factory('form.modifyEvent', {
+      title: 'new event',
+      start: start,
+      end: end
+    });
+
+    yield subject.update(values);
+    yield subject.save();
+
+    var monthView = yield app.element('monthView');
+    yield app.waitUntilElement(monthView, 'displayed');
+
+    var element = yield app.monthsDayView.eventByTitle(
+      values.title
+    );
+
+    yield element.click();
+    yield subject.waitUntilVisible();
+
+    start.setDate(start.getDate() + 1);
+    end.setDate(end.getDate() + 1);
+
+    var updateValues = Factory('form.modifyEvent', {
+      end: end,
+      start: start
+    });
+
+    yield subject.update(updateValues);
+    yield subject.save();
+    yield app.waitUntilElement(monthView, 'displayed');
+
+    // find the element again its going to be different
+    // this time around because we moved it.
+    element = yield app.monthsDayView.eventByTitle(
+      values.title
+    );
+
+    yield element.click();
+    yield subject.waitUntilVisible();
+
+    var expected = updateValues;
+    expected.title = values.title;
+
+    assert.hasProperties(
+      (yield subject.values()),
+      expected,
+      'updates element'
+    );
+
+    yield subject.remove();
+  });
+
+  test('attempt to add event where start > end', function() {
+    yield subject.add();
+    var now = yield app.remoteDate();
+
+    var start = new Date(now.valueOf());
+    start.setDate(start.getDate() + 1);
+    var end = new Date(now.valueOf());
+
+    var status = yield app.element('eventFormStatus');
+    var error = yield app.element('eventFormError');
+
+    assert.isFalse((yield status.displayed()), 'status is hidden');
+
+    var values = Factory('form.modifyEvent', {
+      title: 'fail plz',
+      start: start,
+      end: end
+    });
+
+    yield subject.update(values);
+    yield subject.save();
+
+    assert.isTrue((yield subject.displayed()), 'still shows add event');
+    assert.isTrue((yield status.displayed()), 'shows status');
+
+    var text = yield error.text();
+    assert.ok(text, 'has error text');
+    assert.include(text, 'start date');
+
+    // verify that status is hidden again...
+    yield app.waitFor(function(callback) {
+      status.displayed(function(err, value) {
+        if (err) {
+          callback(err);
+          return;
+        }
+        callback(null, !value);
+      });
+    }, 10000);
   });
 
 });

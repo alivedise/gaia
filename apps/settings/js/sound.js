@@ -5,11 +5,13 @@
 
 var SoundSettings = {
   dialog: document.getElementById('sound-selection'),
+
   callSettings: {
     button: document.getElementById('call-tone-selection'),
     key: 'dialer.ringtone',
     value: null
   },
+
   smsSettings: {
     button: document.getElementById('sms-tone-selection'),
     key: 'sms.ringtone',
@@ -36,6 +38,12 @@ var SoundSettings = {
       self.smsSettings.value = req2.result['sms.ringtone'] || 'sms.wav';
       self.updateButton(self.smsSettings);
     };
+    // Listen to touch on tones
+    var labels = this.dialog.querySelectorAll('label');
+    for (var i = 0; i < labels.length; i++) {
+      var label = labels[i];
+      label.onmouseup = audioPreview.bind(null, label);
+    }
   },
 
   showDialog: function ss_showDialog(target) {
@@ -56,12 +64,12 @@ var SoundSettings = {
       keyValue[target.key] = target.value;
       settings.createLock().set(keyValue);
       self.updateButton(target);
-      document.location.hash = 'sounds';
+      document.location.hash = 'sound';
     };
 
     var reset = this.dialog.querySelector('[type=reset]');
     reset.onclick = function onreset() {
-      document.location.hash = 'sounds'; // hide dialog box
+      document.location.hash = 'sound'; // hide dialog box
     };
     document.location.hash = this.dialog.id;
   },
@@ -71,7 +79,6 @@ var SoundSettings = {
     var label = this.dialog.querySelector(rule).dataset.label;
     target.button.textContent = label;
   }
-
 };
 
 SoundSettings.init();

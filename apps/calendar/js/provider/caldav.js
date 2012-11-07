@@ -2,10 +2,20 @@ Calendar.ns('Provider').Caldav = (function() {
 
   var _super = Calendar.Provider.Abstract.prototype;
 
+  /**
+   * The local provider contains most of the logic
+   * of the database persistence so we reuse those bits
+   * and wrap them with the CalDAV specific logic.
+   */
+  var Local = Calendar.Provider.Local.prototype;
+
   function CaldavProvider() {
     Calendar.Provider.Abstract.apply(this, arguments);
 
     this.service = this.app.serviceController;
+    this.busytimes = this.app.store('Busytime');
+    this.events = this.app.store('Event');
+    this.icalComponents = this.app.store('IcalComponent');
   }
 
   CaldavProvider.prototype = {
@@ -64,7 +74,8 @@ Calendar.ns('Provider').Caldav = (function() {
       startDate.setDate(startDate.getDate() - this.daysToSyncInPast);
 
       var options = {
-        startDate: startDate
+        startDate: startDate,
+        cached: cached
       };
 
       var stream = this.service.stream(
@@ -75,7 +86,6 @@ Calendar.ns('Provider').Caldav = (function() {
       );
 
       var pull = new Calendar.Provider.CaldavPullEvents(stream, {
-        cached: cached,
         account: account,
         calendar: calendar
       });
@@ -95,15 +105,17 @@ Calendar.ns('Provider').Caldav = (function() {
         });
 
       });
+
+      return pull;
     },
 
     /**
-     * Builds event cache for given calendar.
+     * Builds list of event urls & sync tokens.
      *
      * @param {Calendar.Model.Calendar} calender model instance.
      * @param {Function} callback node style [err, results].
      */
-    _buildEventsFor: function(calendar, callback) {
+    _cachedEventsFor: function(calendar, callback) {
       var store = this.app.store('Event');
 
       store.eventsForCalendar(calendar._id, function(err, results) {
@@ -112,13 +124,19 @@ Calendar.ns('Provider').Caldav = (function() {
           return;
         }
 
-        var list = {};
+        var list = Object.create(null);
 
-        // XXX: in the future we can modify this further
-        // to exclude items from the sync/removal list.
-        results.forEach(function(item) {
-          list[item._id] = item;
-        });
+        var i = 0;
+        var len = results.length;
+        var item;
+
+        for (; i < len; i++) {
+          item = results[i];
+          list[item.remote.url] = {
+            syncToken: item.remote.syncToken,
+            id: item._id
+          };
+        }
 
         callback(null, list);
       });
@@ -142,7 +160,7 @@ Calendar.ns('Provider').Caldav = (function() {
         return;
       }
 
-      this._buildEventsFor(calendar, function(err, results) {
+      this._cachedEventsFor(calendar, function(err, results) {
         if (err) {
           callback(err);
           return;
@@ -165,10 +183,8 @@ Calendar.ns('Provider').Caldav = (function() {
       }
 
       var self = this;
-      var store = this.app.store('Event');
-
-      var calendar = store.calendarFor(event);
-      var account = store.accountFor(event);
+      var calendar = this.events.calendarFor(event);
+      var account = this.events.accountFor(event);
 
       this.service.request(
         'caldav',
@@ -176,7 +192,7 @@ Calendar.ns('Provider').Caldav = (function() {
         account,
         calendar.remote,
         event.remote,
-        function handleDelete(err, remote) {
+        function handleCreate(err, remote) {
           if (err) {
             callback(err);
             return;
@@ -187,8 +203,27 @@ Calendar.ns('Provider').Caldav = (function() {
             calendarId: calendar._id
           };
 
+          var component = {
+            eventId: event._id,
+            data: remote.icalComponent
+          }
+
+          delete remote.icalComponent;
           event.remote = remote;
-          store.persist(event, callback);
+
+          var create = Calendar.EventMutations.create({
+            event: event,
+            icalComponent: component
+          });
+
+          create.commit(function(err) {
+            if (err) {
+              callback(err);
+              return;
+            }
+
+            callback(null, create.busytime, create.event);
+          });
         }
       );
     },
@@ -199,31 +234,60 @@ Calendar.ns('Provider').Caldav = (function() {
         busytime = null;
       }
 
+      var calendar = this.events.calendarFor(event);
+      var account = this.events.accountFor(event);
       var self = this;
-      var store = this.app.store('Event');
 
-      var calendar = store.calendarFor(event);
-      var account = store.accountFor(event);
+      function handleUpdate(err, remote) {
+        if (err) {
+          callback(err);
+          return;
+        }
 
-      this.service.request(
-        'caldav',
-        'updateEvent',
-        account,
-        calendar.remote,
-        event.remote,
-        function handleDelete(err, remote) {
+        var component = {
+          eventId: event._id,
+          data: remote.icalComponent
+        }
+
+        delete remote.icalComponent;
+        event.remote = remote;
+
+        var update = Calendar.EventMutations.update({
+          event: event,
+          icalComponent: component
+        });
+
+        update.commit(function(err) {
           if (err) {
             callback(err);
             return;
           }
+          callback(null, update.busytime, update.event);
+        });
 
-          self.app.store('Busytime').removeEvent(event._id);
-          //TODO: error handling
-          event.remote = remote;
-          //event.remote = remote;
-          store.persist(event, callback);
+      }
+
+      // get the raw ical component
+      this.icalComponents.get(event._id, function(err, ical) {
+        if (err) {
+          callback(err);
+          return;
         }
-      );
+
+        var details = {
+          event: event.remote,
+          icalComponent: ical.data
+        };
+
+        self.service.request(
+          'caldav',
+          'updateEvent',
+          account,
+          calendar.remote,
+          details,
+          handleUpdate
+        );
+      });
     },
 
     deleteEvent: function(event, busytime, callback) {
@@ -236,6 +300,7 @@ Calendar.ns('Provider').Caldav = (function() {
 
       var calendar = store.calendarFor(event);
       var account = store.accountFor(event);
+      var self = this;
 
       this.service.request(
         'caldav',
@@ -248,8 +313,8 @@ Calendar.ns('Provider').Caldav = (function() {
             callback(err);
             return;
           }
-          //TODO: error handling
-          store.remove(event._id, callback);
+
+          Local.deleteEvent.call(self, event, busytime, callback);
         }
       );
     }
