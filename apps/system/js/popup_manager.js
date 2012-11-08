@@ -43,7 +43,7 @@ var PopupManager = {
     this.errorBack.addEventListener('click', this);
   },
 
-  open: function pm_open(name, frame, origin) {
+  open: function pm_open(frame, origin, title) {
     // Only one popup per origin at a time.
     // If the popup is being shown, we swap frames.
     if (this._currentPopup[origin]) {
@@ -61,6 +61,7 @@ var PopupManager = {
     dataset.frameType = 'popup';
     dataset.frameName = name;
     dataset.frameOrigin = origin;
+    dataset.frameTitle = title;
 
     // this seems needed, or an override to origin in close()
     this._currentOrigin = origin;
@@ -165,14 +166,14 @@ var PopupManager = {
         }
 
         this.throbber.classList.remove('loading');
-        var popupOrigin = this.getOriginFromUrl(detail.url);
-        this.title.textContent = popupOrigin;
+        var popupTitle = this.getTitleFromUrl(detail.url, openerOrigin);
+        this.title.textContent = popupTitle;
 
         var frame = detail.frameElement;
         frame.dataset.url = detail.url;
 
         this.container.classList.remove('error');
-        this.open(detail.name, frame, openerOrigin, false);
+        this.open(frame, openerOrigin, popupTitle);
 
         break;
 
@@ -233,8 +234,12 @@ var PopupManager = {
     }
   },
 
-  getOriginFromUrl: function pm_getOriginFromUrl(url) {
-    return url.split('//')[0] + '//' + url.split('//')[1].split('/')[0];
+  getTitleFromUrl: function pm_getTitleFromUrl(url, origin) {
+    if (url.indexOf(origin) === 0) {
+      return WindowManager.getCurrentDisplayedApp().manifest.name;
+    } else {
+      return url.split('//')[0] + '//' + url.split('//')[1].split('/')[0];
+    }
   },
 
   getPopupFromOrigin: function pm_getPopupFromOrigin(origin) {
@@ -247,7 +252,10 @@ var PopupManager = {
 
     this.showError();
     this.screen.classList.add('popup');
-    this._currentPopup[this._currentOrigin].hidden = false;
+    
+    var popup = this._currentPopup[this._currentOrigin];
+    this.title.textContent = popup.dataset.frameTitle;
+    popup.hidden = false;
   },
 
   hide: function pm_hide(origin) {
