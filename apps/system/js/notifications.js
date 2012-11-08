@@ -50,6 +50,8 @@ var NotificationScreen = {
 
   lockscreenPreview: true,
 
+  alertSoundEnabled: true,
+
   get container() {
     delete this.container;
 
@@ -262,6 +264,11 @@ var NotificationScreen = {
       var lockScreenNode = notificationNode.cloneNode(true);
       this.lockScreenContainer.insertBefore(lockScreenNode,
                                this.lockScreenContainer.firstElementChild);
+    }
+    
+    if (this.alertSoundEnabled) {
+      var unlockAudio = new Audio('./resources/sounds/notifier_exclamation.ogg');
+      unlockAudio.play();
     }
 
     return notificationNode;
