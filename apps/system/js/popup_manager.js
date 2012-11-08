@@ -20,6 +20,14 @@ var PopupManager = {
 
   closeButton: document.getElementById('popup-close'),
 
+  errorTitle: document.getElementById('popup-error-title'),
+
+  errorMessage: document.getElementById('popup-error-message'),
+
+  errorReload: document.getElementById('popup-error-reload'),
+
+  errorBack: document.getElementById('popup-error-back'),
+
   init: function pm_init() {
     this.title = document.getElementById('popup-title');
     window.addEventListener('mozbrowseropenwindow', this);
@@ -31,6 +39,8 @@ var PopupManager = {
     window.addEventListener('keyboardhide', this);
     window.addEventListener('keyboardchange', this);
     this.closeButton.addEventListener('click', this);
+    this.errorReload.addEventListener('click', this);
+    this.errorBack.addEventListener('click', this);
   },
 
   open: function pm_open(name, frame, origin) {
@@ -59,6 +69,7 @@ var PopupManager = {
 
     this.screen.classList.add('popup');
 
+    popup.addEventListener('mozbrowsererror', this);
     popup.addEventListener('mozbrowserloadend', this);
     popup.addEventListener('mozbrowserloadstart', this);
     popup.addEventListener('mozbrowserlocationchange', this);
@@ -104,7 +115,19 @@ var PopupManager = {
   handleEvent: function pm_handleEvent(evt) {
     switch (evt.type) {
       case 'click':
-        this.backHandling();
+        switch (evt.target) {
+          case this.closeButton:
+            this.backHandling();
+            break;
+          case this.errorBack:
+            this.backHandling();
+            break;
+          case this.errorReload:
+            this.container.classList.remove('error');
+            this._currentPopup[this._currentOrigin].dataset.error = false;
+            this._currentPopup[this._currentOrigin].reload(true);
+            break;
+        }
         break;
 
       case 'mozbrowserloadstart':
@@ -117,6 +140,12 @@ var PopupManager = {
 
       case 'mozbrowserlocationchange':
         evt.target.dataset.url = evt.detail;
+        break;
+
+      case 'mozbrowsererror':
+        this._currentPopup[evt.target.dataset.frameOrigin].dataset.error = true;
+        this.showError();
+        break;
 
       case 'mozbrowseropenwindow':
         var detail = evt.detail;
@@ -142,6 +171,7 @@ var PopupManager = {
         var frame = detail.frameElement;
         frame.dataset.url = detail.url;
 
+        this.container.classList.remove('error');
         this.open(detail.name, frame, openerOrigin, false);
 
         break;
@@ -179,6 +209,30 @@ var PopupManager = {
     }
   },
 
+  showError: function pm_showError() {
+    if (!this._currentPopup[this._currentOrigin].dataset.error) {
+      this.container.classList.remove('error');
+    } else {
+      var self = this;
+      var req = SettingsListener.getSettingsLock().get('ril.radio.disabled');
+      var contentOrigin = this._currentPopup[this._currentOrigin].dataset.url;
+
+      req.onsuccess = function onSuccess() {
+        if (req.result['ril.radio.disabled']) {
+          self.errorTitle.textContent = _('airplane-is-on');
+          self.errorMessage.textContent = _('airplane-is-turned-on', {name: contentOrigin});
+        } else if (!navigator.onLine) {
+          self.errorTitle.textContent = _('network-connection-unavailable');
+          self.errorMessage.textContent = _('network-error', {name: contentOrigin});
+        } else {
+          self.errorTitle.textContent = _('error-title', {name: contentOrigin});
+          self.errorMessage.textContent = _('error-message', {name: contentOrigin});
+        }
+      }
+      this.container.classList.add('error');
+    }
+  },
+
   getOriginFromUrl: function pm_getOriginFromUrl(url) {
     return url.split('//')[0] + '//' + url.split('//')[1].split('/')[0];
   },
@@ -191,6 +245,7 @@ var PopupManager = {
     if (!this._currentPopup[this._currentOrigin])
       return;
 
+    this.showError();
     this.screen.classList.add('popup');
     this._currentPopup[this._currentOrigin].hidden = false;
   },

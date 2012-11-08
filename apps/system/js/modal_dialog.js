@@ -161,8 +161,11 @@ var ModalDialog = {
 
   // Show relative dialog and set message/input value well
   show: function md_show(origin) {
-    this.currentOrigin = origin;
     var evt = this.currentEvents[origin];
+    if (!evt)
+      return;
+    
+    this.currentOrigin = origin;
 
     var message = evt.detail.message || '';
     var elements = this.elements;
@@ -214,12 +217,10 @@ var ModalDialog = {
 
   showErrorDialog: function md_showErrorDialog() {
     var self = this, elements = this.elements;
-    var req = SettingsListener.getSettingsLock().get('ril.radio.enabled');
+    var req = SettingsListener.getSettingsLock().get('ril.radio.disabled');
     req.onsuccess = function onSuccess() {
       var appName = WindowManager.getCurrentDisplayedApp().name;
-      console.log(appName,'======',navigator.onLine,req.result['ril.radio.enabled']);
-
-      if (!req.result['ril.radio.enabled']) {
+      if (req.result['ril.radio.disabled']) {
         elements.errorTitle.textContent = _('airplane-is-on');
         elements.errorMessage.textContent = _('airplane-is-turned-on', {name: appName});
       } else if (!navigator.onLine) {
