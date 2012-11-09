@@ -15,10 +15,6 @@ var ModalDialog = {
   // DOM
   elements: {},
 
-  _yesText: navigator.mozL10n.get('ok'),
-
-  _noText: navigator.mozL10n.get('cancel'),
-
   // Get all elements when inited.
   getAllElements: function md_getAllElements() {
     var elementsID = ['alert', 'alert-ok', 'alert-message',
@@ -169,6 +165,7 @@ var ModalDialog = {
     if (!(origin in this.currentEvents))
       return;
     
+    var _ = navigator.mozL10n.get;
     var evt = this.currentEvents[origin];
     this.currentOrigin = origin;
 
@@ -194,7 +191,7 @@ var ModalDialog = {
         elements.alertMessage.innerHTML = message;
         elements.alert.classList.add('visible');
         this.setTitle('alert', '');
-        elements.alertOk.textContent = evt.yesText ? evt.yesText : this._yesText;
+        elements.alertOk.textContent = evt.yesText ? evt.yesText : _('ok');
         break;
 
       case 'prompt':
@@ -202,16 +199,16 @@ var ModalDialog = {
         elements.promptInput.value = evt.detail.initialValue;
         elements.promptMessage.innerHTML = message;
         this.setTitle('prompt', '');
-        elements.promptOk.textContent = evt.yesText ? evt.yesText : this._yesText;
-        elements.promptCancel.textContent = evt.noText ? evt.noText : this._noText;
+        elements.promptOk.textContent = evt.yesText ? evt.yesText : _('ok');
+        elements.promptCancel.textContent = evt.noText ? evt.noText : _('cancel');
         break;
 
       case 'confirm':
         elements.confirm.classList.add('visible');
         elements.confirmMessage.innerHTML = message;
         this.setTitle('confirm', '');
-        elements.confirmOk.textContent = evt.yesText ? evt.yesText : this._yesText;
-        elements.confirmCancel.textContent = evt.noText ? evt.noText : this._noText;
+        elements.confirmOk.textContent = evt.yesText ? evt.yesText : _('ok');
+        elements.confirmCancel.textContent = evt.noText ? evt.noText : _('cancel');
         break;
 
       case 'selectone':
@@ -398,7 +395,7 @@ var ModalDialog = {
       text: text,
       callback: confirm.callback,
       title: title,
-      yesText: confirm.title ? confirm.title : this._yesText
+      yesText: confirm.title
     });
   },
 
@@ -417,8 +414,8 @@ var ModalDialog = {
       callback: confirm.callback,
       cancel: cancel.callback,
       title: title,
-      yesText: confirm.title ? confirm.title : this._yesText,
-      noText: cancel.title ? cancel.title : this._noText
+      yesText: confirm.title,
+      noText: cancel.title
     });
   },
 
@@ -439,8 +436,8 @@ var ModalDialog = {
       callback: confirm.callback,
       cancel: cancel.callback,
       title: title,
-      yesText: confirm.title ? confirm.title : this._yesText,
-      noText: cancel.title ? cancel.title : this._noText
+      yesText: confirm.title,
+      noText: cancel.title
     });
   },
 
@@ -464,8 +461,8 @@ var ModalDialog = {
     pseudoEvt.callback = config.callback;
     pseudoEvt.detail.promptType = config.type;
     pseudoEvt.cancelCallback = config.cancel;
-    pseudoEvt.yesText = config.yesText ? config.yesText : this._yesText;
-    pseudoEvt.noText = config.noText ? config.noText : this._noText;
+    pseudoEvt.yesText = config.yesText;
+    pseudoEvt.noText = config.noText;
     if (config.type == 'prompt') {
       pseudoEvt.detail.initialValue = config.initialValue;
     }
