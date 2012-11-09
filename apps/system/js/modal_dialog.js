@@ -229,6 +229,7 @@ var ModalDialog = {
   },
 
   showErrorDialog: function md_showErrorDialog() {
+    var _ = navigator.mozL10n.get;
     var elements = this.elements;
     var appName = WindowManager.getCurrentDisplayedApp().name;
     if (AirplaneMode.enabled) {

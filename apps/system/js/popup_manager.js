@@ -225,6 +225,7 @@ var PopupManager = {
     }
 
     var contentOrigin = this._currentPopup[this._currentOrigin].dataset.url;
+    var _ = navigator.mozL10n.get;
 
     if (AirplaneMode.enabled) {
       this.errorTitle.textContent = _('airplane-is-on');
