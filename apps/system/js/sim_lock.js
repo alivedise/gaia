@@ -55,18 +55,21 @@ var SimLock = {
     switch (conn.cardState) {
       case 'pukRequired':
       case 'pinRequired':
-        var activity = new MozActivity({
-          name: 'unlock',
-          data: {
-            target: 'sim'
-          }
-        });
-        activity.onsuccess = function sl_unlockSuccess() {
-          // Go back to the current displayed app
-          // XXX: this should be removed when bug 798445 is fixed
-          // and bug 799039 actually works.
-          WindowManager.launch(WindowManager.getDisplayedApp());
-        };
+        ModalDialog.confirm('blahblah', 'simpin', 
+          {
+            callback:
+              function(re) {
+                var activity = new MozActivity({
+                  name: 'unlock',
+                  data: {
+                    target: 'sim'
+                  }
+                });
+              },
+            title: 'OOOOOOK'
+          }, {
+            title: 'passss'
+          });
         break;
       case 'ready':
       default:
