@@ -130,7 +130,7 @@
 #screen.switch-app [data-z-index-level="app"] > iframe.appWindow.opening,
 #screen.switch-app [data-z-index-level="app"] > iframe.appWindow.closing,
 #screen.switch-app [data-z-index-level="app"] > iframe.appWindow:not(.homescreen).active {
-  z-index: 6;
+  z-index: 7;
 }
 
 #screen > [data-z-index-level="app"] {
@@ -152,12 +152,17 @@
  */
 #screen > [data-z-index-level="app"] > #wrapper-footer,
 #screen > [data-z-index-level="app"] > #wrapper-activity-indicator {
-  z-index: 5;
+  z-index: 6;
 }
 
 #screen > [data-z-index-level="app"] > iframe.appWindow.active,
 #screen > [data-z-index-level="app"] > iframe.appWindow.opening,
-#screen > [data-z-index-level="app"] > iframe.appWindow.closing {
+#screen > [data-z-index-level="app"] > iframe.appWindow.closing,
+#screen > [data-z-index-level="app"].default-background {
+  z-index: 5;
+}
+
+#screen > [data-z-index-level="app"][data-state="error"] {
   z-index: 4;
 }
 

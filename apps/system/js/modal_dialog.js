@@ -38,6 +38,7 @@ var ModalDialog = {
 
     this.screen = document.getElementById('screen');
     this.overlay = document.getElementById('dialog-overlay');
+    this.defaultCover = document.getElementById('default-cover');
   },
 
   // Save the events returned by mozbrowsershowmodalprompt for later use.
@@ -61,6 +62,10 @@ var ModalDialog = {
     window.addEventListener('keyboardhide', this);
     window.addEventListener('home', this);
     window.addEventListener('holdhome', this);
+    window.addEventListener('mozbrowserlocationchange', this);
+    window.addEventListener('mozbrowserfirstpaint', this);
+    window.addEventListener('mozbrowserloadstart', this);
+    window.addEventListener('mozbrowserloadend', this);
 
     for (var id in elements) {
       var tagName = elements[id].tagName.toLowerCase();
@@ -73,7 +78,18 @@ var ModalDialog = {
   // Default event handler
   handleEvent: function md_handleEvent(evt) {
     var elements = this.elements;
+    console.log(evt.type, evt.target.getAttribute('mozapp'), '=====');
     switch (evt.type) {
+      case 'mozbroserloadstart':
+        if (evt.target.dataset.state == 'error') {
+          evt.target.dataset.state = 'error2loading';
+        }
+        break;
+      case 'mozbroserlocationchange':
+        if (evt.target.dataset.state == 'error2loading') {
+          this.defaultCover.classList.remove('visible');
+        }
+        break;
       case 'mozbrowsererror':
       case 'mozbrowsershowmodalprompt':
         var frameType = evt.target.dataset.frameType;
@@ -83,6 +99,10 @@ var ModalDialog = {
         /* fatal case (App crashing) is handled in Window Manager */
         if (evt.type == 'mozbrowsererror' && evt.detail.type == 'fatal')
           return;
+
+        if (evt.type == 'mozbrowsererror') {
+          evt.target.dataset.state = 'error';
+        }
 
         evt.preventDefault();
         var origin = evt.target.dataset.frameOrigin;
@@ -220,6 +240,7 @@ var ModalDialog = {
 
       // Error
       case 'other':
+        this.defaultCover.classList.add('visible');
         this.showErrorDialog();
         break;
     }

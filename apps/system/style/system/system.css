@@ -256,7 +256,8 @@ body {
   background-color: #fff;
 }
 
-#windows > iframe.appWindow:not(.homescreen).default-background {
+#windows > iframe.appWindow:not(.homescreen).default-background,
+#windows > div.default-background {
   background: url('./images/splash_screen_generic.png') center center no-repeat #fff;
 }
 
@@ -525,4 +526,12 @@ iframe.backgroundWindow {
 
 #screen iframe.communication-frame {
   visibility: hidden;
+}
+
+#default-cover {
+  display: none;
+}
+
+#default-cover.visible {
+  display: block;
 }
