@@ -118,6 +118,10 @@
   z-index: 1024;
 }
 
+#screen > [data-z-index-level="app"] > [data-z-index-level="app-background"].visible {
+  z-index: 1023;
+}
+
 #screen.modal-dialog > [data-z-index-level="keyboard-frame"].visible,
 #screen.authentication-dialog > [data-z-index-level="keyboard-frame"].visible,
 #screen.popup > [data-z-index-level="keyboard-frame"].visible,
@@ -158,7 +162,7 @@
 #screen > [data-z-index-level="app"] > iframe.appWindow.active,
 #screen > [data-z-index-level="app"] > iframe.appWindow.opening,
 #screen > [data-z-index-level="app"] > iframe.appWindow.closing,
-#screen > [data-z-index-level="app"].default-background {
+#screen > [data-z-index-level="app"] > [data-z-index-level="app-background"] {
   z-index: 5;
 }
 
