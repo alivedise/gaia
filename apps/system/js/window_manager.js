@@ -1482,8 +1482,6 @@ var WindowManager = (function() {
 
     if (document.mozFullScreen) {
       document.mozCancelFullScreen();
-    } else if (inlineActivityFrame) {
-      stopInlineActivity();
     } else if (displayedApp !== homescreen || inTransition) {
       if (displayedApp != ftuURL) {
         setDisplayedApp(homescreen);
