@@ -527,11 +527,3 @@ iframe.backgroundWindow {
 #screen iframe.communication-frame {
   visibility: hidden;
 }
-
-#default-cover {
-  display: none;
-}
-
-#default-cover.visible {
-  display: block;
-}

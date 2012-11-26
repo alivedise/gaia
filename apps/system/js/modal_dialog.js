@@ -62,7 +62,6 @@ var ModalDialog = {
     window.addEventListener('keyboardhide', this);
     window.addEventListener('home', this);
     window.addEventListener('holdhome', this);
-    window.addEventListener('mozbrowserlocationchange', this);
     window.addEventListener('mozbrowserfirstpaint', this);
     window.addEventListener('mozbrowserloadstart', this);
     window.addEventListener('mozbrowserloadend', this);
@@ -78,17 +77,22 @@ var ModalDialog = {
   // Default event handler
   handleEvent: function md_handleEvent(evt) {
     var elements = this.elements;
-    console.log(evt.type, evt.target.getAttribute('mozapp'), '=====');
+    console.log(evt.type, '======');
     switch (evt.type) {
-      case 'mozbroserloadstart':
-        if (evt.target.dataset.state == 'error') {
-          evt.target.dataset.state = 'error2loading';
+      case 'mozbrowserfirstpaint':
+      /*
+        if ('state' in evt.target.dataset && evt.target.dataset.state == 'loading') {
+          delete evt.target.dataset.state;
+          this.defaultCover.classList.remove('active');
         }
+        */
         break;
-      case 'mozbroserlocationchange':
-        if (evt.target.dataset.state == 'error2loading') {
-          this.defaultCover.classList.remove('visible');
+      case 'mozbrowserloadstart':
+      /*
+        if ('state' in evt.target.dataset && evt.target.dataset.state != 'error') {
+          evt.target.dataset.state = 'loading';
         }
+        */
         break;
       case 'mozbrowsererror':
       case 'mozbrowsershowmodalprompt':
@@ -240,7 +244,8 @@ var ModalDialog = {
 
       // Error
       case 'other':
-        this.defaultCover.classList.add('visible');
+        this.defaultCover.classList.add('active');
+        evt.tatget.dataset.state = 'error';
         this.showErrorDialog();
         break;
     }
@@ -249,6 +254,7 @@ var ModalDialog = {
   },
 
   showErrorDialog: function md_showErrorDialog() {
+    console.log('====showing error dialog=====');
     var _ = navigator.mozL10n.get;
     var elements = this.elements;
     var appName = WindowManager.getCurrentDisplayedApp().name;

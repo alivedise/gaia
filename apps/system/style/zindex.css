@@ -155,18 +155,14 @@
  *
  */
 #screen > [data-z-index-level="app"] > #wrapper-footer,
-#screen > [data-z-index-level="app"] > #wrapper-activity-indicator {
-  z-index: 6;
+#screen > [data-z-index-level="app"] > #wrapper-activity-indicator,
+#screen > [data-z-index-level="app"] > #default-cover.active {
+  z-index: 5;
 }
 
 #screen > [data-z-index-level="app"] > iframe.appWindow.active,
 #screen > [data-z-index-level="app"] > iframe.appWindow.opening,
-#screen > [data-z-index-level="app"] > iframe.appWindow.closing,
-#screen > [data-z-index-level="app"] > [data-z-index-level="app-background"] {
-  z-index: 5;
-}
-
-#screen > [data-z-index-level="app"][data-state="error"] {
+#screen > [data-z-index-level="app"] > iframe.appWindow.closing {
   z-index: 4;
 }
 
@@ -182,6 +178,7 @@
   z-index: 1;
 }
 
+#screen > [data-z-index-level="app"] > #default-cover,
 #screen > [data-z-index-level="app"] > iframe.appWindow.homescreen {
   z-index: 0;
 }
