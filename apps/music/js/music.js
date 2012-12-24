@@ -25,6 +25,9 @@ var musicdb;
 var scanning = false;
 var scanningFoundChanges = false;
 
+
+var localized = false;
+
 // We get a localized event when the application is launched and when
 // the user switches languages.
 window.addEventListener('localized', function onlocalized() {
@@ -48,6 +51,9 @@ window.addEventListener('localized', function onlocalized() {
 
   // <body> children are hidden until the UI is translated
   document.body.classList.remove('invisible');
+
+  localized = true;
+  changeMode(MODE_TILES);
 
   // The first time we get this event we start running the application.
   // But don't re-initialize if the user switches languages while we're running.
@@ -253,6 +259,9 @@ var currentMode, fromMode;
 var playerTitle, sublistTitle;
 
 function changeMode(mode) {
+  if (!localized)
+    return;
+
   var title;
 
   switch (mode) {
