@@ -10,7 +10,8 @@
   "permissions": {
     "device-storage:pictures":{ "access": "readwrite" },
     "device-storage:videos":{ "access": "readwrite" },
-    "settings":{ "access": "readonly" }
+    "settings":{ "access": "readonly" },
+    "audio-channel-content":{}
   },
   "activities": {
     "browse": {
