@@ -28,6 +28,7 @@ window.onload = function() {
     context.drawImage(e.target, 0, 0);
 
     canvas.toBlob(function(blob) {
+      alert('1111');
       pickActivity.postResult({
         type: 'image/png',
         blob: blob

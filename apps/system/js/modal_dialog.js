@@ -159,6 +159,7 @@ var ModalDialog = {
 
   // Show relative dialog and set message/input value well
   show: function md_show(target, origin) {
+    console.log(origin, '======');
     if (!(origin in this.currentEvents))
       return;
 
