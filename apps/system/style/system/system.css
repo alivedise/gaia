@@ -556,3 +556,24 @@ iframe.backgroundWindow {
 #screen.ftuStarting #statusbar {
   opacity: 0;
 }
+
+/* For app error */
+
+.appWindow > iframe {
+  z-index: 1;
+}
+
+.app-error {
+  display: none;
+  background-color: black;
+  z-index: 0;
+}
+
+.appWindow > .app-error {
+  background-color: black;
+}
+
+.app-error.visible {
+  z-index: 2;
+  display: block;
+}
