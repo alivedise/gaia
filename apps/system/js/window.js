@@ -124,4 +124,59 @@
     WindowManager.kill(this.origin);
   }
 
+  // resize:
+  // An app is responsible to resize itself when it's brought to foreground
+  // So this should be called by Window Manager
+  AppWindow.prototype.resize = function(changeActivityFrame) {
+    var frame = this.frame;
+    var manifest = this.manifest;
+
+    var cssWidth = window.innerWidth + 'px';
+    var cssHeight = window.innerHeight - StatusBar.height;
+    
+    // XXX: Attention screen should be also accessed from Statusbar
+    if (new ManifestHelper(manifest).fullscreen) {
+      cssHeight = window.innerHeight + 'px';
+    } else {
+      if ('wrapper' in frame.dataset) {
+        cssHeight -= 10;
+      }
+      cssHeight += 'px';
+    }
+
+    frame.style.width = cssWidth;
+    frame.style.height = cssHeight;
+  };
+
+  // XXX: draft
+  AppWindow.prototype.startInlineActivity = function(frame) {
+    this.inlineActivityFrames.push(new InlineActivity({
+      frame: frame,
+      iframe: frame.firstChild
+    }));
+  }
+
+  AppWindow.prototype.setHeight = function(first_argument) {
+    // App's height is relevant to keyboard height
+    var frame = this.frame;
+    var manifest = this.manifest;
+
+    var cssHeight =
+      window.innerHeight - StatusBar.height - keyboardHeight + 'px';
+
+    if (new ManifestHelper(manifest).fullscreen) {
+      cssHeight = window.innerHeight - keyboardHeight + 'px';
+    }
+
+    frame.style.height = cssHeight;
+  };
+
+  AppWindow.prototype.setVisibility = function(visible) {
+    if ('setVisible' in this.iframe) {
+      this.iframe.setVisible(visible);
+      // Update visible to track
+      this.visible = visible;
+    }
+  };
+
 }(this));

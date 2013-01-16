@@ -133,13 +133,13 @@ var WindowManager = (function() {
   function launch(origin) {
     // If the origin is indeed valid we make that app as the displayed app.
     if (isRunning(origin)) {
-      setDisplayedApp(origin);
+      runningApps[origin].resize();
       return;
     }
 
     // If the origin is null, make the homescreen visible.
     if (origin == null) {
-      setDisplayedApp(homescreen);
+      runningApps[homescreen].resize();
       return;
     }
 
@@ -148,7 +148,7 @@ var WindowManager = (function() {
     // we would need the manifest URL and the specific entry point.
     console.warn('No running app is being identified as "' + origin + '". ' +
                  'Showing home screen instead.');
-    setDisplayedApp(homescreen);
+    runningApps[homescreen].resize();
   }
 
   function isRunning(origin) {
@@ -160,62 +160,6 @@ var WindowManager = (function() {
       return runningApps[origin].frame;
     else
       return null;
-  }
-
-  // Set the size of the app's iframe to match the size of the screen.
-  // We have to call this on resize events (which happen when the
-  // phone orientation is changed). And also when an app is launched
-  // and each time an app is brought to the front, since the
-  // orientation could have changed since it was last displayed
-  function setAppSize(origin, changeActivityFrame) {
-    var app = runningApps[origin];
-    if (!app)
-      return;
-
-    var frame = app.frame;
-    var manifest = app.manifest;
-
-    var cssWidth = window.innerWidth + 'px';
-    var cssHeight = window.innerHeight - StatusBar.height;
-    if ('wrapper' in frame.dataset) {
-      cssHeight -= 10;
-    }
-    cssHeight += 'px';
-
-    if (!screenElement.classList.contains('attention') &&
-        requireFullscreen(origin)) {
-      cssHeight = window.innerHeight + 'px';
-    }
-
-    frame.style.width = cssWidth;
-    frame.style.height = cssHeight;
-
-    // We will call setInlineActivityFrameSize()
-    // if changeActivityFrame is not explicitly set to false.
-    if (changeActivityFrame !== false)
-      setInlineActivityFrameSize();
-  }
-
-  // App's height is relevant to keyboard height
-  function setAppHeight(keyboardHeight) {
-    var app = runningApps[displayedApp];
-    if (!app)
-      return;
-
-    var frame = app.frame;
-    var manifest = app.manifest;
-
-    var cssHeight =
-      window.innerHeight - StatusBar.height - keyboardHeight + 'px';
-
-    if (!screenElement.classList.contains('attention') &&
-        requireFullscreen(displayedApp)) {
-      cssHeight = window.innerHeight - keyboardHeight + 'px';
-    }
-
-    frame.style.height = cssHeight;
-
-    setInlineActivityFrameSize();
   }
 
   // Copy the dimension of the currently displayed app
@@ -643,7 +587,7 @@ var WindowManager = (function() {
     openCallback = callback || function() {};
 
     // set the size of the opening app
-    setAppSize(origin);
+    runningApps[origin].resize();
 
     if (origin === homescreen) {
       // We cannot apply background screenshot to home screen app since
@@ -753,8 +697,7 @@ var WindowManager = (function() {
 
     // Set the size of both homescreen app and the closing app
     // since the orientation had changed.
-    setAppSize(homescreen);
-    setAppSize(origin);
+    runningApps[origin].resize();
 
     // Send a synthentic 'appwillclose' event.
     // The keyboard uses this and the appclose event to know when to close
@@ -815,9 +758,9 @@ var WindowManager = (function() {
       runningApps[homescreen].iframe.src = homescreenURL;
     }
 
-    // need to setAppSize or for the first time, or from FTU to homescreen
+    // need to resize or for the first time, or from FTU to homescreen
     // the dock position would be incorrect.
-    setAppSize(homescreen);
+    runningApps[homescreen].resize();
 
     return runningApps[homescreen].frame;
   }
@@ -1386,7 +1329,7 @@ var WindowManager = (function() {
           // set the size of the iframe
           // so Cards View will get a correct screenshot of the frame
           if (!e.detail.isActivity)
-            setAppSize(origin, false);
+            runningApps[origin].resize();
         } else {
           ensureHomescreen();
         }
@@ -1464,10 +1407,10 @@ var WindowManager = (function() {
       case 'unlock':
         if (LockScreen.locked)
           return;
-        setVisibilityForCurrentApp(true);
+        runningApps[displayedApp].setVisibility(true);
         break;
       case 'lock':
-        setVisibilityForCurrentApp(false);
+        runningApps[displayedApp].setVisibility(false);
         break;
 
       /*
@@ -1481,7 +1424,7 @@ var WindowManager = (function() {
         if (evt.detail && evt.detail.origin &&
           evt.detail.origin != displayedApp) {
             attentionScreenTimer = setTimeout(function setVisibility() {
-              setVisibilityForCurrentApp(false);
+              runningApps[displayedApp].setVisibility(false);
             }, 5000);
 
             // Immediatly blur the frame in order to ensure hiding the keyboard
@@ -1496,21 +1439,6 @@ var WindowManager = (function() {
   overlayEvents.forEach(function overlayEventIterator(event) {
     window.addEventListener(event, overlayEventHandler);
   });
-
-  function setVisibilityForCurrentApp(visible) {
-    var app = runningApps[displayedApp];
-    if (!app)
-      return;
-    if ('setVisible' in app.iframe)
-      app.iframe.setVisible(visible);
-
-    // Restore/give away focus on visiblity change
-    // so that the app can take back its focus
-    if (visible)
-      app.iframe.focus();
-    else
-      app.iframe.blur();
-  }
 
   function handleAppCrash(origin, manifestURL) {
     if (origin && manifestURL) {
@@ -1581,17 +1509,6 @@ var WindowManager = (function() {
     kill(origin);
   });
 
-
-  function hasPermission(app, permission) {
-    var mozPerms = navigator.mozPermissionSettings;
-    if (!mozPerms)
-      return false;
-
-    var value = mozPerms.get(permission, app.manifestURL, app.origin, false);
-
-    return (value === 'allow');
-  }
-
   // Watch for window.open usages in order to open wrapper frames
   window.addEventListener('mozbrowseropenwindow', function handleWrapper(evt) {
     var detail = evt.detail;
@@ -1632,7 +1549,7 @@ var WindowManager = (function() {
       // Just bring on top if a wrapper window is already running with this url
       if (origin in runningApps &&
           runningApps[origin].windowName == '_blank') {
-        setDisplayedApp(origin);
+        runningApps[origin].resize();
         return;
       }
     } else {
@@ -1736,7 +1653,7 @@ var WindowManager = (function() {
     // First load blank page in order to hide previous website
     iframe.src = url;
 
-    setDisplayedApp(origin);
+    runningApps[origin].resize();
   }, true); // Use capture in order to catch the event before PopupManager does
 
 
@@ -1810,9 +1727,10 @@ var WindowManager = (function() {
         if (document.mozFullScreen)
           document.mozCancelFullScreen();
 
-        setAppHeight(evt.detail.height);
+        runningApps[displayedApp].setHeight(evt.detail.height);
+        setInlineActivityFrameSize();
       } else if (displayedApp) {
-        setAppSize(displayedApp);
+        runningApps[displayedApp].resize();
       }
     });
   });
@@ -1834,7 +1752,7 @@ var WindowManager = (function() {
     }
     if (displayedApp !== homescreen || inTransition) {
       if (displayedApp != ftuURL) {
-        setDisplayedApp(homescreen);
+        runningApps[homescreen].resize();
       } else {
         e.preventDefault();
       }
