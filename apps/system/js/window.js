@@ -10,9 +10,19 @@
   window.AppError = function AppError(app) {
     var self = this;
     this.app = app;
+    this.app.frame.addEventListener('mozbrowserloadstart', function (evt) {
+      self.currentState = 'mozbrowserloadstart';
+    });
+    this.app.frame.addEventListener('mozbrowserfirstpaint', function (evt) {
+      if (self.isShown() && self.currentState == 'mozbrowserloadstart') {
+        self.hide();
+      }
+    });
     this.app.frame.addEventListener('mozbrowsererror', function (evt) {
       if (evt.detail.type != 'other')
         return;
+
+      self.currentState = 'mozbrowsererror';
 
       console.warn('app of [' + self.app.origin + '] got a mozbrowsererror event.');
 
@@ -50,7 +60,6 @@
     }
 
     this.reloadButton.onclick = function() {
-      self.hide();
       self.app.reload();
     }
   }
