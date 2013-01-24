@@ -37,17 +37,21 @@ var AttentionScreen = {
     this.bar.addEventListener('click', this.show.bind(this));
     window.addEventListener('home', this.hide.bind(this));
     window.addEventListener('holdhome', this.hide.bind(this));
+    window.addEventListener('appwillopen', this.hide.bind(this));
   },
 
   resize: function as_resize(evt) {
-    if (!this.isFullyVisible())
-      return;
-
     if (evt.type == 'keyboardchange') {
+      if (!this.isFullyVisible())
+        return;
+
       this.attentionScreen.style.height =
         window.innerHeight - evt.detail.height + 'px';
     } else if (evt.type == 'keyboardhide') {
-      this.attentionScreen.style.height = window.innerHeight + 'px';
+      // We still need to reset the height property even when the attention
+      // screen is not fully visible, or it will overrides the height
+      // we defined with #attention-screen.status-mode
+      this.attentionScreen.style.height = '';
     }
   },
 
@@ -213,15 +217,15 @@ var AttentionScreen = {
     if (!this.isFullyVisible())
       return;
 
+    // entering "active-statusbar" mode,
+    // with a transform: translateY() slide up transition.
+    this.mainScreen.classList.add('active-statusbar');
+
     // The only way to hide attention screen is the home/holdhome event.
     // So we don't fire any origin information here.
     // The expected behavior is restore homescreen visibility to 'true'
     // in the Window Manager.
     this.dispatchEvent('status-active');
-
-    // entering "active-statusbar" mode,
-    // with a transform: translateY() slide up transition.
-    this.mainScreen.classList.add('active-statusbar');
 
     var attentionScreen = this.attentionScreen;
     attentionScreen.addEventListener('transitionend', function trWait() {
@@ -252,6 +256,16 @@ var AttentionScreen = {
     if (origin === frameOrigin) {
       this.show();
     }
+  },
+
+  getAttentionScreenOrigins: function as_getAttentionScreenOrigins() {
+    var attentionScreen = this.attentionScreen;
+    var frames = this.attentionScreen.querySelectorAll('iframe');
+    var attentiveApps = [];
+    Array.prototype.forEach.call(frames, function pushFrame(frame) {
+      attentiveApps.push(frame.dataset.frameOrigin);
+    });
+    return attentiveApps;
   },
 
   _hasAttentionPermission: function as_hasAttentionPermission(app) {

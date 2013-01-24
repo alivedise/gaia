@@ -11,7 +11,7 @@ var Settings = (function() {
 
   'use strict';
 
-  var costcontrol, vmanager, autosettings;
+  var costcontrol, vmanager, autosettings, initialized;
   var plantypeSelector, phoneActivityTitle, phoneActivitySettings;
   var balanceTitle, balanceSettings, reportsTitle;
   function configureUI() {
@@ -65,6 +65,16 @@ var Settings = (function() {
       ConfigManager.observe('resetTime', _updateNextReset, true);
       ConfigManager.observe('trackingPeriod', _updateNextReset, true);
 
+      initialized = true;
+
+      // Debug options
+      if (DEBUGGING) {
+        var debugOnlyItems = document.querySelectorAll('.debug-only');
+        [].forEach.call(debugOnlyItems, function _showItem(item) {
+          item.classList.remove('debug-only');
+        });
+      }
+
       updateUI();
     });
   }
@@ -110,7 +120,9 @@ var Settings = (function() {
   }
 
   window.addEventListener('localized', function _onLocalize() {
-    updateUI();
+    if (initialized) {
+      updateUI();
+    }
   });
 
   var currentMode;
@@ -187,7 +199,7 @@ var Settings = (function() {
     var calltimeSpan = document.getElementById('calltime');
     var smscountSpan = document.getElementById('smscount');
     calltimeSpan.innerHTML = _('magnitude', {
-      value: Math.ceil(activity.calltime / 60000),
+      value: computeTelephonyMinutes(activity),
       unit: 'min.'
     });
     smscountSpan.innerHTML = _('magnitude', {

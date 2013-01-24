@@ -4,7 +4,7 @@
 
 'use strict';
 
- var GaiaDataLayer = {
+var GaiaDataLayer = {
 
   insertContact: function(cdata) {
     contact = new mozContact();
@@ -46,7 +46,7 @@
     var req = window.navigator.mozSettings.createLock().get(aName);
     req.onsuccess = function() {
       console.log('setting retrieved');
-      result = aName === '*' ? req.result : req.result[aName];
+      let result = aName === '*' ? req.result : req.result[aName];
       marionetteScriptFinished(result);
     };
     req.onerror = function() {
@@ -186,7 +186,8 @@
       console.log("success forgetting network with ssid '" +
                   aNetwork.ssid + "'");
       if (waitForStatus !== false) {
-        console.log("waiting for connection status '" + waitForStatus + "'");
+        console.log("waiting for connection status '" +
+                    waitForStatus + "'");
         waitFor(
           function() { callback(true); },
           function() {
@@ -221,13 +222,13 @@
     var manager = window.navigator.mozMobileConnection;
 
     if (!manager.data.connected) {
-      manager.ondatachange = function() {
-        if (manager.data.connected) {
+      waitFor(
+        function() {
           console.log('cell data enabled');
-          manager.ondatachange = null;
           marionetteScriptFinished(true);
-        }
-      };
+        },
+        function() { return manager.data.connected; }
+      );
       this.setSetting('ril.data.enabled', true, false);
     }
     else {
@@ -240,13 +241,13 @@
     var manager = window.navigator.mozMobileConnection;
 
     if (manager.data.connected) {
-      manager.ondatachange = function() {
-        if (!manager.data.connected) {
+      waitFor(
+        function() {
           console.log('cell data disabled');
-          manager.ondatachange = null;
           marionetteScriptFinished(true);
-        }
-      };
+        },
+        function() { return !manager.data.connected; }
+      );
       this.setSetting('ril.data.enabled', false, false);
     }
     else {
@@ -255,12 +256,40 @@
     }
   },
 
-  getFMHardwareState: function() {
-    return window.navigator.mozFMRadio.enabled;
-  },
+  getAllMediaFiles: function(aCallback) {
+    var callback = aCallback || marionetteScriptFinished;
+    var mediaTypes = ['pictures', 'videos', 'music'];
+    var remainingMediaTypes = mediaTypes.length;
+    var media = [];
+    mediaTypes.forEach(function(aType) {
+      console.log('getting', aType);
+      var storage = navigator.getDeviceStorage(aType);
+      var req = storage.enumerate();
+      req.onsuccess = function() {
+        var file = req.result;
+        if (file) {
+          if (aType === 'music' && file.name.slice(0, 5) === 'DCIM/' &&
+              file.name.slice(-4) === '.3gp') {
+            req.continue();
+          }
+          else {
+            media.push(file.name);
+            req.continue();
+          }
+        }
+        else {
+          remainingMediaTypes--;
+        }
+      };
+      req.onerror = function() {
+        console.error('failed to enumerate ' + aType, req.error.name);
+        callback(false);
+      };
+    });
 
-  getFMHardwareFrequency: function() {
-    return this.getFMHardwareState() &&
-           window.navigator.mozFMRadio.frequency;
+    waitFor(
+      function() { callback(media); },
+      function() { return remainingMediaTypes === 0; }
+    );
   }
 };

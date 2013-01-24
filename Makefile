@@ -28,6 +28,7 @@ GAIA_DOMAIN?=gaiamobile.org
 
 DEBUG?=0
 PRODUCTION?=0
+DOGFOOD?=0
 
 LOCAL_DOMAINS?=1
 
@@ -42,6 +43,9 @@ endif
 HOMESCREEN?=$(SCHEME)system.$(GAIA_DOMAIN)
 
 BUILD_APP_NAME?=*
+ifneq ($(APP),)
+BUILD_APP_NAME=$(APP)
+endif
 
 REPORTER?=Spec
 
@@ -54,6 +58,10 @@ GAIA_ALL_APP_SRCDIRS=$(GAIA_APP_SRCDIRS)
 ifeq ($(MAKECMDGOALS), demo)
 GAIA_DOMAIN=thisdomaindoesnotexist.org
 GAIA_APP_SRCDIRS=apps showcase_apps
+else ifeq ($(MAKECMDGOALS), dogfood)
+DOGFOOD=1
+PRODUCTION=1
+B2G_SYSTEM_APPS=1
 else ifeq ($(MAKECMDGOALS), production)
 PRODUCTION=1
 B2G_SYSTEM_APPS=1
@@ -63,6 +71,10 @@ endif
 ifeq ($(PRODUCTION), 1)
 GAIA_APP_SRCDIRS=apps
 ADB_REMOUNT=1
+endif
+
+ifeq ($(MAKECMDGOALS), dogfood)
+GAIA_APP_SRCDIRS=apps dogfood_apps
 endif
 
 ifeq ($(B2G_SYSTEM_APPS), 1)
@@ -81,6 +93,7 @@ GAIA_LOCALES_PATH?=locales
 LOCALES_FILE?=shared/resources/languages.json
 GAIA_LOCALE_SRCDIRS=shared $(GAIA_APP_SRCDIRS)
 GAIA_DEFAULT_LOCALE?=en-US
+GAIA_INLINE_LOCALES?=1
 
 ###############################################################################
 # The above rules generate the profile/ folder and all its content.           #
@@ -236,13 +249,13 @@ ifneq ($(DEBUG),1)
 	@$(call run-js-command, webapp-zip)
 endif
 
-# Precompile l10n
-webapp-l10n: install-xulrunner-sdk
-	@$(call run-js-command, webapp-l10n)
+# Web app optimization steps (like precompling l10n, concatenating js files, etc..).
+webapp-optimize: install-xulrunner-sdk
+	@$(call run-js-command, webapp-optimize)
 
 # Remove temporary l10n files
-l10n-clean: install-xulrunner-sdk
-	@$(call run-js-command, l10n-clean)
+optimize-clean: install-xulrunner-sdk
+	@$(call run-js-command, optimize-clean)
 
 # Populate appcache
 offline-cache: webapp-manifests install-xulrunner-sdk
@@ -251,7 +264,7 @@ offline-cache: webapp-manifests install-xulrunner-sdk
 	@echo "Done"
 
 # Create webapps
-offline: webapp-manifests webapp-l10n webapp-zip l10n-clean
+offline: webapp-manifests webapp-optimize webapp-zip optimize-clean
 
 
 # The install-xulrunner target arranges to get xulrunner downloaded and sets up
@@ -316,10 +329,13 @@ define run-js-command
 	const HOMESCREEN = "$(HOMESCREEN)"; const GAIA_PORT = "$(GAIA_PORT)";       \
 	const GAIA_APP_SRCDIRS = "$(GAIA_APP_SRCDIRS)";                             \
 	const GAIA_LOCALES_PATH = "$(GAIA_LOCALES_PATH)";                           \
+	const LOCALES_FILE = "$(LOCALES_FILE)";                                     \
 	const BUILD_APP_NAME = "$(BUILD_APP_NAME)";                                 \
 	const PRODUCTION = "$(PRODUCTION)";                                         \
+	const DOGFOOD = "$(DOGFOOD)";                                               \
 	const OFFICIAL = "$(MOZILLA_OFFICIAL)";                                     \
 	const GAIA_DEFAULT_LOCALE = "$(GAIA_DEFAULT_LOCALE)";                       \
+	const GAIA_INLINE_LOCALES = "$(GAIA_INLINE_LOCALES)";                       \
 	const GAIA_ENGINE = "xpcshell";                                             \
 	';                                                                          \
 	$(XULRUNNERSDK) $(XPCSHELLSDK) -e "$$JS_CONSTS" -f build/utils.js "build/$(strip $1).js"
@@ -503,7 +519,9 @@ lint:
 #     let us remove the update-offline-manifests target dependancy of the
 #     default target.
 stamp-commit-hash:
-	@(if [ -d ./.git ]; then \
+	@(if [ -e gaia_commit_override.txt ]; then \
+		cp gaia_commit_override.txt apps/settings/resources/gaia_commit.txt; \
+	elif [ -d ./.git ]; then \
 		git log -1 --format="%H%n%at" HEAD > apps/settings/resources/gaia_commit.txt; \
 	else \
 		echo 'Unknown Git commit; build date shown here.' > apps/settings/resources/gaia_commit.txt; \
@@ -561,10 +579,18 @@ update-offline-manifests:
 # phone, and you have adb in your path, then you can use the install-gaia
 # target to update the gaia files and reboot b2g
 TARGET_FOLDER = webapps/$(BUILD_APP_NAME).$(GAIA_DOMAIN)
+APP_NAME = $(shell cat apps/${BUILD_APP_NAME}/manifest.webapp | grep name | head -1 | cut -d '"' -f 4)
+APP_PID = $(shell adb shell b2g-ps | grep '${APP_NAME}' | tr -s '${APP_NAME}' ' ' | tr -s ' ' ' ' | cut -f 3 -d' ')
 install-gaia: profile
 	$(ADB) start-server
 	@echo 'Stopping b2g'
+ifeq ($(BUILD_APP_NAME),*)
 	$(ADB) shell stop b2g
+else ifeq ($(BUILD_APP_NAME), system)
+	$(ADB) shell stop b2g
+else ifneq (${APP_PID},)
+	$(ADB) shell kill ${APP_PID}
+endif
 	$(ADB) shell rm -r $(MSYS_FIX)/cache/*
 
 ifeq ($(ADB_REMOUNT),1)
@@ -607,6 +633,7 @@ dialer-demo:
 demo: install-media-samples install-gaia
 
 production: reset-gaia
+dogfood: reset-gaia
 
 # Remove everything and install a clean profile
 reset-gaia: purge install-gaia install-settings-defaults
@@ -628,7 +655,7 @@ SETTINGS_ARG=--noftu
 endif
 
 profile/settings.json: build/settings.py build/wallpaper.jpg
-	python build/settings.py $(SETTINGS_ARG) --console --homescreen $(SCHEME)homescreen.$(GAIA_DOMAIN)$(GAIA_PORT)/manifest.webapp --ftu $(SCHEME)communications.$(GAIA_DOMAIN)$(GAIA_PORT)/manifest.webapp --wallpaper build/wallpaper.jpg --override build/custom-settings.json --output $@
+	python build/settings.py $(SETTINGS_ARG) --console --locale $(GAIA_DEFAULT_LOCALE) --homescreen $(SCHEME)homescreen.$(GAIA_DOMAIN)$(GAIA_PORT)/manifest.webapp --ftu $(SCHEME)communications.$(GAIA_DOMAIN)$(GAIA_PORT)/manifest.webapp --wallpaper build/wallpaper.jpg --override build/custom-settings.json --output $@
 
 # push profile/settings.json to the phone
 install-settings-defaults: profile/settings.json

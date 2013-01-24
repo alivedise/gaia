@@ -25,7 +25,6 @@ settings = {
  "audio.volume.telephony": 5,
  "bluetooth.enabled": False,
  "camera.shutter.enabled": True,
- "debug.dev-mode": False,
  "debug.grid.enabled": False,
  "debug.oop.disabled": False,
  "debug.fps.enabled": False,
@@ -55,9 +54,10 @@ settings = {
  "keyboard.layouts.japanese": False,
  "keyboard.layouts.portuguese": False,
  "keyboard.layouts.spanish": False,
- "keyboard.vibration": True,
+ "keyboard.vibration": False,
  "keyboard.clicksound": False,
- "keyboard.wordsuggestion": True,
+ "keyboard.wordsuggestion": False,
+ "keyboard.current": "en",
  "language.current": "en-US",
  "lockscreen.passcode-lock.code": "0000",
  "lockscreen.passcode-lock.timeout": 0,
@@ -66,6 +66,7 @@ settings = {
  "lockscreen.enabled": True,
  "lockscreen.locked": True,
  "lockscreen.unlock-sound.enabled": False,
+ "mail.sent-sound.enabled": True,
  "operatorvariant.mcc": 0,
  "operatorvariant.mnc": 0,
  "ril.iccInfo.mbdn":"",
@@ -76,7 +77,7 @@ settings = {
  "powersave.enabled": False,
  "powersave.threshold": 0,
  "privacy.donottrackheader.enabled": False,
- "ril.callwaiting.enabled": True,
+ "ril.callwaiting.enabled": None,
  "ril.data.enabled": False,
  "ril.data.apn": "",
  "ril.data.carrier": "",
@@ -133,7 +134,8 @@ settings = {
  "wifi.enabled": True,
  "wifi.disabled_by_wakelock": False,
  "wifi.notification": False,
- "icc.displayTextTimeout": 10000
+ "icc.displayTextTimeout": 40000,
+ "icc.inputTextTimeout": 40000
 }
 
 def main():
@@ -146,6 +148,7 @@ def main():
     parser.add_option("-w", "--wallpaper", help="specify the name of the wallpaper file")
     parser.add_option("-v", "--verbose", help="increase output verbosity", action="store_true")
     parser.add_option(      "--noftu", help="bypass the ftu app")
+    parser.add_option(      "--locale", help="specify the default locale to use")
     (options, args) = parser.parse_args(sys.argv[1:])
 
     verbose = options.verbose
@@ -187,6 +190,10 @@ def main():
     # Set the ftu manifest URL
     if not options.noftu:
         settings["ftu.manifestURL"] = ftu_url
+
+    # Set the default locale
+    if options.locale:
+        settings["language.current"] = options.locale
 
     # Grab wallpaper.jpg and convert it into a base64 string
     wallpaper_file = open(wallpaper_filename, "rb")

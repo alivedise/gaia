@@ -7,15 +7,36 @@
     return window.parent.location.pathname === '/message_handler.html';
   }
 
+  // Redirect global objects to parent versions to avoid conflicts
+  if (!inStandAloneMode()) {
+    ConfigManager = window.parent.ConfigManager;
+  }
+
+  // XXX: This case implies that message handler triggered by system
+  // (inStandAlone check) has replaced CC application (history's length check).
+  //
+  // This only occurs when the system (window manager) has detected there is
+  // already an iframe for CC application, it is in background and it is
+  // not the message handler. So, as the CC index.html uses the this file
+  // inside an iframe (no standalone mode), all the messages should be attended
+  // so we can conclude **there is nothing to do**.
+  if (inStandAloneMode() && window.history.length > 1) {
+    debug('Nothing to do, closing...');
+    window.history.back();
+  }
+
   function inApplicationMode() {
     return window.parent.location.pathname === '/index.html';
   }
 
   // Close if in standalone mode
-  function closeIfProceed() {
+  function closeIfProceeds() {
+    debug('Trying to close...');
     if (inStandAloneMode()) {
-      setTimeout(window.close, 1000);
-      debug('Closing message handler');
+      setTimeout(function _close() {
+        window.close();
+        debug('Closing message handler');
+      }, 500);
     }
   }
 
@@ -31,29 +52,45 @@
 
   // XXX: Remove from here when this is solved
   // https://bugzilla.mozilla.org/show_bug.cgi?id=800431
-  function setNextReset(when) {
-    asyncStorage.getItem('nextResetAlarm', function(id) {
-      debug('Current nextResetAlarm ' + id + (id ? '. Removing.' : ''));
-      if (id)
-        navigator.mozAlarms.remove(id);
+  function setNextReset(when, callback) {
 
+    // XXX: This is not part of configuration by SIM so we bypass ConfigManager
+    asyncStorage.getItem('nextResetAlarm', function(id) {
+      // There is already an alarm, remove it
+      debug('Current nextResetAlarm', id + '.', id ? 'Removing.' : '');
+      if (id) {
+        navigator.mozAlarms.remove(id);
+      }
+
+      // If no when, disable alarms passing null
       if (!when) {
-        ConfigManager.setOption({ nextReset: null });
+        debug('Automatic reset disabled');
+        updateResetAttributes(null, null, callback);
         return;
       }
 
-      var request = navigator.mozAlarms.add(when, 'ignoreTimezone',
-                                            {type: 'nextReset' });
+      // If when is provided, request an alarm an set the new values
+      var alarms = navigator.mozAlarms;
+      var request = alarms.add(when, 'ignoreTimezone', {type: 'nextReset' });
       request.onsuccess = function _onSuccess() {
-        ConfigManager.setOption({ nextReset: when }, function _sync() {
-            localStorage['sync'] = 'nextReset#' + Math.random();
-        });
-        debug('Setting nextResetAlarm ' + request.result + ' to ' + when);
-        asyncStorage.setItem('nextResetAlarm', request.result);
+        debug('Setting nextResetAlarm', request.result, 'to', when);
+        updateResetAttributes(request.result, when, callback);
       };
     });
-  };
+  }
   window.setNextReset = setNextReset;
+
+  // Update the nextResetAlarm and nextReset values and request for
+  // synchronization.
+  function updateResetAttributes(alarmId, date, callback) {
+    asyncStorage.setItem('nextResetAlarm', alarmId, function _updateOption() {
+      ConfigManager.setOption({ nextReset: date }, function _sync() {
+        localStorage['sync'] = 'nextReset#' + Math.random();
+        if (callback)
+          callback();
+      });
+    });
+  }
 
   // Register in standalone or for application
   if (inStandAloneMode() || inApplicationMode()) {
@@ -65,7 +102,7 @@
         // Non expected SMS
         if (configuration.balance.senders.indexOf(sms.sender) === -1 &&
             configuration.topup.senders.indexOf(sms.sender) === -1) {
-          closeIfProceed();
+          closeIfProceeds();
           return;
         }
 
@@ -113,8 +150,7 @@
 
           // Remove the timeout
           navigator.mozAlarms.remove(settings.waitingForBalance);
-          debug('Balance timeout: ' + settings.waitingForBalance +
-                ' removed');
+          debug('Balance timeout:', settings.waitingForBalance, 'removed');
 
           // Store new balance and sync
           ConfigManager.setOption(
@@ -123,34 +159,34 @@
               debug('Balance up to date and stored');
               debug('Trying to synchronize!');
               localStorage['sync'] = 'lastBalance#' + Math.random();
-              closeIfProceed();
+              closeIfProceeds();
             }
           );
         } else if (isConfirmation) {
           // Store SUCCESS for TopIp and sync
           navigator.mozAlarms.remove(settings.waitingForTopUp);
-          debug('TopUp timeout: ' + settings.waitingForTopUp + ' removed');
+          debug('TopUp timeout:', settings.waitingForTopUp, 'removed');
           ConfigManager.setOption(
             { 'waitingForTopUp': null },
             function _onSet() {
               debug('TopUp confirmed!');
               debug('Trying to synchronize!');
               localStorage['sync'] = 'waitingForTopUp#' + Math.random();
-              closeIfProceed();
+              closeIfProceeds();
             }
           );
         } else if (isError) {
           // Store ERROR for TopUp and sync
           settings.errors['INCORRECT_TOPUP_CODE'] = true;
           navigator.mozAlarms.remove(settings.waitingForTopUp);
-          debug('TopUp timeout: ' + settings.waitingForTopUp + ' removed');
+          debug('TopUp timeout: ', settings.waitingForTopUp, 'removed');
           ConfigManager.setOption(
             { 'errors': settings.errors, 'waitingForTopUp': null },
             function _onSet() {
               debug('Balance up to date and stored');
               debug('Trying to synchronize!');
               localStorage['sync'] = 'errors#' + Math.random();
-              closeIfProceed();
+              closeIfProceeds();
             }
           );
         }
@@ -169,7 +205,7 @@
                 debug('Timeout for balance');
                 debug('Trying to synchronize!');
                 localStorage['sync'] = 'errors#' + Math.random();
-                closeIfProceed();
+                closeIfProceeds();
               }
             );
           });
@@ -184,7 +220,7 @@
                 debug('Timeout for topup');
                 debug('Trying to synchronize!');
                 localStorage['sync'] = 'errors#' + Math.random();
-                closeIfProceed();
+                closeIfProceeds();
               }
             );
           });
@@ -194,9 +230,53 @@
           ConfigManager.requestSettings(function _onSettings(settings) {
             resetAll();
             updateNextReset(settings.trackingPeriod, settings.resetTime);
+            closeIfProceeds();
           });
           break;
       }
     });
+
+    // Count a new SMS
+    window.navigator.mozSetMessageHandler('sms-sent', function _onSMSSent(sms) {
+      ConfigManager.requestSettings(function _onSettings(settings) {
+        debug('SMS sent!');
+        var manager = window.navigator.mozSms;
+        var smsInfo = manager.getSegmentInfoForText(sms.body);
+        var realCount = smsInfo.segments;
+        settings.lastTelephonyActivity.timestamp = new Date();
+        settings.lastTelephonyActivity.smscount += realCount;
+        ConfigManager.setOption({
+          lastTelephonyActivity: settings.lastTelephonyActivity
+        }, function _sync() {
+          localStorage['sync'] = 'lastTelephonyActivity#' + Math.random();
+          closeIfProceeds();
+        });
+      });
+    });
+
+    // When a call ends
+    window.navigator.mozSetMessageHandler('telephony-call-ended',
+      function _onCall(tcall) {
+        if (tcall.direction !== 'outgoing')
+          return;
+
+        debug('Outgoing call finished!');
+        ConfigManager.requestSettings(function _onSettings(settings) {
+          settings.lastTelephonyActivity.timestamp = new Date();
+          settings.lastTelephonyActivity.calltime += tcall.duration;
+          ConfigManager.setOption({
+            lastTelephonyActivity: settings.lastTelephonyActivity
+          }, function _sync() {
+            localStorage['sync'] = 'lastTelephonyActivity#' + Math.random();
+            closeIfProceeds();
+          });
+        });
+      }
+    );
+
   }
+
+  // Notify message handler is ready
+  var readyEvent = new CustomEvent('messagehandlerready');
+  window.parent.dispatchEvent(readyEvent);
 }());

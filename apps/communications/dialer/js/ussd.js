@@ -20,9 +20,8 @@ var UssdManager = {
   init: function um_init() {
     if (this._conn.voice) {
       this._conn.addEventListener('voicechange', this);
-      // Even without SIM card, the mozMobileConnection.voice.network object
-      // exists, although its shortName property is null.
-      this._operator = this._conn.voice.network.shortName;
+      this._operator = MobileOperator.userFacingInfo(this._conn).operator;
+
     }
     this._origin = document.location.protocol + '//' +
       document.location.host;
@@ -181,18 +180,21 @@ var UssdManager = {
     this._popup.ready = true;
     if (this._closedOnVisibilityChange) {
       this.notifyLast();
+    } else {
+      this.notifyPending();
     }
-    this.notifyPending();
   },
 
   notifyPending: function um_notifyPending() {
-    if (this._pendingNotification)
+    if (this._pendingNotification) {
       this.postMessage(this._pendingNotification);
+    }
   },
 
-  notifyLast: function um_notifyPending() {
-    if (this._lastMessage)
+  notifyLast: function um_notifyLast() {
+    if (this._lastMessage) {
       this.postMessage(this._lastMessage);
+    }
   },
 
   isUSSD: function um_isUSSD(number) {
@@ -202,7 +204,11 @@ var UssdManager = {
 
   postMessage: function um_postMessage(message) {
     if (this._popup && this._popup.ready) {
-      this._popup.postMessage(this._lastMessage = message, this._origin);
+      this._popup.postMessage(message, this._origin);
+      this._pendingNotification = null;
+      if (message.type !== 'voicechange') {
+        this._lastMessage = message;
+      }
     } else {
       this._pendingNotification = message;
     }
@@ -237,10 +243,7 @@ var UssdManager = {
           };
         break;
       case 'voicechange':
-        // Even without SIM card, the mozMobileConnection.voice.network object
-        // exists, although its shortName property is null.
-        this._operator = this._conn.voice.network.shortName ?
-          this._conn.voice.network.shortName : null;
+        this._operator = MobileOperator.userFacingInfo(this._conn).operator;
         message = {
           type: 'voicechange',
           operator: (this._operator ? this._operator : 'Unknown')

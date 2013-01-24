@@ -46,11 +46,17 @@ function ComposeCard(domNode, mode, args) {
     addBtns[i].addEventListener('click', this.onContactAdd.bind(this));
   }
   // Add input focus:
-  var containerList = domNode.getElementsByClassName('cmp-bubble-container');
+  var containerList = domNode.getElementsByClassName('cmp-combo');
   for (var i = 0; i < containerList.length; i++) {
     containerList[i].addEventListener('click',
       this.onContainerClick.bind(this));
   }
+
+  // Add subject focus for larger hitbox
+  var subjectContainer = domNode.querySelector('.cmp-subject');
+  subjectContainer.addEventListener('click', function subjectFocus() {
+    subjectContainer.querySelector('input').focus();
+  });
 
   // Add attachments
   var attachmentsContainer =
@@ -76,6 +82,23 @@ function ComposeCard(domNode, mode, args) {
   }
   else {
     attachmentsContainer.classList.add('collapsed');
+  }
+
+  // Sent sound init
+  this.sentAudioKey = 'mail.sent-sound.enabled';
+  this.sentAudio = new Audio('/sounds/sent.ogg');
+  this.sentAudio.mozAudioChannelType = 'notification';
+  this.sentAudioEnabled = false;
+
+  if ('mozSettings' in navigator) {
+    var req = navigator.mozSettings.createLock().get(this.sentAudioKey);
+    req.onsuccess = (function onsuccess() {
+      this.sentAudioEnabled = req.result[this.sentAudioKey];
+    }).bind(this);
+
+    navigator.mozSettings.addObserver(this.sentAudioKey, (function(e) {
+      this.sentAudioEnabled = e.settingValue;
+    }).bind(this));
   }
 }
 ComposeCard.prototype = {
@@ -182,11 +205,6 @@ ComposeCard.prototype = {
     var container = node.parentNode;
     var bubble = this.createBubbleNode(name, address);
     container.insertBefore(bubble, node);
-    var dotInput = document.createElement('input');
-    dotInput.value = ',';
-    dotInput.classList.add('cmp-dot-text');
-    dotInput.size = 1;
-    container.insertBefore(dotInput, node);
   },
   /**
    * deleteBubble: Delete the bubble from the parent container.
@@ -195,11 +213,7 @@ ComposeCard.prototype = {
     if (!node) {
       return;
     }
-    var dot = node.nextSibling;
     var container = node.parentNode;
-    if (dot.classList.contains('cmp-dot-text')) {
-      container.removeChild(dot);
-    }
     if (node.classList.contains('cmp-peep-bubble')) {
       container.removeChild(node);
     }
@@ -230,7 +244,7 @@ ComposeCard.prototype = {
 
     if (evt.keyCode == 8 && node.value == '') {
       //delete bubble
-      var previousBubble = node.previousSibling.previousSibling;
+      var previousBubble = node.previousSibling;
       this.deleteBubble(previousBubble);
       if (this.isEmptyAddress()) {
         this.sendButton.setAttribute('aria-disabled', 'true');
@@ -249,13 +263,37 @@ ComposeCard.prototype = {
       return;
     }
     this.sendButton.setAttribute('aria-disabled', 'false');
-    if (node.value.slice(-1) == ',') {
+    var makeBubble = false;
+    // When do we want to tie off this e-mail address, put it into a bubble
+    // and clear the input box so the user can type another address?
+    switch (node.value.slice(-1)) {
+      // If they hit space and we believe they've already typed an email
+      // address!  (Space is okay in a display name or to delimit a display
+      // name from the e-mail address)
+      //
+      // We use the presence of an '@' character as indicating that the e-mail
+      // address
+      case ' ':
+        makeBubble = node.value.indexOf('@') !== -1;
+        break;
+      // We started out supporting comma, but now it's not on our keyboard at
+      // all in type=email mode!  We aren't terribly concerned about it not
+      // being usable in display names, although we really should check for
+      // quoting...
+      case ',':
+      // Semicolon is on the keyboard, and we also don't care about it not
+      // being usable in display names.
+      case ';':
+        makeBubble = true;
+        break;
+    }
+    if (makeBubble) {
       // TODO: Need to match the email with contact name.
       node.style.width = '0.5rem';
       // TODO: We will apply email address parser for showing bubble properly.
       //       We simply set name as string that splited from address
       //       before parser is ready.
-      this.insertBubble(node, null, node.value.split(',')[0]);
+      this.insertBubble(node, null, node.value.slice(0, -1));
       node.value = '';
     }
     // XXX: Workaround to get the length of the string. Here we create a dummy
@@ -376,7 +414,7 @@ ComposeCard.prototype = {
 
     // XXX well-formedness-check (ideally just handle by not letting you send
     // if you haven't added anyone...)
-
+    var self = this;
     var activity = this.activity;
     var domNode = this.domNode;
     var sendingTemplate = cmpNodes['sending-container'];
@@ -392,6 +430,10 @@ ComposeCard.prototype = {
             }
             activity = null;
           }
+        }
+
+        if (self.sentAudioEnabled) {
+          self.sentAudio.play();
         }
 
         domNode.removeChild(sendingTemplate);
@@ -415,6 +457,7 @@ ComposeCard.prototype = {
   },
 
   onContactAdd: function(event) {
+    event.stopPropagation();
     var contactBtn = event.target;
     var self = this;
     contactBtn.classList.remove('show');

@@ -2,13 +2,15 @@
 
 var MobileOperator = {
   BRAZIL_MCC: 724,
+  BRAZIL_CELLBROADCAST_CHANNEL: 50,
 
   userFacingInfo: function mo_userFacingInfo(mobileConnection) {
     var network = mobileConnection.voice.network;
     var iccInfo = mobileConnection.iccInfo;
     var operator = network.shortName || network.longName;
 
-    if (iccInfo.isDisplaySpnRequired && iccInfo.spn) {
+    if (iccInfo.isDisplaySpnRequired && iccInfo.spn
+        && !mobileConnection.voice.roaming) {
       if (iccInfo.isDisplayNetworkNameRequired) {
         operator = operator + ' ' + iccInfo.spn;
       } else {

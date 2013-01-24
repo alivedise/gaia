@@ -11,32 +11,60 @@ var CostControlApp = (function() {
 
   'use strict';
 
-  var costcontrol, initialized = false;
-  window.addEventListener('DOMContentLoaded', function _onDOMReady() {
-    checkSIMChange();
+  // XXX: This is the point of entry, check common.js for more info
+  waitForDOMAndMessageHandler(window, onReady);
 
-    CostControl.getInstance(function _onCostControlReady(instance) {
-      if (ConfigManager.option('fte')) {
-        window.location = '/fte.html';
-        return;
-      }
-      costcontrol = instance;
-      setupApp();
+  var vmanager;
+  var costcontrol, initialized = false;
+  function onReady() {
+    vmanager = new ViewManager();
+    var mobileConnection = window.navigator.mozMobileConnection;
+
+    // SIM is absent
+    if (mobileConnection.cardState === 'absent') {
+      debug('There is no SIM');
+      document.getElementById('no-sim-info-dialog')
+        .addEventListener('click', function _close() {
+        window.close();
+      });
+      vmanager.changeViewTo('no-sim-info-dialog');
+
+    // SIM is not ready
+    } else if (mobileConnection.cardState !== 'ready') {
+      debug('SIM not ready:', mobileConnection.cardState);
+      mobileConnection.oniccinfochange = onReady;
+
+    // SIM is ready
+    } else {
+      mobileConnection.oniccinfochange = undefined;
+      startApp();
+    }
+  }
+
+  function startApp() {
+    checkSIMChange(function _onSIMChecked() {
+      CostControl.getInstance(function _onCostControlReady(instance) {
+        if (ConfigManager.option('fte')) {
+          window.location = '/fte.html';
+          return;
+        }
+        costcontrol = instance;
+        setupApp();
+      });
     });
-  });
+  }
 
   window.addEventListener('localized', function _onLocalize() {
     if (initialized)
       updateUI();
   });
 
-  var tabmanager, vmanager, settingsVManager;
+  var tabmanager, settingsVManager;
   function setupApp() {
     // View managers for dialogs and settings
     tabmanager = new ViewManager(
       ['balance-tab', 'telephony-tab', 'datausage-tab']
     );
-    vmanager = new ViewManager();
     settingsVManager = new ViewManager();
 
     // Configure settings
@@ -88,12 +116,11 @@ var CostControlApp = (function() {
     initialized = true;
   }
 
-
   var currentMode;
   function updateUI() {
     ConfigManager.requestSettings(function _onSettings(settings) {
       var mode = costcontrol.getApplicationMode(settings);
-      debug('App UI mode: ' + mode);
+      debug('App UI mode: ', mode);
 
       // Layout
       if (mode !== currentMode) {

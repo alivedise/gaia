@@ -46,7 +46,7 @@ function openLink(url) {
  */
 
 function openDialog(dialogID, onSubmit, onReset) {
-  if('#' + dialogID == document.location.hash)
+  if ('#' + dialogID == document.location.hash)
     return;
 
   var origin = document.location.hash;
@@ -87,7 +87,8 @@ function audioPreview(element, type) {
             element.querySelector('input').value;
   audio.src = url;
   if (source === audio.src && playing) {
-    audio.stop();
+    audio.pause();
+    audio.src = '';
   } else {
     audio.play();
   }
@@ -258,7 +259,7 @@ function bug344618_polyfill() {
   };
 
   // apply to all input[type="range"] elements
-  var ranges = document.querySelectorAll('label > input[type="range"]');
+  var ranges = document.querySelectorAll('label:not(.bug344618_polyfill) > input[type="range"]');
   for (var i = 0; i < ranges.length; i++) {
     polyfill(ranges[i]);
   }

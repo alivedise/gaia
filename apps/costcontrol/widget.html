@@ -5,6 +5,7 @@
   <title>Cost Control Widget</title>
   <link rel="stylesheet" type="text/css" href="style/widget.css">
   <link rel="resource" type="application/l10n" href="locales/locales.ini">
+  <link rel="resource" type="application/l10n" href="shared/locales/date.ini" />
 
   <script type="text/javascript" src="shared/js/l10n.js"></script>
   <script type="text/javascript" src="shared/js/l10n_date.js"></script>
@@ -23,6 +24,14 @@
 <body>
   <section id="cost-control">
 
+    <section id="fte-view" aria-hidden="true">
+      <span id="fte-icon" class="icon"></span>
+      <div class="info">
+        <p></p>
+        <p class="meta"></p>
+      </div>
+    </section>
+
     <section class="credit" id="left-panel">
 
       <section class="view" id="balance-view">
@@ -35,8 +44,8 @@
 
       <section class="view" id="telephony-view" aria-hidden="true">
         <div class="info">
-          <p><span id="telephony-calltime"></span><span class="unit"></span> <span id="telephony-smscount"></span><span class="unit"></span></p>
-          <p class="meta"><time id="telephony-from-date"></time> – <time id="telephony-to-date"></time></p>
+          <p><span id="telephony-calltime"></span> <span id="telephony-smscount"></span></p>
+          <p class="meta"></p>
         </div>
       </section>
 

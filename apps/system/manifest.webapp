@@ -34,7 +34,8 @@
     "permissions":{},
     "audio-channel-publicnotification":{},
     "audio-channel-notification":{},
-    "audio-channel-content":{}
+    "audio-channel-content":{},
+    "cellbroadcast":{}
   },
   "locales": {
     "ar": {

@@ -20,6 +20,8 @@ Icon.prototype = {
   MIN_ICON_SIZE: 52,
   MAX_ICON_SIZE: 60,
 
+  DEFAULT_BOOKMARK_ICON_URL: window.location.protocol + '//' + window.location.host +
+                    '/style/images/default_favicon.png',
   DEFAULT_ICON_URL: window.location.protocol + '//' + window.location.host +
                     '/style/images/default.png',
   DOWNLOAD_ICON_URL: window.location.protocol + '//' + window.location.host +
@@ -30,7 +32,8 @@ Icon.prototype = {
   // These properties will be copied from the descriptor onto the icon's HTML
   // element dataset and allow us to uniquely look up the Icon object from
   // the HTML element.
-  _descriptorIdentifiers: ['manifestURL', 'entry_point', 'bookmarkURL'],
+  _descriptorIdentifiers: ['manifestURL', 'entry_point', 'bookmarkURL',
+                           'useAsyncPanZoom'],
 
   /**
    * The Application (or Bookmark) object corresponding to this icon.
@@ -103,6 +106,7 @@ Icon.prototype = {
     var label = this.label = document.createElement('span');
     label.textContent = localizedName;
     wrapper.appendChild(label);
+    this.applyOverflowTextMask();
 
     icon.appendChild(wrapper);
 
@@ -126,6 +130,15 @@ Icon.prototype = {
     }
   },
 
+  applyOverflowTextMask: function icon_applyOverflowTextMask() {
+    var label = this.label;
+    if (TextOverflowDetective.check(label.textContent)) {
+      label.parentNode.classList.add('mask');
+    } else {
+      label.parentNode.classList.remove('mask');
+    }
+  },
+
   fetchImageData: function icon_fetchImageData() {
     var descriptor = this.descriptor;
     var icon = descriptor.icon;
@@ -136,8 +149,8 @@ Icon.prototype = {
 
     // If we already have locally cached data, load the image right away.
     if (icon.indexOf('data:') == 0) {
-       this.loadImageData();
-       return;
+      this.loadImageData();
+      return;
     }
 
     var self = this;
@@ -149,7 +162,7 @@ Icon.prototype = {
     } catch (e) {
       console.error('Got an exception when trying to load icon "' + icon +
           '", falling back to default icon. Exception is:', e);
-      this.loadImageData();
+      this.loadCachedIcon();
       return;
     }
 
@@ -158,15 +171,24 @@ Icon.prototype = {
         return;
 
       if (xhr.status != 0 && xhr.status != 200) {
-        self.loadImageData();
+        self.loadCachedIcon();
         return;
       }
       self.loadImageData(xhr.response);
     };
 
     xhr.onerror = function saveIcon_onerror() {
-      self.loadImageData();
+      self.loadCachedIcon();
     };
+  },
+
+  loadCachedIcon: function icon_loadCachedImage() {
+    var oldRenderedIcon = this.descriptor.oldRenderedIcon;
+    if (oldRenderedIcon && oldRenderedIcon instanceof Blob) {
+      this.renderBlob(oldRenderedIcon);
+    } else {
+      this.loadImageData();
+    }
   },
 
   loadImageData: function icon_loadImageData(blob) {
@@ -186,22 +208,49 @@ Icon.prototype = {
     img.onload = function icon_loadSuccess() {
       if (blob)
         window.URL.revokeObjectURL(img.src);
-
       self.renderImage(img);
     };
 
     img.onerror = function icon_loadError() {
       if (blob)
         window.URL.revokeObjectURL(img.src);
-
-      img.src = self.DEFAULT_ICON_URL;
+      img.src = getDefaultIcon(self.app);
       img.onload = function icon_errorIconLoadSucess() {
         self.renderImage(img);
       };
     };
   },
 
+  renderImageForBookMark: function icon_renderImageForBookmark(img){
+    var self = this;
+    var canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    var ctx = canvas.getContext('2d');
+
+    // Draw the background
+    var background = new Image();
+    background.src = 'style/images/default_background.png';
+    background.onload = function icon_loadBackgroundSuccess(){
+      ctx.shadowColor = 'rgba(0,0,0,0.8)';
+      ctx.shadowBlur = 2;
+      ctx.shadowOffsetY = 2;
+      ctx.drawImage(background,2,2);
+      // Disable smoothing on icon resize
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+      ctx.mozImageSmoothingEnabled = false;
+      ctx.drawImage(img,16,16,32,32);
+      canvas.toBlob(self.renderBlob.bind(self));
+    };
+  },
+
   renderImage: function icon_renderImage(img) {
+    if( this.app && this.app.iconable ) {
+      this.renderImageForBookMark(img);
+      return;
+    }
+
     var canvas = document.createElement('canvas');
     canvas.width = 64;
     canvas.height = 64;
@@ -226,12 +275,13 @@ Icon.prototype = {
                   width, height);
     ctx.fill();
 
-    var self = this;
-    canvas.toBlob(function canvasAsBlob(blob) {
-      self.descriptor.renderedIcon = blob;
-      GridManager.markDirtyState();
-      self.displayRenderedIcon();
-    });
+    canvas.toBlob(this.renderBlob.bind(this));
+  },
+
+  renderBlob: function icon_renderBlob(blob) {
+    this.descriptor.renderedIcon = blob;
+    GridManager.markDirtyState();
+    this.displayRenderedIcon();
   },
 
   displayRenderedIcon: function icon_displayRenderedIcon(img, skipRevoke) {
@@ -284,6 +334,7 @@ Icon.prototype = {
         descriptor.icon == oldDescriptor.icon) {
       this.descriptor.renderedIcon = oldDescriptor.renderedIcon;
     } else {
+      this.descriptor.oldRenderedIcon = oldDescriptor.renderedIcon;
       this.fetchImageData();
     }
     if (descriptor.updateTime != oldDescriptor.updateTime ||
@@ -331,20 +382,15 @@ Icon.prototype = {
     if (entryPoint)
       iconsAndNameHolder = manifest.entry_points[entryPoint];
 
-    var localizedName = iconsAndNameHolder.name;
-    var locales = iconsAndNameHolder.locales;
-    if (locales) {
-      var locale = locales[document.documentElement.lang];
-      if (locale && locale.name) {
-        localizedName = locale.name;
-      }
-    }
+    var localizedName = new ManifestHelper(iconsAndNameHolder).name;
 
     this.label.textContent = localizedName;
     if (descriptor.localizedName != localizedName) {
       descriptor.localizedName = localizedName;
       GridManager.markDirtyState();
     }
+
+    this.applyOverflowTextMask();
   },
 
   /*
@@ -706,6 +752,14 @@ Page.prototype = {
   }
 };
 
+function getDefaultIcon(app){
+  if (app && app.iconable) {
+    return Icon.prototype.DEFAULT_BOOKMARK_ICON_URL;
+  } else {
+    return Icon.prototype.DEFAULT_ICON_URL;
+  }
+}
+
 function extend(subClass, superClass) {
   var F = function() {};
   F.prototype = superClass.prototype;
@@ -768,3 +822,27 @@ dockProto.getChildren = function dk_getChildren() {
 };
 
 HTMLCollection.prototype.indexOf = Array.prototype.indexOf;
+
+const TextOverflowDetective = (function() {
+
+  var iconFakeWrapperWidth;
+  var iconFakeLabel;
+
+  function init() {
+    var fakeIconName = document.querySelector('#fake-icon-name-wrapper');
+    iconFakeWrapperWidth = fakeIconName.offsetWidth;
+    iconFakeLabel = document.querySelector('#fake-icon-name');
+  }
+
+  function check(text) {
+    if (! iconFakeLabel || ! iconFakeWrapperWidth) {
+      init();
+    }
+    iconFakeLabel.textContent = text;
+    return iconFakeLabel.offsetWidth >= iconFakeWrapperWidth;
+  }
+
+  return {
+    check: check
+  };
+})();

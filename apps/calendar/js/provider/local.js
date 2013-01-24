@@ -10,6 +10,8 @@
     this.alarms = this.app.store('Alarm');
   }
 
+  Local.calendarId = LOCAL_CALENDAR_ID;
+
   /**
    * Returns the details for the default calendars.
    */
@@ -27,7 +29,7 @@
     }
 
     if (!name) {
-      name = 'Offline Calendar';
+      name = 'Offline calendar';
     }
 
     return {
@@ -36,10 +38,12 @@
       id: LOCAL_CALENDAR_ID,
       color: '#D2642A'
     };
-  }
+  };
 
   Local.prototype = {
     __proto__: Calendar.Provider.Abstract.prototype,
+
+    canExpandRecurringEvents: false,
 
     getAccount: function(account, callback) {
       callback(null, {});

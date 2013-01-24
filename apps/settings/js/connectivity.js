@@ -210,13 +210,32 @@ var gBluetooth = (function(window) {
 // display connectivity status on the main panel
 var Connectivity = (function(window, document, undefined) {
   var _ = navigator.mozL10n.get;
+  var wifiEnabledListeners = [updateWifi];
+  var wifiDisabledListeners = [updateWifi];
+  var wifiStatusChangeListeners = [updateWifi];
   var settings = Settings.mozSettings;
 
+  //
+  // Set wifi.enabled so that it mirrors the state of the hardware.
+  // wifi.enabled is not an ordinary user setting because the system
+  // turns it on and off when wifi goes up and down.
+  //
+  settings.createLock().set({'wifi.enabled': gWifiManager.enabled});
+
+  //
+  // Now register callbacks to track the state of the wifi hardware
+  //
+  gWifiManager.onenabled = function() {
+    dispatchEvent(new CustomEvent('wifi-enabled'));
+    wifiEnabled();
+  };
+  gWifiManager.ondisabled = function() {
+    dispatchEvent(new CustomEvent('wifi-disabled'));
+    wifiDisabled();
+  };
+  gWifiManager.onstatuschange = wifiStatusChange;
+
   function init() {
-    // these listeners are replaced when wifi.js is loaded
-    gWifiManager.onenabled = updateWifi;
-    gWifiManager.ondisabled = updateWifi;
-    gWifiManager.onstatuschange = updateWifi;
     updateWifi();
 
     // this event listener is not cleared by carrier.js
@@ -228,9 +247,15 @@ var Connectivity = (function(window, document, undefined) {
     gMobileConnection.addEventListener('datachange', updateCarrier);
     updateCarrier();
 
-    // this listener is replaced when bluetooth.js is loaded
-    gBluetooth.onadapteradded = updateBluetooth;
-    gBluetooth.ondisabled = updateBluetooth;
+    // these listeners are replaced when bluetooth.js is loaded
+    gBluetooth.onadapteradded = function() {
+      dispatchEvent(new CustomEvent('bluetooth-adapter-added'));
+      updateBluetooth();
+    };
+    gBluetooth.ondisabled = function() {
+      dispatchEvent(new CustomEvent('bluetooth-disabled'));
+      updateBluetooth();
+    };
     updateBluetooth();
     initSystemMessageHandler();
   }
@@ -253,6 +278,24 @@ var Connectivity = (function(window, document, undefined) {
     if (settings) {
       settings.createLock().set({ 'deviceinfo.mac': gWifiManager.macAddress });
     }
+  }
+
+  function wifiEnabled() {
+    // Keep the setting in sync with the hardware state.
+    // We need to do this because b2g/dom/wifi/WifiWorker.js can turn
+    // the hardware on and off
+    settings.createLock().set({'wifi.enabled': true});
+    wifiEnabledListeners.forEach(function(listener) { listener(); });
+  }
+
+  function wifiDisabled() {
+    // Keep the setting in sync with the hardware state.
+    settings.createLock().set({'wifi.enabled': false});
+    wifiDisabledListeners.forEach(function(listener) { listener(); });
+  }
+
+  function wifiStatusChange(event) {
+    wifiStatusChangeListeners.forEach(function(listener) { listener(event); });
   }
 
   /**
@@ -408,7 +451,10 @@ var Connectivity = (function(window, document, undefined) {
         hotspot: document.getElementById('hotspot-desc').textContent,
         bluetooth: document.getElementById('bluetooth-desc').textContent
       };
-    }
+    },
+    set wifiEnabled(listener) { wifiEnabledListeners.push(listener) },
+    set wifiDisabled(listener) { wifiDisabledListeners.push(listener); },
+    set wifiStatusChange(listener) { wifiStatusChangeListeners.push(listener); }
   };
 })(this, document);
 

@@ -39,7 +39,7 @@
 }());
 
 var NotificationScreen = {
-  TOASTER_TIMEOUT: 1200,
+  TOASTER_TIMEOUT: 5000,
   TRANSITION_SPEED: 1.8,
   TRANSITION_FRACTION: 0.30,
 
@@ -80,6 +80,7 @@ var NotificationScreen = {
     window.addEventListener('utilitytrayshow', this);
     window.addEventListener('unlock', this.clearLockScreen.bind(this));
     window.addEventListener('mozvisibilitychange', this);
+    window.addEventListener('appopen', this.handleAppopen.bind(this));
 
     this._sound = 'style/notifications/ringtones/notifier_exclamation.ogg';
 
@@ -121,6 +122,17 @@ var NotificationScreen = {
     }
   },
 
+  handleAppopen: function ns_handleAppopen(evt) {
+    var manifestURL = evt.detail.manifestURL,
+        selector = '[data-manifest-u-r-l="' + manifestURL + '"]';
+
+    var nodes = this.container.querySelectorAll(selector);
+
+    for (var i = nodes.length - 1; i >= 0; i--) {
+      this.closeNotification(nodes[i]);
+    }
+  },
+
   // Swipe handling
   mousedown: function ns_mousedown(evt) {
     if (!evt.target.dataset.notificationID)
@@ -129,9 +141,6 @@ var NotificationScreen = {
     evt.preventDefault();
     this._notification = evt.target;
     this._containerWidth = this.container.clientWidth;
-
-    this._notification.style.MozTransition = '';
-    this._notification.style.width = evt.target.parentNode.clientWidth + 'px';
   },
 
   swipe: function ns_swipe(evt) {
@@ -141,7 +150,11 @@ var NotificationScreen = {
     var farEnough = Math.abs(distance) >
       this._containerWidth * this.TRANSITION_FRACTION;
 
-    if (!(farEnough || fastEnough)) {
+    // We only remove the notification if the swipe was
+    // - left to right
+    // - far or fast enough
+    if ((distance > 0) ||
+        !(farEnough || fastEnough)) {
       // Werent far or fast enough to delete, restore
       delete this._notification;
       return;
@@ -168,6 +181,7 @@ var NotificationScreen = {
         toaster.style.MozTransition = '';
         toaster.style.MozTransform = '';
         toaster.classList.remove('displayed');
+        toaster.classList.remove('disappearing');
 
         setTimeout(function nextLoop() {
           toaster.style.display = 'block';
@@ -208,6 +222,7 @@ var NotificationScreen = {
     notificationNode.className = 'notification';
 
     notificationNode.dataset.notificationID = detail.id;
+    notificationNode.dataset.manifestURL = detail.manifestURL;
 
     if (detail.icon) {
       var icon = document.createElement('img');
@@ -237,7 +252,7 @@ var NotificationScreen = {
 
     this.toasterDetail.textContent = detail.text;
 
-    this.container.appendChild(notificationNode);
+    this.container.insertBefore(notificationNode, this.container.firstElementChild);
     new GestureDetector(notificationNode).startDetecting();
 
     // We turn the screen on if needed in order to let

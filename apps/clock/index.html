@@ -10,6 +10,7 @@
     <!-- Shared styles -->
     <link rel="stylesheet" type="text/css" href="shared/style/headers.css">
     <link rel="stylesheet" type="text/css" href="shared/style/switches.css">
+    <link rel="stylesheet" type="text/css" href="shared/style/status.css">
 
     <!-- Shared sounds -->
     <link rel="resources" type="directory" href="shared/resources/media/alarms/">
@@ -22,10 +23,12 @@
 
     <!-- Specific code -->
     <script type="application/javascript" src="shared/js/gesture_detector.js"></script>
+    <script type="application/javascript" src="shared/js/mouse_event_shim.js"></script>
     <script type="application/javascript" src="js/utils.js"></script>
     <script type="application/javascript" src="js/alarmsdb.js"></script>
     <script type="application/javascript" src="js/clock.js"></script>
     <script type="application/javascript" src="js/alarm.js"></script>
+    <script type="application/javascript" src="js/alarmManager.js"></script>
     <script type="application/javascript" src="js/stopwatch.js"></script>
     <script type="application/javascript" src="js/timer.js"></script>
   </head>
@@ -61,11 +64,11 @@
           <a id="alarm-new" href="#alarm" class="right button plus"></a>
           <ul id="alarms" class="tableView"></ul>
         </div>
-        <div id="banner-countdown" class="banner">
+        <section id="banner-countdown" role="status">
           <p> <!-- this will be replaced dynamically -->
             The alarm is set for <strong>8 hours</strong> and <strong>45 minutes</strong> from now.
           </p>
-        </div>
+        </section>
       </div>
 
       <div id="stopwatch-view" class="active view" hidden="true">
@@ -127,7 +130,7 @@
     <!-- Alarm -->
     <section id="alarm" class="view skin-organic" role="region" data-title="Alarm">
       <header>
-        <a href="#alarm-view" id="alarm-clock-container"><span class="icon icon-back" id="alarm-back" >back</span></a>
+        <a href="#alarm-view" id="alarm-clock-container"><span class="icon icon-close" id="alarm-close" >close</span></a>
         <menu type="toolbar">
           <a id="alarm-done" href="#alarm-view" data-l10n-id="done">Done</a>
         </menu>

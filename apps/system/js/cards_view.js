@@ -27,6 +27,8 @@ var CardsView = (function() {
   var cardsList = cardsView.firstElementChild;
   var displayedApp;
   var runningApps;
+  // Unkillable apps which have attention screen now
+  var attentionScreenApps = [];
   // Card which we are re-ordering now
   var reorderedCard = null;
   var currentDisplayed = 0;
@@ -94,7 +96,6 @@ var CardsView = (function() {
 
     // events to handle
     window.addEventListener('lock', CardsView);
-    window.addEventListener('attentionscreenshow', CardsView);
 
     // Close utility tray if it is opened.
     UtilityTray.hide(true);
@@ -210,7 +211,7 @@ var CardsView = (function() {
       title.textContent = app.name;
       card.appendChild(title);
 
-      var frameForScreenshot = app.frame;
+      var frameForScreenshot = app.iframe;
 
       if (PopupManager.getPopupFromOrigin(origin)) {
         var popupFrame = PopupManager.getPopupFromOrigin(origin);
@@ -240,6 +241,10 @@ var CardsView = (function() {
         header.innerHTML += '</h1></header>';
         card.appendChild(header);
         card.classList.add('trustedui');
+      } else if (attentionScreenApps.indexOf(origin) == -1) {
+        var closeButton = document.createElement('div');
+        closeButton.classList.add('close-card');
+        card.appendChild(closeButton);
       }
 
       cardsList.appendChild(card);
@@ -263,11 +268,34 @@ var CardsView = (function() {
     }
   }
 
-  function runApp() {
+  function runApp(e) {
+    // Handle close events
+    if (e.target.classList.contains('close-card')) {
+      var element = e.target.parentNode;
+      cardsList.removeChild(element);
+      closeApp(element, true);
+      return;
+    }
+
     var origin = this.dataset.origin;
     alignCard(currentDisplayed, function cardAligned() {
       WindowManager.launch(origin);
     });
+  }
+
+  function closeApp(element, removeImmediately) {
+    // Stop the app itself
+    WindowManager.kill(element.dataset.origin);
+
+    // Fix for non selectable cards when we remove the last card
+    // Described in https://bugzilla.mozilla.org/show_bug.cgi?id=825293
+    if (cardsList.children.length === currentDisplayed) {
+      currentDisplayed--;
+    }
+
+    // If there are no cards left, then dismiss the task switcher.
+    if (!cardsList.children.length)
+      hideCardSwitcher(removeImmediately);
   }
 
   function getOriginObject(url) {
@@ -310,13 +338,12 @@ var CardsView = (function() {
 
   getOffOrigin.cache = {};
 
-  function hideCardSwitcher() {
+  function hideCardSwitcher(removeImmediately) {
     if (!cardSwitcherIsShown())
       return;
 
     // events to handle
     window.removeEventListener('lock', CardsView);
-    window.removeEventListener('attentionscreenshow', CardsView);
 
     // Make the cardsView overlay inactive
     cardsView.classList.remove('active');
@@ -329,14 +356,19 @@ var CardsView = (function() {
     screenshotObjectURLs = [];
 
     // And remove all the cards from the document after the transition
-    cardsView.addEventListener('transitionend', function removeCards() {
+    function removeCards() {
       cardsView.removeEventListener('transitionend', removeCards);
       screenElement.classList.remove('cards-view');
 
       while (cardsList.firstElementChild) {
         cardsList.removeChild(cardsList.firstElementChild);
       }
-    });
+    }
+    if (removeImmediately) {
+      removeCards();
+    } else {
+      cardsView.addEventListener('transitionend', removeCards);
+    }
   }
 
   function cardSwitcherIsShown() {
@@ -468,8 +500,10 @@ var CardsView = (function() {
 
     if (SNAPPING_SCROLLING && !draggingCardUp && reorderedCard === null) {
       if (Math.abs(eventDetail.dx) > threshold) {
-        if (direction === 'left' &&
-            currentDisplayed <= cardsList.children.length) {
+        if (
+            direction === 'left' &&
+            currentDisplayed < cardsList.children.length - 1
+        ) {
           currentDisplayed++;
           alignCard(currentDisplayed);
         } else if (direction === 'right' && currentDisplayed > 0) {
@@ -490,7 +524,10 @@ var CardsView = (function() {
     ) {
 
       draggingCardUp = false;
-      if (-eventDetail.dy > removeCardThreshold) {
+      // Prevent user from closing the app with a attention screen
+      if (-eventDetail.dy > removeCardThreshold &&
+        attentionScreenApps.indexOf(element.dataset.origin) == -1
+      ) {
 
         // remove the app also from the ordering list
         if (
@@ -511,12 +548,7 @@ var CardsView = (function() {
         // Remove the icon from the task list
         cardsList.removeChild(element);
 
-        // Stop the app itself
-        WindowManager.kill(element.dataset.origin);
-
-        // If there are no cards left, then dismiss the task switcher.
-        if (!cardsList.children.length)
-          hideCardSwitcher();
+        closeApp(element);
 
         return;
       } else {
@@ -605,10 +637,18 @@ var CardsView = (function() {
 
       case 'lock':
       case 'attentionscreenshow':
+        attentionScreenApps = AttentionScreen.getAttentionScreenOrigins();
         hideCardSwitcher();
         break;
 
+      case 'attentionscreenhide':
+        attentionScreenApps = AttentionScreen.getAttentionScreenOrigins();
+        break;
+
       case 'holdhome':
+        if (LockScreen.locked)
+          return;
+
         SleepMenu.hide();
         showCardSwitcher();
         break;
@@ -628,6 +668,8 @@ var CardsView = (function() {
   };
 })();
 
+window.addEventListener('attentionscreenshow', CardsView);
+window.addEventListener('attentionscreenhide', CardsView);
 window.addEventListener('holdhome', CardsView);
 window.addEventListener('home', CardsView);
 window.addEventListener('appwillopen', CardsView);
