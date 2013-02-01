@@ -1,0 +1,3 @@
+var MockCaptivePortal = {
+	isManualConnected: false
+}
