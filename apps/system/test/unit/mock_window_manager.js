@@ -7,10 +7,16 @@ var MockWindowManager = {
     this.mLastKilledOrigin = origin;
   },
 
-  mDisplayedApp: '',
+  isFtuRunning: function mwm_isFtuRunning() {
+    return this.mFtuRunning;
+  },
+
+  mFtuRunning: false,
+  mDisplayedApp: {},
   mLastKilledOrigin: '',
   mTeardown: function() {
-    this.mDisplayedApp = '';
+    this.mDisplayedApp = {};
     this.mLastKilledOrigin = '';
+    this.mFtuRunning = false;
   }
 };

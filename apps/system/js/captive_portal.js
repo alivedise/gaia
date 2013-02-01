@@ -21,6 +21,14 @@ var CaptivePortal = {
     var networkName = (currentNetwork && currentNetwork.ssid) ?
         currentNetwork.ssid : '';
     var message = _('captive-wifi-available', { networkName: networkName });
+
+    if (WindowManager.isFtuRunning()) {
+      settings.createLock().set({'wifi.connect_via_settings': false});
+
+      this.entrySheet = new EntrySheet(document.getElementById('screen'), url, new Browser(url));
+      return;
+    }
+
     if (!this.isManualConnect) {
       this.notification = NotificationScreen.addNotification({
         id: id, title: '', text: message, icon: null
@@ -49,14 +57,19 @@ var CaptivePortal = {
     var _ = window.navigator.mozL10n.get;
     var settings = window.navigator.mozSettings;
 
-    if (id === this.eventId && this.notification) {
-      if (this.notification.parentNode) {
+    if (id === this.eventId) {
+      if (this.notification && this.notification.parentNode) {
         if (this.captiveNotification_onTap) {
           this.notification.removeEventListener('tap', this.captiveNotification_onTap);
           this.captiveNotification_onTap = null;
         }
         NotificationScreen.removeNotification(id);
         this.notification = null;
+      }
+
+      if (this.entrySheet) {
+        this.entrySheet.close();
+        this.entrySheet = null;
       }
     }
   },
