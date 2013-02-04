@@ -21,6 +21,14 @@ var CaptivePortal = {
     var networkName = (currentNetwork && currentNetwork.ssid) ?
         currentNetwork.ssid : '';
     var message = _('captive-wifi-available', { networkName: networkName });
+
+    if (WindowManager.isFtuRunning()) {
+      settings.createLock().set({'wifi.connect_via_settings': false});
+
+      this.entrySheet = new EntrySheet(document.getElementById('screen'), url, new Browser(url));
+      return;
+    }
+
     if (!this.isManualConnect) {
       this.notification = NotificationScreen.addNotification({
         id: id, title: '', text: message, icon: null
