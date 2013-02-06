@@ -1212,10 +1212,6 @@ var WindowManager = (function() {
       frame.classList.add('ftu');
     }
 
-    // A frame should start with visible false
-    if ('setVisible' in iframe)
-      iframe.setVisible(false);
-
     numRunningApps++;
 
     return app;
