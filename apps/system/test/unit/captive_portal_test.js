@@ -15,7 +15,7 @@ requireApp('system/test/unit/mock_activity.js');
 requireApp('system/test/unit/mock_notification_screen.js');
 requireApp('system/test/unit/mock_window_manager.js');
 
-requireApp('system/js/browser.js');
+requireApp('system/js/browser_element.js');
 requireApp('system/js/entry_sheet.js');
 requireApp('system/js/captive_portal.js');
 

@@ -37,7 +37,7 @@ var EntrySheet = (function invocation() {
   // These are helper functions and variables used by the methods above
   // They're not part of the public API of the module, but they're hidden
   // within this function scope so we don't have to define them as a
-  // property of Browser or prefix them with underscores.
+  // property of EntrySheet or prefix them with underscores.
   // Now define instance methods on Set.prototype.
   function view() {
     return '<div class="' + EntrySheet.className + '">' +
@@ -65,7 +65,7 @@ var EntrySheet = (function invocation() {
     this.element.dataset.zIndexLevel = 'dialog-overlay';
 
     var self = this;
-    if (Browser && content instanceof Browser) {
+    if (typeof(BrowserElement) != 'undefined' && content instanceof BrowserElement) {
       content.element.addEventListener('mozbrowserloadstart', function onLoadStart(){
         self.throbberElement.dataset.loading = true;
       });

@@ -25,7 +25,7 @@ var CaptivePortal = {
     if (WindowManager.isFtuRunning()) {
       settings.createLock().set({'wifi.connect_via_settings': false});
 
-      this.entrySheet = new EntrySheet(document.getElementById('screen'), url, new Browser(url));
+      this.entrySheet = new EntrySheet(document.getElementById('screen'), url, new BrowserElement(url));
       this.entrySheet.open();
       return;
     }
