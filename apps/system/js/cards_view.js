@@ -271,6 +271,7 @@ var CardsView = (function() {
       // And then switch it with screenshots when one will be ready
       // (instead of -moz-element backgrounds)
       if (typeof frameForScreenshot.getScreenshot === 'function') {
+        frameForScreenshot.setVisible(true);
         frameForScreenshot.getScreenshot(rect.width, rect.height).onsuccess =
           function gotScreenshot(screenshot) {
             if (screenshot.target.result) {
@@ -287,6 +288,7 @@ var CardsView = (function() {
                 // Override the cached image
                 URL.revokeObjectURL(cachedLayer);
                 WindowManager.screenshots[origin] = objectURL;
+                frameForScreenshot.setVisible(false);
               }, 200);
             }
           };
