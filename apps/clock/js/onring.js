@@ -40,6 +40,7 @@ var RingView = {
     if (!document.mozHidden) {
       this.startAlarmNotification();
     } else {
+      console.log('[', new Date().toLocaleString(), '][clock] First checkin is HIDDEN.');
       // The setTimeout() is used to workaround
       // https://bugzilla.mozilla.org/show_bug.cgi?id=810431
       // The workaround is used in screen off mode.
@@ -52,6 +53,8 @@ var RingView = {
       // underneath the oncall screen
         if (!document.mozHidden) {
           self.startAlarmNotification();
+        } else {
+          console.log('[', new Date().toLocaleString(), '][clock] Second checkin is HIDDEN.');
         }
       }, 0);
     }

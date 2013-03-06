@@ -1,13 +1,5 @@
 'use strict';
 
-document.addEventListener('mozvisibilitychange', function visibilityChange() {
-  if (!document.mozHidden) {
-    console.log('[clock] I am shown.');
-  } else {
-    console.log('[clock] I am hidden.');
-  }
-});
-
 function escapeHTML(str, escapeQuotes) {
   var span = document.createElement('span');
   span.textContent = str;
