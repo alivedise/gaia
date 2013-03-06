@@ -55,6 +55,7 @@ var RingView = {
           self.startAlarmNotification();
         } else {
           console.log('[', new Date().toLocaleString(), '][clock] Second checkin is HIDDEN.');
+          timer();
         }
       }, 0);
     }
@@ -74,6 +75,7 @@ var RingView = {
     }
 
     if (enabled) {
+      console.log('[clock] waking screen!'); 
       this._screenLock = navigator.requestWakeLock('screen');
     } else if (this._screenLock) {
       this._screenLock.unlock();
@@ -214,3 +216,11 @@ window.addEventListener('localized', function showBody() {
 });
 
 
+var count = 10;
+function timer() {
+  if (count > 0) {
+    count--;
+    console.log('[', new Date().toLocaleString(), '][clock] ', 10 - count,' cont checkin is .', document.mozHidden ? 'HIDDEN':'SHOWN');
+    setTimeout(timer, 300);
+  }
+}

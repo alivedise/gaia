@@ -129,6 +129,7 @@ var AttentionScreen = {
     // The setTimeout() and the closure is used to workaround
     // https://bugzilla.mozilla.org/show_bug.cgi?id=810431
     setTimeout(function(frame) {
+      console.log(new Date().toLocaleString(), '[non clock] set true!');
       frame.setVisible(true);
       frame.focus();
     }, 0, frames[i]);
@@ -137,6 +138,7 @@ var AttentionScreen = {
       // The setTimeout() and the closure is used to workaround
       // https://bugzilla.mozilla.org/show_bug.cgi?id=810431
       setTimeout(function(frame) {
+        console.log(new Date().toLocaleString(), '[non clock] set false!');
         frame.setVisible(false);
         frame.blur();
       }, 0, frames[i]);

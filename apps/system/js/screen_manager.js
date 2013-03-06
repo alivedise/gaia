@@ -203,6 +203,7 @@ var ScreenManager = {
         break;
 
       case 'wake':
+        console.log('[', new Date().toLocaleString(), '][non clock] Turning screen on!');
         this.turnScreenOn();
         break;
 
@@ -364,6 +365,7 @@ var ScreenManager = {
     var power = navigator.mozPower;
     if (power)
       power.screenEnabled = true;
+    console.log('[', new Date().toLocaleString(), '][non clock] screen is actually on.');
     this.screenEnabled = true;
     this.screen.classList.remove('screenoff');
 
