@@ -8,6 +8,7 @@ var RingView = {
   _vibrateInterval: null,
   _screenLock: null,
   _onFireAlarm: {},
+  _started: false,
 
   get time() {
     delete this.time;
@@ -55,9 +56,9 @@ var RingView = {
           self.startAlarmNotification();
         } else {
           console.log('[', new Date().toLocaleString(), '][clock] Second checkin is HIDDEN.');
-          timer();
+          // Our final chance is to rely on visibilitychange event handler.
         }
-      }, 0);
+      }, 1);
     }
 
     this.setAlarmTime();
@@ -129,6 +130,11 @@ var RingView = {
   },
 
   startAlarmNotification: function rv_startAlarmNotification() {
+    // Ensure called only once.
+    if (this._started)
+      return;
+
+    this._started = true;
     this.setWakeLockEnabled(true);
     this.ring();
     this.vibrate();
@@ -176,9 +182,11 @@ var RingView = {
   handleEvent: function rv_handleEvent(evt) {
     switch (evt.type) {
     case 'mozvisibilitychange':
-      // https://bugzilla.mozilla.org/show_bug.cgi?id=810431
-      // Since Bug 810431 is not fixed yet,
-      // be carefull to use the event here during alarm goes off.
+      // There's chance to miss the mozHidden state when inited,
+      // before setVisible take effects, there may be a latency.
+      if (!document.mozHidden) {
+        this.startAlarmNotification();
+      }
       break;
     case 'mozinterruptbegin':
       // Only ringer/telephony channel audio could trigger 'mozinterruptbegin'
@@ -221,6 +229,6 @@ function timer() {
   if (count > 0) {
     count--;
     console.log('[', new Date().toLocaleString(), '][clock] ', 10 - count,' cont checkin is .', document.mozHidden ? 'HIDDEN':'SHOWN');
-    setTimeout(timer, 300);
+    setTimeout(timer, 10);
   }
 }
