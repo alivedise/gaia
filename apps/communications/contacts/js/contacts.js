@@ -46,6 +46,8 @@ var Contacts = (function() {
     var params = hasParams.length > 1 ?
       extractParams(hasParams[1]) : -1;
 
+    console.log(JSON.stringify(params), '[alive]');
+
     switch (sectionId) {
       case 'view-contact-details':
         initDetails(function onInitDetails() {
@@ -68,7 +70,9 @@ var Contacts = (function() {
       case 'view-contact-form':
         initForm(function onInitForm() {
           if (params == -1 || !('id' in params)) {
-            contactsForm.render(params, goToForm);
+            
+              contactsForm.render(params, goToForm);
+            
           } else {
             // Editing existing contact
             if ('id' in params) {

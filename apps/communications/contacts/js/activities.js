@@ -39,7 +39,7 @@ var ActivityHandler = {
       }
       hash += '?' + params.join('&');
     }
-    document.location.hash = hash;
+    document.location.hash = hash + '&transition=immediate';
   },
   handle: function ah_handle(activity) {
     switch (activity.source.name) {

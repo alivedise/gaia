@@ -1,4 +1,4 @@
-'use strict';
+//'use strict';
 
 var contacts = window.contacts || {};
 
@@ -119,6 +119,7 @@ contacts.Details = (function() {
   };
 
   var render = function cd_render(currentContact, tags, isEnrichedContact) {
+    console.log('[alive]', arguments.caller.callee.name);
     contactData = currentContact || contactData;
 
     TAG_OPTIONS = tags || TAG_OPTIONS;

@@ -3,7 +3,8 @@
 function navigationStack(currentView) {
   var transitions = {
     'right-left': 'view-right',
-    'popup': 'view-bottom'
+    'popup': 'view-bottom',
+    'immediate': ''
   };
 
   var _currentView = currentView;
