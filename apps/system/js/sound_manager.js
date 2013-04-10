@@ -4,6 +4,12 @@
 'use strict';
 
 (function() {
+  // This timer is to keep current active channel until next
+  // non-empty channel comes. The main purpose is for tracking
+  // audio volume modifying.
+  var audioChannelTimer = null;
+  var lastActiveChannel = 'none';
+
   window.addEventListener('volumeup', function() {
     if (ScreenManager.screenEnabled || currentChannel !== 'none') {
       if (onBTEarphoneConnected() && onCall()) {
@@ -37,6 +43,17 @@
     if (type == 'bluetooth-volumeset') {
       changeVolume(e.detail.value - currentVolume['bt_sco'], 'bt_sco');
     } else if (type == 'audio-channel-changed') {
+      if (audioChannelTimer)
+        clearTimeout(audioChannelTimer);
+
+      if (e.detail.channel == 'none') {
+        audioChannelTimer = setTimeout(function() {
+          lastActiveChannel = 'none';
+          audioChannelTimer = null;
+        }, 2000);
+      } else {
+        lastActiveChannel = currentChannel;
+      }
       currentChannel = e.detail.channel;
     }
   });
@@ -134,7 +151,11 @@
       case 'notification':
       case 'ringer':
       default:
-        return 'notification';
+        if (lastActiveChannel == 'none') {
+          return 'notification';
+        } else {
+          return lastActiveChannel;
+        }
     }
   }
 
