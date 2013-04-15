@@ -243,7 +243,7 @@ var CallHandler = (function callHandler() {
 
   /* === Calls === */
   function call(number) {
-    if (MmiManager.isMMI(number)) {
+    if (typeof(MmiManager) != 'undefined' && MmiManager.isMMI(number)) {
       MmiManager.send(number);
       // Clearing the code from the dialer screen gives the user immediate
       // feedback.
