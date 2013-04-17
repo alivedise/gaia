@@ -865,8 +865,15 @@ var WindowManager = (function() {
     evt.initCustomEvent('appwillclose', true, false, { origin: origin });
     closeFrame.dispatchEvent(evt);
 
+    if ('wrapper' in closeFrame.dataset) {
+      wrapperHeader.classList.remove('visible');
+      wrapperFooter.classList.remove('visible');
+    }
+
     transitionCloseCallback = function startClosingTransition() {
       // We have been canceled by another transition.
+      console.log('[alive]', closeFrame);
+
       if (!closeFrame || transitionCloseCallback != startClosingTransition)
         return;
 
@@ -877,11 +884,11 @@ var WindowManager = (function() {
       closeFrame.classList.add('closing');
       closeFrame.classList.remove('active');
 
-      if ('wrapper' in closeFrame.dataset) {
-        wrapperHeader.classList.remove('visible');
-        wrapperFooter.classList.remove('visible');
-      }
+      console.log('[alive]', closeFrame, closeFrame.firstChild.dataset.frameOrigin);
     };
+
+
+    console.log('[alive]', closeFrame, closeFrame.firstChild.dataset.frameOrigin);
 
     waitForNextPaint(homescreenFrame, transitionCloseCallback);
   }
