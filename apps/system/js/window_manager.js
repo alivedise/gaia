@@ -47,7 +47,7 @@
 //
 
 var WindowManager = (function() {
-  'use strict';
+  //'use strict';
 
   function debug(str) {
     dump('WindowManager: ' + str + '\n');
@@ -68,8 +68,6 @@ var WindowManager = (function() {
   // Some document elements we use
   var windows = document.getElementById('windows');
   var screenElement = document.getElementById('screen');
-  var wrapperHeader = document.querySelector('#wrapper-activity-indicator');
-  var wrapperFooter = document.querySelector('#wrapper-footer');
   var kTransitionTimeout = 1000;
 
   // Set this to true to debugging the transitions and state change
@@ -173,6 +171,8 @@ var WindowManager = (function() {
 
     var cssWidth = window.innerWidth + 'px';
     var cssHeight = window.innerHeight - StatusBar.height;
+    // XXX: We shouldn't deal with wrapper size here.
+    // Let appWindow do resize by itself.
     if ('wrapper' in frame.dataset) {
       cssHeight -= 10;
     }
@@ -229,7 +229,7 @@ var WindowManager = (function() {
       frame.style.height = window.innerHeight + 'px';
       frame.style.top = '0px';
     } else {
-      if ('wrapper' in appFrame.dataset) {
+      if (app.isWrapper) {
         frame.style.height = window.innerHeight - StatusBar.height + 'px';
       } else {
         frame.style.height = appFrame.style.height;
@@ -437,10 +437,6 @@ var WindowManager = (function() {
     if (displayedApp == iframe.dataset.frameOrigin) {
       frame.classList.add('active');
       windows.classList.add('active');
-
-      if ('wrapper' in frame.dataset) {
-        wrapperFooter.classList.add('visible');
-      }
 
       // Take the focus away from the currently displayed app
       var app = runningApps[displayedApp];
@@ -865,11 +861,8 @@ var WindowManager = (function() {
       closeFrame.classList.add('closing');
       closeFrame.classList.remove('active');
 
-      if ('wrapper' in closeFrame.dataset) {
-        wrapperHeader.classList.remove('visible');
-        wrapperFooter.classList.remove('visible');
-      }
     };
+
 
     waitForNextPaint(homescreenFrame, transitionCloseCallback);
   }
@@ -1174,20 +1167,6 @@ var WindowManager = (function() {
     // platform.
     iframe.setAttribute('mozbrowser', 'true');
 
-    // These apps currently have bugs preventing them from being
-    // run out of process. All other apps will be run OOP.
-    //
-    var host = document.location.host;
-    var domain = host.replace(/(^[\w\d]+\.)?([\w\d]+\.[a-z]+)/, '$2');
-    var protocol = document.location.protocol + '//';
-    var browserManifestUrl =
-      protocol + 'browser.' + domain + '/manifest.webapp';
-    var outOfProcessBlackList = [
-      browserManifestUrl
-      // Requires nested content processes (bug 761935).  This is not
-      // on the schedule for v1.
-    ];
-
     if (!isOutOfProcessDisabled &&
         outOfProcessBlackList.indexOf(manifestURL) === -1) {
       // FIXME: content shouldn't control this directly
@@ -1209,8 +1188,23 @@ var WindowManager = (function() {
   function appendFrame(origFrame, origin, url, name, manifest, manifestURL,
                        expectingSystemMessage) {
     // Create the <iframe mozbrowser mozapp> that hosts the app
+    
+    // These apps currently have bugs preventing them from being
+    // run out of process. All other apps will be run OOP.
+    //
+    var host = document.location.host;
+    var domain = host.replace(/(^[\w\d]+\.)?([\w\d]+\.[a-z]+)/, '$2');
+    var protocol = document.location.protocol + '//';
+    var browserManifestUrl =
+      protocol + 'browser.' + domain + '/manifest.webapp';
+    var outOfProcessBlackList = [
+      browserManifestUrl
+      // Requires nested content processes (bug 761935).  This is not
+      // on the schedule for v1.
+    ];
+
     var frame =
-        createFrame(origFrame, origin, url, name, manifest, manifestURL);
+        BrowserFrame.browserize(origFrame, origin, url, name, manifest, manifestURL);
     var iframe = frame.firstChild;
     frame.id = 'appframe' + nextAppId++;
     iframe.dataset.frameType = 'window';
@@ -1324,10 +1318,6 @@ var WindowManager = (function() {
       openFrame.classList.add('active');
       if (inlineActivityFrames.length == 1)
         activityCallerOrigin = displayedApp;
-      if ('wrapper' in runningApps[displayedApp].frame.dataset) {
-        wrapperFooter.classList.remove('visible');
-        wrapperHeader.classList.remove('visible');
-      }
     });
   }
 
@@ -1404,9 +1394,6 @@ var WindowManager = (function() {
       var app = runningApps[displayedApp];
       if (app && app.iframe) {
         app.iframe.focus();
-        if ('wrapper' in app.frame.dataset) {
-          wrapperFooter.classList.add('visible');
-        }
       }
       screenElement.classList.remove('inline-activity');
     }
@@ -1835,150 +1822,15 @@ var WindowManager = (function() {
       lock.set({'clear.remote-windows.data': false});
     });
 
-  // Watch for window.open usages in order to open wrapper frames
-  window.addEventListener('mozbrowseropenwindow', function handleWrapper(evt) {
+  window.addEventListener('wrapperappend', function handleWrapper(evt) {
     var detail = evt.detail;
-    var features;
-    try {
-      features = JSON.parse(detail.features);
-    } catch (e) {
-      features = {};
-    }
+    var app = appendFrame(detail.iframe, detail.origin, detail.url,
+      detail.title, { 'name': title }, null, /* expectingSystemMessage */ false);
 
-    // Handles only call to window.open with `{remote: true}` feature.
-    if (!features.remote)
-      return;
-
-    // XXX bug 819882: for now, only allows homescreen to open oop windows
-    var callerIframe = evt.target;
-    var callerFrame = callerIframe.parentNode;
-    var manifestURL = callerIframe.getAttribute('mozapp');
-    var callerApp = Applications.getByManifestURL(manifestURL);
-    if (!callerApp || !callerFrame.classList.contains('homescreen'))
-      return;
-    var callerOrigin = callerApp.origin;
-
-    // So, we are going to open a remote window.
-    // Now, avoid PopupManager listener to be fired.
-    evt.stopImmediatePropagation();
-
-    var name = detail.name;
-    var url = detail.url;
-
-    // Use fake origin for named windows in order to be able to reuse them,
-    // otherwise always open a new window for '_blank'.
-    var origin = null;
-    var app = null;
-    if (name == '_blank') {
-      origin = url;
-
-      // Just bring on top if a wrapper window is already running with this url
-      if (origin in runningApps &&
-          runningApps[origin].windowName == '_blank') {
-        setDisplayedApp(origin);
-        return;
-      }
-    } else {
-      origin = 'window:' + name + ',source:' + callerOrigin;
-
-      var runningApp = runningApps[origin];
-      if (runningApp && runningApp.windowName === name) {
-        if (runningApp.iframe.src === url) {
-          // If the url is already loaded, just display the app
-          setDisplayedApp(origin);
-          return;
-        } else {
-          // Wrapper context shouldn't be shared between two apps -> killing
-          kill(origin);
-        }
-      }
-    }
-
-    var title = '', icon = '', remote = false, useAsyncPanZoom = false;
-    var originName, originURL, searchName, searchURL;
-
-    try {
-      var features = JSON.parse(detail.features);
-      var regExp = new RegExp('&nbsp;', 'g');
-
-      title = features.name.replace(regExp, ' ') || url;
-      icon = features.icon || '';
-
-      if (features.origin) {
-        originName = features.origin.name.replace(regExp, ' ');
-        originURL = decodeURIComponent(features.origin.url);
-      }
-
-      if (features.search) {
-        searchName = features.search.name.replace(regExp, ' ');
-        searchURL = decodeURIComponent(features.search.url);
-      }
-
-      if (features.useAsyncPanZoom)
-        useAsyncPanZoom = true;
-    } catch (ex) { }
-
-    // If we don't reuse an existing app, open a brand new one
-    var iframe;
-    if (!app) {
-      // Bug 807438: Move new window document OOP
-      // Ignore `event.detail.frameElement` for now in order
-      // to create a remote system app frame.
-      // So that new window documents are going to share
-      // system app content processes data jar.
-      iframe = document.createElement('iframe');
-      iframe.setAttribute('mozbrowser', 'true');
-      iframe.setAttribute('remote', 'true');
-
-      iframe.addEventListener('mozbrowserloadstart', function start() {
-        iframe.dataset.loading = true;
-        wrapperHeader.classList.add('visible');
-      });
-
-      iframe.addEventListener('mozbrowserloadend', function end() {
-        delete iframe.dataset.loading;
-        wrapperHeader.classList.remove('visible');
-      });
-
-      // `mozasyncpanzoom` only works when added before attaching the iframe
-      // node to the document.
-      if (useAsyncPanZoom) {
-        iframe.dataset.useAsyncPanZoom = true;
-        iframe.setAttribute('mozasyncpanzoom', 'true');
-      }
-
-      var app = appendFrame(iframe, origin, url, title, {
-        'name': title
-      }, null, /* expectingSystemMessage */ false);
-
-      // Set the window name in order to reuse this app if we try to open
-      // a new window with same name
-      app.windowName = name;
-    } else {
-      iframe = app.iframe;
-
-      // Update app name for the card view
-      app.manifest.name = title;
-    }
-
-    iframe.dataset.name = title;
-    iframe.dataset.icon = icon;
-
-    if (originName)
-      iframe.dataset.originName = originName;
-    if (originURL)
-      iframe.dataset.originURL = originURL;
-
-    if (searchName)
-      iframe.dataset.searchName = searchName;
-    if (searchURL)
-      iframe.dataset.searchURL = searchURL;
-
-    // First load blank page in order to hide previous website
-    iframe.src = url;
-
-    setDisplayedApp(origin);
-  }, true); // Use capture in order to catch the event before PopupManager does
+    // Set the window name in order to reuse this app if we try to open
+    // a new window with same name
+    app.windowName = name;
+  }); // Use capture in order to catch the event before PopupManager does
 
 
   // Stop running the app with the specified origin
