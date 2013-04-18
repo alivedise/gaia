@@ -72,8 +72,6 @@ var WindowManager = (function() {
   // Some document elements we use
   var windows = document.getElementById('windows');
   var screenElement = document.getElementById('screen');
-  var wrapperHeader = document.querySelector('#wrapper-activity-indicator');
-  var wrapperFooter = document.querySelector('#wrapper-footer');
   var kTransitionTimeout = 1000;
 
   // Set this to true to debugging the transitions and state change
@@ -177,6 +175,8 @@ var WindowManager = (function() {
 
     var cssWidth = window.innerWidth + 'px';
     var cssHeight = window.innerHeight - StatusBar.height;
+    // XXX: We shouldn't deal with wrapper size here.
+    // Let appWindow do resize by itself.
     if ('wrapper' in frame.dataset) {
       cssHeight -= 10;
     }
@@ -233,7 +233,7 @@ var WindowManager = (function() {
       frame.style.height = window.innerHeight + 'px';
       frame.style.top = '0px';
     } else {
-      if ('wrapper' in appFrame.dataset) {
+      if (app.isWrapper) {
         frame.style.height = window.innerHeight - StatusBar.height + 'px';
       } else {
         frame.style.height = appFrame.style.height;
@@ -400,10 +400,6 @@ var WindowManager = (function() {
       // If this is a cold launch let's wait for the app to load first
       var iframe = openFrame.firstChild;
       if ('unpainted' in iframe.dataset) {
-
-        if ('wrapper' in frame.dataset)
-          wrapperFooter.classList.add('visible');
-
         iframe.addEventListener('mozbrowserloadend', function on(e) {
           iframe.removeEventListener('mozbrowserloadend', on);
           onWindowReady();
@@ -440,10 +436,6 @@ var WindowManager = (function() {
     if (displayedApp == iframe.dataset.frameOrigin) {
       frame.classList.add('active');
       windows.classList.add('active');
-
-      if ('wrapper' in frame.dataset) {
-        wrapperFooter.classList.add('visible');
-      }
 
       // Take the focus away from the currently displayed app
       var app = runningApps[displayedApp];
@@ -864,11 +856,6 @@ var WindowManager = (function() {
     var evt = document.createEvent('CustomEvent');
     evt.initCustomEvent('appwillclose', true, false, { origin: origin });
     closeFrame.dispatchEvent(evt);
-
-    if ('wrapper' in closeFrame.dataset) {
-      wrapperHeader.classList.remove('visible');
-      wrapperFooter.classList.remove('visible');
-    }
 
     transitionCloseCallback = function startClosingTransition() {
       // We have been canceled by another transition.
@@ -1354,10 +1341,6 @@ var WindowManager = (function() {
       openFrame.classList.add('active');
       if (inlineActivityFrames.length == 1)
         activityCallerOrigin = displayedApp;
-      if ('wrapper' in runningApps[displayedApp].frame.dataset) {
-        wrapperFooter.classList.remove('visible');
-        wrapperHeader.classList.remove('visible');
-      }
     });
   }
 
@@ -1431,9 +1414,6 @@ var WindowManager = (function() {
       var app = runningApps[displayedApp];
       if (app && app.iframe) {
         app.iframe.focus();
-        if ('wrapper' in app.frame.dataset) {
-          wrapperFooter.classList.add('visible');
-        }
       }
       screenElement.classList.remove('inline-activity');
     }
