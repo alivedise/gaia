@@ -141,6 +141,10 @@
     // we may need to export the error state of AppWindow instance
     // to the other module in the future.
     this.appError = new AppError(this);
+
+    if (this.iframe.isWrapper && typeof(Wrapper) != 'undefined')
+      this.wrapper = new AppWrapper(this);
+
     if (ENABLE_LOG)
       this.appLog = new AppLog(this);
 

@@ -32,8 +32,13 @@ var BrowserFrame = (function invocation() {
     if (oop)
       browser.setAttribute('remote', 'true');
 
-    if (manifestURL)
+    if (manifestURL) {
       browser.setAttribute('mozapp', manifestURL);
+    } else {
+      // Create a mozbrowser iframe "without manifestURL"
+      // means that we are only a web page instead of a web app.
+      browser.isWrapper = true;
+    }
 
     browser.src = url;
 
