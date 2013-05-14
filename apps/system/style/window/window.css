@@ -1,0 +1,299 @@
+/**
+ * window.css
+ * Define *Window styles.
+ * The transitions are defined here and 
+ * used in *_window.js.
+ */
+
+
+/**
+ * App window style.
+ * A window directly under #windows element.
+ * It may be an app or a web page.
+ */
+
+#windows > .appWindow {
+  position: fixed;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  left: 0;
+  top: 2rem;
+
+  /*
+   * Do not specify height/width here!
+   * They should be handle executively in app_window.js
+   * by calling resize().
+   */
+
+  /*
+   * Disable this for now because it forces an expensive fallback path in
+   * Gecko.  The performance issue should be fixed by
+   * https://bugzilla.mozilla.org/show_bug.cgi?id=697645 or a related bug.
+   *
+    border-radius: 0.8rem;
+   */
+
+  background-repeat: no-repeat;
+  background-position: center center;
+}
+
+#windows > .appWindow[data-homesreen="true"] {
+  background-color: black;
+}
+
+#windows > .appWindow:not([data-homesreen="true"]).render {
+  background-image: none !important;
+  background-color: transparent;
+}
+
+#windows > .appWindow:not([data-homescreen="true"]):not(.active):not([data-transition="opening"]):not([data-transition="closing"]):not(.inlineActivity) {
+  opacity: 0;
+}
+
+#windows > .appWindow > iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+#windows > .appWindow:not(.homescreen).render > iframe {
+  background-color: #fff;
+}
+
+#screen.active-statusbar #windows > .appWindow {
+  top: 4rem;
+}
+
+#screen > #windows > .appWindow[data-transition="closing"][data-switch="true"] {
+  transform: scale(0.6);
+}
+
+#windows > .appWindow[data-transition="opening"] {
+  animation: openApp .3s forwards ease;
+  pointer-events: auto;
+}
+
+#windows.slow-transition > .appWindow[data-transition="opening"],
+.appWindow[data-transtion="opening"] {
+  animation: openApp 3s forwards ease;
+}
+
+#screen > #windows > .appWindow[data-transition="opening-card"] {
+  animation: openAppFromCardView 0.15s forwards ease;
+}
+
+#screen > #windows.slow-transition > .appWindow[data-transition="opening"][data-cardview="true"],
+#screen > #windows.slow-transition > .appWindow[data-transtion="opening"][data-cardview="true"] {
+  animation: openAppFromCardView 1.5s forwards ease;
+}
+
+/* Opacity increases start up time then we don't use it anymore for opening */
+@keyframes openApp {
+  0%   { transform: scale(0.1) }
+  100% { transform: scale(1.0) }
+}
+
+#windows > .appWindow[data-transition="zoom-in"] {
+  transform: scale(1);
+  animation: zoom-in 0.3s forwards ease;
+}
+
+#windows.slow-transition > .appWindow[data-transition="zoom-in"] {
+  animation: zoom-in 3s forwards ease;
+}
+
+#screen.switch-app > #windows > .appWindow[data-transition="zoom-in"],
+#screen.cards-view > #windows > .appWindow[data-transition="zoom-in"] {
+  animation: none;
+}
+
+/**
+ * Animation used in homescreenWindow.
+ */
+
+@keyframes zoom-in {
+  0%   { transform: scale(1); }
+  100% { transform: scale(1.8); }
+}
+
+@keyframes openAppFromCardView {
+  0%   { transform: scale(0.8); }
+  100% { transform: scale(1.0); }
+}
+
+#screen > #windows > .appWindow[data-transition="opening"][data-switch="true"],
+#screen > #windows > .appWindow[data-transition="closing"][data-switch="true"] {
+  transition: transform 0.25s ease;
+  visibility: inherit;
+  opacity: 1;
+  animation: none;
+}
+
+#screen > #windows.slow-transition > .appWindow[data-transition="opening"][data-switch="true"],
+#screen > #windows.slow-transition > .appWindow[data-transition="closing"][data-switch="true"] {
+  transition: transform 5s ease;
+  animation: none;
+}
+
+#screen > #windows > .appWindow[data-position="card-right"] {
+  transform: translateX(70%) scale(0.6);
+  visibility: inherit;
+  transition: none;
+  animation: none;
+  opacity: 1;
+}
+
+#screen > #windows > .appWindow[data-transition="swap-in"] {
+  animation: swap-in 0.5s forwards ease;
+}
+
+#screen > #windows > .appWindow[data-transition="swap-out"] {
+  animation: swap-out 0.5s forwards ease;
+}
+
+#screen > #windows.slow-transition > .appWindow[data-transition="swap-in"] {
+  animation: swap-in 3s forwards ease;
+}
+
+#screen > #windows.slow-transition > .appWindow[data-transition="swap-out"] {
+  animation: swap-out 3s forwards ease;
+}
+
+#screen > #windows > .appWindow[data-position="card-right"][data-transition="move-in"] {
+  transform: scale(0.6);
+  transition: transform 0.25s ease;
+  visibility: inherit;
+  opacity: 1;
+}
+
+#screen > #windows.slow-transition > .appWindow[data-transition="closing-card"][data-switch="true"] {
+  transition: transform 5s ease;
+}
+
+#screen > #windows > .appWindow[data-transition="closing-card"] {
+  transform: translateX(-70%) scale(0.6);
+  transition: transform 0.25s ease;
+  visibility: inherit;
+  opacity: 1;
+}
+
+#screen > #windows.slow-transition > .appWindow[data-transition="closing-out"] {
+  transition: transform 5s ease;
+}
+
+#windows > .appWindow[data-transition="closing"] {
+  animation: closeApp 0.3s forwards ease;
+  /* The animation takes .3 seconds so users cannot touch the app while the
+   * closing animation is performing */
+  pointer-events: none;
+}
+
+#windows.slow-transition > .appWindow[data-transition="closing"] {
+  animation: closeApp 3s forwards ease;
+}
+
+#windows > .appWindow[data-transition="zoom-out"] {
+  transform: scale(1.8);
+  animation: zoom-out 0.3s forwards ease;
+}
+
+#windows.slow-transition > .appWindow[data-transition="zoom-out"] {
+  animation: zoom-out 3s forwards ease;
+}
+
+#screen > #windows > .appWindow[data-transition="zoom-out"][data-cardview="true"] {
+  animation: none;
+}
+
+@keyframes zoom-out {
+  0%   { transform: scale(1.8); }
+  100% { transform: scale(1); }
+}
+
+@keyframes swap-in {
+  0%   { transform: scale(1) translateX(130%); }
+  33%  { transform: scale(0.6) translateX(130%); }
+  66%  { transform: scale(0.6); }
+  100% { transform: scale(1); }
+}
+
+@keyframes swap-out {
+  0%   { transform: scale(1); }
+  33%  { transform: scale(0.6); }
+  66%  { transform: scale(0.6) translateX(-130%); }
+  100% { transform: scale(1) translateX(-130%); }
+}
+
+#screen.cards-view > #windows > .appWindow[data-transition="closing"] {
+  animation: closeAppTowardsCardView 0.15s forwards ease;
+}
+
+#screen.cards-view > #windows.slow-transition > .appWindow[data-transition="closing"] {
+  animation: closeAppTowardsCardView 1.5s forwards ease;
+}
+
+@keyframes closeApp {
+  0%   { transform: scale(1.0); opacity: 1; }
+  100% { transform: scale(0.1); opacity: 0; }
+}
+
+@keyframes closeAppTowardsCardView {
+  0%   { transform: scale(1.0); }
+  100% { transform: scale(0.8); }
+}
+
+#windows > .appWindow.inlineActivity,
+#windows > .appWindow.hideBottom {
+  transform: translateY(100%);
+  transition: transform 0.25s ease, visibility 0.25s ease;
+}
+
+#windows.slow-transition > .appWindow.inlineActivity,
+#windows.slow-transition > .appWindow.hideBottom {
+  transition: transform 5s ease, visibility 5s ease;
+}
+
+#windows > .appWindow.back {
+  transition: transform 0.25s ease, visibility 0.25s ease;
+  transform: scale(0.86);
+}
+
+#windows > .appWindow.restored {
+  transform: none;
+  transition: transform 0.25s ease;
+}
+
+#windows > .appWindow.inlineActivity.active {
+  transform: none;
+}
+
+#screen > #windows > .appWindow.fullscreen-app {
+  top: 0;
+}
+
+#screen.attention > #windows > .appWindow.fullscreen-app {
+  height: calc(100% - 4rem);
+  top: 4rem;
+}
+
+/**
+ * (inline)Activity window style
+ * Usually an activity window is put
+ * in another window.
+ * So popupWindow, appWindow, activityWindow
+ * itself may contain another activityWindow.
+ */
+
+#windows .activityWindow {
+  transform: translateY(100%);
+  transition: transform 0.25s ease, visibility 0.25s ease;
+}
+
+#windows .activityWindow.visible {
+  transform: translateY(0);
+}

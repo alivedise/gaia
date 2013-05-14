@@ -1,4 +1,4 @@
-#wrapper-activity-indicator {
+.wrapper-activity-indicator {
   position: fixed;
   top: 2rem; /* This is the status bar height */
   left: 0;
@@ -10,13 +10,14 @@
 
   pointer-events: none;
   visibility: hidden;
+  z-index: 2;
 }
 
-#wrapper-activity-indicator.visible {
+.wrapper-activity-indicator.visible {
   visibility: visible;
 }
 
-#wrapper-footer {
+.wrapper-footer {
   position: fixed;
   bottom: -4rem;
   left: 0;
@@ -27,14 +28,15 @@
 
   pointer-events: none;
   visibility: hidden;
+  z-index: 2;
 }
 
-#wrapper-footer.visible {
+.wrapper-footer.visible {
   pointer-events: auto;
   visibility: visible;
 }
 
-#handler {
+.handler {
   width: 100%;
   height: 1rem;
   background-color: #000;
@@ -42,11 +44,11 @@
   background-position: right;
 }
 
-#wrapper-footer.closed #handler {
+.wrapper-footer.closed #handler {
   background-image: url("images/open.png");
 }
 
-#wrapper-footer menu[type="buttonbar"] {
+.wrapper-footer menu[type="buttonbar"] {
   width: 100%;
   height: 4rem;
   margin: 0;
@@ -56,11 +58,11 @@
   -moz-transition: -moz-transform .4s ease;
 }
 
-#wrapper-footer.closed menu {
+.wrapper-footer.closed menu {
   -moz-transform: translateY(0);
 }
 
-#wrapper-footer menu button {
+.wrapper-footer menu button {
   background-color: transparent;
   -moz-appearance: none;
   border: none;
@@ -75,41 +77,41 @@
   opacity: 1;
 }
 
-#back-button {
+.back-button {
   background-image: url("images/back.png");
   background-size: 2rem;
 }
 
-#forward-button {
+.forward-button {
   background-image: url("images/forward.png");
   background-size: 3rem;
 }
 
-#reload-button {
+.reload-button {
   background-image: url("images/reload.png");
   background-size: 2.6rem;
 }
 
-#bookmark-button {
+.bookmark-button {
   background-image: url("images/bookmark.png");
   background-size: 3rem;
 }
 
-#bookmark-button[data-disabled] {
+.bookmark-button[data-disabled] {
   background-image: none;
 }
 
-#close-button {
+.close-button {
   background-image: url("images/close.png");
   background-size: 2.1rem;
 }
 
-#wrapper-footer menu button[data-disabled] {
+.wrapper-footer menu button[data-disabled] {
   opacity: .2;
   pointer-events: none;
 }
 
-#wrapper-footer input::-moz-focus-inner, input:active {
+.wrapper-footer input::-moz-focus-inner, input:active {
   border: 0;
   background: transparent !important;
 }

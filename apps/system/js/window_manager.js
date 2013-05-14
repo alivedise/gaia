@@ -975,14 +975,6 @@ var WindowManager = (function() {
     return frame;
   }
 
-  function maybeSetFrameIsCritical(iframe, origin) {
-    // XXX Those urls needs to be built dynamically.
-    if (origin.startsWith('app://communications.gaiamobile.org/dialer') ||
-        origin.startsWith('app://clock.gaiamobile.org')) {
-      iframe.setAttribute('mozapptype', 'critical');
-    }
-  }
-
   function appendFrame(origFrame, origin, url, name, manifest, manifestURL,
                        expectingSystemMessage) {
     // Create the <iframe mozbrowser mozapp> that hosts the app
@@ -1011,8 +1003,7 @@ var WindowManager = (function() {
       iframe.setAttribute('expecting-system-message',
                           'expecting-system-message');
     }
-    maybeSetFrameIsCritical(iframe, origin);
-
+    
     // Add the iframe to the document
     windows.appendChild(frame);
 
@@ -1060,8 +1051,7 @@ var WindowManager = (function() {
 
     iframe.setAttribute('expecting-system-message',
                         'expecting-system-message');
-    maybeSetFrameIsCritical(iframe, origin);
-
+    
     // Give a name to the frame for differentiating between main frame and
     // inline frame. With the name we can get frames of the same app using the
     // window.open method.
@@ -1260,16 +1250,6 @@ var WindowManager = (function() {
           splash = getIconForSplash(new ManifestHelper(currentEp));
         }
       }
-    }
-
-    if (splash) {
-      var a = document.createElement('a');
-      a.href = origin;
-      splash = a.protocol + '//' + a.hostname + ':' + (a.port || 80) + splash;
-
-      // Start to load the image in background to avoid flickering if possible.
-      var img = new Image();
-      img.src = splash;
     }
 
     switch (e.detail.type) {
@@ -1929,18 +1909,18 @@ var WindowManager = (function() {
     window.dispatchEvent(evt);
   });
 
-  // This is code copied from
-  // http://dl.dropbox.com/u/8727858/physical-events/index.html
-  // It appears to workaround the Nexus S bug where we're not
-  // getting orientation data.  See:
-  // https://bugzilla.mozilla.org/show_bug.cgi?id=753245
-  // It seems it needs to be in both window_manager.js and bootstrap.js.
-  function dumbListener2(event) {}
-  window.addEventListener('devicemotion', dumbListener2);
+  function fire(type, detail) {
+    var evt = new Event(type, detail);
+    window.dispatchEvent(evt);
+  }
 
-  window.setTimeout(function() {
-    window.removeEventListener('devicemotion', dumbListener2);
-  }, 2000);
+  function init() {
+    // XXX: Remove FtuLauncher dependency here.
+    // 
+    // Determine to launch FTU or homescreen.
+    if (FtuLauncher)
+      retrieveHomescreen(FtuLauncher.retrieve.bind(FtuLauncher));
+  }
 
   // Return the object that holds the public API
   return {
@@ -1967,7 +1947,8 @@ var WindowManager = (function() {
     },
     toggleHomescreen: toggleHomescreen,
     retrieveHomescreen: retrieveHomescreen,
-    screenshots: screenshots
+    screenshots: screenshots,
+    init: init
   };
 }());
 

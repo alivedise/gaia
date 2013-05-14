@@ -11,6 +11,7 @@ requireApp('system/test/unit/mock_window_manager.js');
 requireApp('system/test/unit/mock_lock_screen.js');
 requireApp('system/test/unit/mock_sleep_menu.js');
 requireApp('system/test/unit/mock_popup_manager.js');
+requireApp('system/test/unit/mock_applications.js');
 requireApp('system/test/unit/mocks_helper.js');
 
 var mocksForCardsView = ['GestureDetector',

@@ -18,7 +18,6 @@
 
     <!-- Wrapper -->
     <link rel="stylesheet" type="text/css" href="style/wrapper/wrapper.css">
-    <script type="text/javascript" defer src="js/wrapper.js"></script>
 
     <!-- System -->
     <link rel="stylesheet" type="text/css" href="style/system/system.css">
@@ -43,6 +42,9 @@
     <!-- Not deferring the following to show startup logo/animation as soon as possible. -->
     <script src="js/logo_loader.js"></script>
     <script src="js/init_logo_handler.js"></script>
+
+    <script defer src="js/system.js"></script>
+    <script defer src="js/ui.js"></script>
 
     <script defer src="js/screen_manager.js"></script>
     <script defer src="js/mouse2touch.js"></script>
@@ -115,9 +117,8 @@
     <script defer src="js/airplane_mode.js"></script>
 
     <!-- Modal Dialog -->
-    <link rel="stylesheet" type="text/css" href="style/modal_dialog/prompt.css">
     <link rel="stylesheet" type="text/css" href="style/modal_dialog/modal_dialog.css">
-    <script defer src="js/modal_dialog.js"></script>
+    <script defer src="js/app_modal_dialog.js"></script>
 
     <!-- Authentication Dialog-->
     <script defer src="js/authentication_dialog.js"></script>
@@ -213,11 +214,21 @@
     <!-- Captive Portal Login -->
     <script defer src="js/captive_portal.js"></script>
 
+
+
+    <link rel="stylesheet" type="text/css" href="style/window/window.css">
+    <script defer src="js/app_error.js"></script>
+    <script defer src="js/browser_config.js"></script>
+    <script defer src="js/app_window.js"></script>
+    <script defer src="js/homescreen_window.js"></script>
+    <script defer src="js/ftu_window.js"></script>
+    <script defer src="js/app_wrapper.js"></script>
+    <script defer src="js/wrapper_window.js"></script>
+
     <!-- Windows -->
     <!-- Any module that wants to intercept the Home button and prevent the -->
     <!-- homescreen from being displayed must come before this script. -->
-    <script defer src="js/window.js"></script>
-    <script defer src="js/window_manager.js"></script>
+    <script defer src="js/window_manager2.js"></script>
 
     <!-- Entry Sheet -->
     <link rel="stylesheet" type="text/css" href="style/entry_sheet/entry_sheet.css">
@@ -238,6 +249,8 @@
     <!-- Device storage watcher -->
     <script defer src="js/storage_watcher.js"></script>
     <link rel="stylesheet" type="text/css" href="style/storage_watcher/storage_watcher.css">
+
+    <script defer src="js/alive_scope.js"></script>
 
     <style>
       /* initlogos style is here to prevent flashing */
@@ -398,17 +411,6 @@
 
       <div id="windows" data-z-index-level="app">
         <!-- application windows are added here -->
-        <header id="wrapper-activity-indicator"></header>
-        <footer id="wrapper-footer" class="closed">
-          <div id="handler"></div>
-          <menu type="buttonbar">
-            <button type="button" id="back-button" alt="Back" data-disabled="disabled"></button>
-            <button type="button" id="forward-button" alt="Forward" data-disabled="disabled"></button>
-            <button type="button" id="reload-button" alt="Reload"></button>
-            <button type="button" id="bookmark-button" alt="Bookmark" data-disabled="disabled"></button>
-            <button type="button" id="close-button" alt="Close"></button>
-          </menu>
-        </footer>
       </div>
 
       <div id="dialog-overlay" data-z-index-level="dialog-overlay">
