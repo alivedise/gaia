@@ -6,6 +6,11 @@
   visibility: visible;
 }
 
+#listmenu menu.action h3 {
+  padding-left: 8rem;
+  padding-right: 8rem;
+}
+
 #listmenu menu,
 #listmenu.visible menu.slidedown {
   transition: transform 0.3s ease;
@@ -19,7 +24,20 @@
 #listmenu menu button.icon,
 #listmenu menu a[role="button"].icon {
   background-repeat: no-repeat;
-  background-position: 0.5rem center;
-  padding-left: 4rem;
-  background-size: 3rem;
+  background-position: 1.5rem center;
+  padding-left: 6.5rem;
+  background-size: 4rem;
+  height: 4.5rem;
+  line-height: 4.5rem;
+}
+
+#listmenu menu ul li:last-child {
+  padding: 0;
+}
+
+#listmenu menu ul li:last-child button {
+  width: 28.5rem;
+  height: 4.5rem;
+  margin-top: 3.25rem;
+  margin-bottom: 3.25rem;
 }

@@ -7,7 +7,7 @@
 }
 
 #picker-bar.format12h {
-  width: 85%;
+  width: 60.9rem;
 }
 
 #picker-bar.format24h {
@@ -67,7 +67,7 @@
 
 #value-indicator-hover-time {
   pointer-events: none;
-  background-color: #00A5C5;
+  background-color: #2ea7e0;
   position: absolute;
   height: 100%;
   font: 3rem/6rem 'MozTT',sans-serif;
@@ -84,7 +84,7 @@
 
 #value-indicator-hover {
   pointer-events: none;
-  background-color: #00A5C5;
+  background-color: #2ea7e0;
   position: absolute;
   width: 33%;
   height: 100%;

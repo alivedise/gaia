@@ -5,7 +5,7 @@
 /* Main dialog setup */
 form[role="dialog"][data-type="value-selector"] {
   -moz-box-sizing: border-box;
-  background: url(value_selector/images/ui/pattern.png) repeat left top, url(value_selector/images/ui/gradient.png) no-repeat left top;
+  background: url(../themes/default/images/DeeplyGray_bg.jpg) repeat left top, url(value_selector/images/ui/gradient.png) no-repeat left top;
   background-size: auto auto, 100% 100%;
   /* We can't use shortand with background size because is not implemented yet:
   https://bugzilla.mozilla.org/show_bug.cgi?id=570326; */
@@ -16,7 +16,7 @@ form[role="dialog"][data-type="value-selector"] {
   left: calc(50% - 39rem);
   width: 78rem;
   height: 48rem;
-  padding: 0 0 7rem;
+  padding: 0;
   font-family: "Open Sans", Sans-serif;
   font-size: 2rem;
   /* Using font-size: 0; we avoid the unwanted visual space (about 3px)
@@ -30,26 +30,30 @@ form[role="dialog"][data-type="value-selector"]:before {
   vertical-align: top;
   width: 1px;
   height: 100%;
-  margin-left: -1px;
 }
 
 form[role="dialog"][data-type="value-selector"] > section {
-  padding: 0 1.5rem 0;
-  -moz-box-sizing: padding-box;
+  padding: 0;
+  -moz-box-sizing: border-box;
   width: 100%;
   height: 100%;
   display: inline-block;
   vertical-align: top;
   white-space: normal;
+  margin-left: -0.5rem;
 }
 
 form[role="dialog"][data-type="value-selector"] h1 {
-  font: 2.1rem/1em 'Open Sans', Sans-serif;
+  -moz-box-sizing: border-box;
+  font: 2.4rem/1em 'Open Sans', Sans-serif;
   color: #fff;
   border-bottom: 0.1rem solid #616262;
-  background: url(value_selector/images/ui/alpha.png) repeat 0 0;
-  margin: 0 -1.5rem;
-  padding: 2.5rem 3rem 1rem;
+  margin: 0;
+  height: 7rem;
+  padding-top: 3rem;
+  padding-left: 8rem;
+  font-weight: normal;
+  background: url(../themes/default/images/DarkGray_bg.jpg) repeat left top, url(value_selector/images/ui/gradient.png) no-repeat left top;
 }
 
 /* Menu & buttons setup */
@@ -58,7 +62,7 @@ form[role="dialog"][data-type="value-selector"] menu {
   margin: 0;
   padding: 1.5rem;
   border-top: solid 1px rgba(255, 255, 255, 0.1);
-  background: #2d2d2d url(value_selector/images/ui/pattern.png) repeat left top;
+  background: #2d2d2d url(../themes/default/images/DarkGray_bg.jpg) repeat left top;
   display: block;
   overflow: hidden;
   position: absolute;
@@ -68,8 +72,8 @@ form[role="dialog"][data-type="value-selector"] menu {
 }
 
 form[role="dialog"][data-type="value-selector"] menu button {
-  width: 100%;
-  height: 3.8rem;
+  width: 28.5rem;
+  height: 5rem;
   margin: 0 0 1rem;
   padding: 0 1.5rem;
   -moz-box-sizing: border-box;
@@ -139,21 +143,25 @@ form[role="dialog"][data-type="value-selector"] menu button:first-child {
 }
 
 form[role="dialog"][data-type="value-selector"] menu button {
-  width: -moz-calc((100% - 1rem) / 2);
+  width: 28.5rem;
 }
 
 form[role="dialog"][data-type="value-selector"] menu button.full {
-  width: 100%;
+  width: 28.5rem;
 }
 
 /* Specific component code */
 form[role="dialog"][data-type="value-selector"] [role="listbox"] {
   position: relative;
-  padding: 0 1.5rem;
-  margin: 0 -1.5rem;
-  max-height: calc(100% - 5rem);
+  padding: 0 3.5rem;
+  margin: 0;
+  max-height: calc(78rem - 7rem - 11rem);
   overflow: auto;
-  border-top: solid 0.1rem #222323;
+  border-top-width: 0.1rem;
+  border-bottom-width: 0.1rem;
+  border-top-image-source: url(value_selector/images/ui/shadow_top.png);
+  border-bottom-image-source: url(value_selector/images/ui/shadow_bottom.png);
+  background: url(../themes/default/images/DeeplyGray_bg.jpg) repeat left top, url(value_selector/images/ui/gradient.png) no-repeat left top;
 }
 
 form[role="dialog"][data-type="value-selector"] .scrollable:before {
@@ -170,8 +178,9 @@ form[role="dialog"][data-type="value-selector"] .scrollable:before {
 
 form[role="dialog"][data-type="value-selector"] [role="listbox"] li {
   margin: 0;
+  padding-left: 4.5rem;
   padding-bottom: 1px;
-  height: 5.9rem;
+  height: 5rem;
   list-style: none;
   position: relative;
   border-bottom: 1px solid #666;
@@ -183,7 +192,7 @@ form[role="dialog"][data-type="value-selector"] [role="listbox"] li {
 }
 
 form[role="dialog"][data-type="value-selector"] [role="listbox"] li span {
-  padding: 0 1.5rem;
+  padding: 0 4.5rem;
 }
 
 form[role="dialog"][data-type="value-selector"] [role="listbox"] li:active,
@@ -209,7 +218,6 @@ form[role="dialog"][data-type="value-selector"] [role="listbox"] li[aria-checked
 
 form[role="dialog"][data-type="value-selector"] [role="listbox"] li a,
 form[role="dialog"][data-type="value-selector"] [role="listbox"] li label {
-  border-bottom: 1px solid #000;
   outline: none;
 }
 
