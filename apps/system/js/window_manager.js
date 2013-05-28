@@ -1322,6 +1322,57 @@ var WindowManager = (function() {
 
     numRunningApps++;
 
+    /**
+     * Construct a mutation observer.
+     * See https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver
+     */
+
+    /**
+     * var target = document.querySelector('#id');
+     */
+    var target = frame;
+    /**
+     * create an observer instance
+     */
+    var observer = new MutationObserver(function(mutations) {
+      /**
+       * We could iterate the mutations here,
+       * but I don't really care it now.
+       */
+      var st = window.getComputedStyle(target, null);
+      var tr = st.getPropertyValue("-webkit-transform") ||
+               st.getPropertyValue("-moz-transform") ||
+               st.getPropertyValue("-ms-transform") ||
+               st.getPropertyValue("-o-transform") ||
+               st.getPropertyValue("transform");
+
+      console.log('Matrix: ' + tr);
+
+      // rotation matrix - http://en.wikipedia.org/wiki/Rotation_matrix
+
+      var values = tr.split('(')[1];
+      values = values.split(')')[0];
+      values = values.split(',');
+      var a = values[0];
+      var b = values[1];
+      var c = values[2];
+      var d = values[3];
+
+      var scale = Math.sqrt(a*a + b*b);
+      // works!
+      console.log('[alive][' + origin + '] ClassList: ' + target.classList + ';Scale: ' + scale + '; z-index: ' + st.getPropertyValue("z-index"));
+    });
+    /**
+      * Configuration of mutation observer.
+      */
+    var config = { attributes: true, childList: true, characterData: true };
+    app.observer = observer;
+
+    /**
+     * pass in the target node, as well as the observer options
+     */
+    observer.observe(target, config);
+
     return app;
   }
 
@@ -1374,6 +1425,7 @@ var WindowManager = (function() {
     var frame = app.frame;
 
     if (frame) {
+      app.observer.disconnect();
       windows.removeChild(frame);
       clearFrameBackground(frame);
     }
