@@ -1160,12 +1160,8 @@ var WindowManager = (function() {
   }
 
   function setOrientationForInlineActivity(frame) {
-    if ('orientation' in frame.dataset.orientation) {
-      var rv = screen.mozLockOrientation(frame.dataset.orientation);
-      if (rv === false) {
-        console.warn('screen.mozLockOrientation() returned false for',
-                     origin, 'orientation', frame.dataset.orientation);
-      }
+    if ('orientation' in frame.dataset) {
+      screen.mozLockOrientation(frame.dataset.orientation);
     }
     else {  // If no orientation was requested, then let it rotate
       screen.mozUnlockOrientation();
@@ -1448,8 +1444,8 @@ var WindowManager = (function() {
     if (!inlineActivityFrames.length) {
       // Give back focus to the displayed app
       var app = runningApps[displayedApp];
+      setOrientationForApp(displayedApp);
       if (app && app.iframe) {
-        setOrientationForApp(app);
         app.iframe.focus();
         if ('wrapper' in app.frame.dataset) {
           wrapperFooter.classList.add('visible');
