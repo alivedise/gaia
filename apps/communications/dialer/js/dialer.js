@@ -528,6 +528,7 @@ window.onresize = function(e) {
 // in particular when scrolling the homescreen.
 // See: https://bugzilla.mozilla.org/show_bug.cgi?id=779914
 document.addEventListener('mozvisibilitychange', function visibilitychanged() {
+  console.log('[alive] hidden?', document.mozHidden);
   if (!document.mozHidden) {
     TonePlayer.ensureAudio();
   } else {

@@ -1,140 +1,207 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-
-'use strict';
-
 (function(window) {
+  'use strict';
+  var nextID = 0;
+  var screenElement = document.getElementById('screen');
 
-  var _ = navigator.mozL10n.get;
+  /**
+   * AppWindow creates, contains, manages a mozbrowser iframe.
+   * AppWindow is directly managed by Window Manager,
+   * by call resize(), open(), close() on AppWindow.
+   *
+   * Basically AppWindow would manipulate all mozbrowser events
+   * fired from the mozbrowser iframe by itself and show relevant UI.
+   *
+   * AppWindow is also the parent class of ActivityWindow and PopupWindow.
+   * Mostly they do the same thing but is different at some points
+   * like the way transitioning.
+   *
+   * About creating an AppWindow,
+   * you need to provide at least the web app/page URL.
+   * If you have also provided the manifest,
+   * then you would get an AppWindow object which is a web app.
+   * Otherwise you would get an AppWindow which is in 'Wrapper' type.
+   * The only one different thing between web app and web page is
+   * just the manifest URL.
+   * If you are a wrapper type AppWindow, there would be some
+   * navigation UI for a wrapper like goBack, goForward, refresh.
+   *
+   * @example
+   * var app = new AppWindow('http://uitest.gaiamobile.org:8080/index.html',
+   *                         'http://uitest.gaiamobile.org:8080/manifest.webapp');
+   * app.open();
+   *
+   * @constructor AppWindow
+   * @mixes TransitionStateMachine into AppWindow.prototype
+   */
+  
 
-  var ENABLE_LOG = false;
+  window.AppWindow = function AppWindow(url, manifestURL) {
+    this._id = nextID++;
+    this.config = new BrowserConfig(url, manifestURL);
+    this._splash = this.getIconForSplash();
+    
+    this.render();
+    // We keep the appError object here for the purpose that
+    // we may need to export the error state of AppWindow instance
+    // to the other module in the future.
+    if (window.AppError) {
+      this.appError = new AppError(this);
+    }
 
-  // Use mutation observer to monitor appWindow status change
-  window.AppLog = function AppLog(app) {
-    // select the target node
-    var target = app.frame;
-
-    // create an observer instance
-    var observer = new MutationObserver(function(mutations) {
-      mutations.forEach(function(mutation) {
-        console.log(mutation.target.id,
-                    mutation.target.className,
-                    mutation.attributeName);
-      });
-    });
-
-    // configuration of the observer:
-    var config = { attributes: true };
-
-    // pass in the target node, as well as the observer options
-    observer.observe(target, config);
+    /** 
+     * AppWindow is created.
+     * 
+     * @event AppWindow#appcreated
+     * @type {object}
+     * @property {string} origin - The origin of this appWindow instance.
+     */
+    this.publish('created', this.config);
   };
 
-  window.AppError = function AppError(app) {
-    var self = this;
-    this.app = app;
-    this.app.frame.addEventListener('mozbrowsererror', function(evt) {
-      if (evt.detail.type != 'other')
-        return;
-
-      console.warn(
-        'app of [' + self.app.origin + '] got a mozbrowsererror event.');
-
-      if (self.injected) {
-        self.update();
-      } else {
-        self.render();
+  /**
+   * Mixin the appWindow prototype with {mixin} object.
+   * @param  {Object} mixin The object to be mixed.
+   */
+  AppWindow.addMixin = function (mixin) {    
+    for (var prop in mixin) {
+      if (mixin.hasOwnProperty(prop)) {
+        this.prototype[prop] = mixin[prop];
       }
-      self.show();
-      self.injected = true;
-    });
-    return this;
-  };
-
-  AppError.className = 'appError';
-
-  AppError.prototype.hide = function() {
-    this.element.classList.remove('visible');
-  };
-
-  AppError.prototype.show = function() {
-    this.element.classList.add('visible');
-  };
-
-  AppError.prototype.render = function() {
-    this.app.frame.insertAdjacentHTML('beforeend', this.view());
-    this.closeButton =
-      this.app.frame.querySelector('.' + AppError.className + ' .close');
-    this.reloadButton =
-      this.app.frame.querySelector('.' + AppError.className + ' .reload');
-    this.titleElement =
-      this.app.frame.querySelector('.' + AppError.className + ' .title');
-    this.messageElement =
-      this.app.frame.querySelector('.' + AppError.className + ' .message');
-    this.element = this.app.frame.querySelector('.' + AppError.className);
-    var self = this;
-    this.closeButton.onclick = function() {
-      self.app.kill();
-    };
-
-    this.reloadButton.onclick = function() {
-      self.hide();
-      self.app.reload();
-    };
-  };
-
-  AppError.prototype.update = function() {
-    this.titleElement.textContent = this.getTitle();
-    this.messageElement.textContent = this.getMessage();
-  };
-
-  AppError.prototype.id = function() {
-    return AppError.className + '-' + this.app.frame.id;
-  };
-
-  AppError.prototype.getTitle = function() {
-    if (AirplaneMode.enabled) {
-      return _('airplane-is-on');
-    } else if (!navigator.onLine) {
-      return _('network-connection-unavailable');
-    } else {
-      return _('error-title', { name: this.app.name });
     }
   };
 
-  AppError.prototype.getMessage = function() {
-    if (AirplaneMode.enabled) {
-      return _('airplane-is-turned-on', { name: this.app.name });
-    } else if (!navigator.onLine) {
-      return _('network-error', { name: this.app.name });
-    } else {
-      return _('error-message', { name: this.app.name });
+  /**
+   * @static
+   * @type {Object}
+   */
+  AppWindow.defaultTransition = {
+    'ENLARGING': 'transition-enlarging',
+    'REDUCING': 'transition-reducing',
+    'ZOOMIN': 'transition-zoomin',
+    'ZOOMOUT': 'transition-zoomout',
+    'INVOKED': 'transition-invoked',
+    'INVOKING': 'transition-invoking',
+    'SLIDEUP': 'transition-slideup',
+    'SLIDEDOWN': 'transition-slidedown'
+  };
+
+  /**
+   * Container element is where |this.element| lives in.
+   *
+   * All app window instance should exist under '#windows' element.
+   *
+   * However, ActivityWindow and PopupWindow live under their opener element,
+   * which is also an app window instance.
+   * @type {DOMElement}
+   */
+  AppWindow.prototype.containerElement = document.getElementById('windows');
+
+  /**
+   * AppWindow's default transition name.
+   */
+  
+  AppWindow.prototype.defaultTransition = {
+    'open': 'transition-enlarging',
+    'close': 'transition-reducing'
+  };
+
+  /**
+   * This transition is implemented in css3 animation
+   * or transition in |window.css|.
+   * We catch the |animationend| or |transitionend|
+   * event in |this.transitionHandler|.
+   *
+   * If your app has specific transition,
+   * inherit from appWindow,
+   * implement your own transition in |window.css|,
+   * name it, and replace the config here.
+   *
+   * The name must be prefixed with "transition-".
+   *
+   * Default open transition is "transition-enlaring",
+   * and close transition is "transition-reducing".
+   *
+   * @property {String} open The name of opening transition.
+   * @property {String} close The name of closing transition.
+   * 
+   * @type {Object}
+   */
+  
+  AppWindow.prototype._transition = {
+    'open': 'transition-enlarging',
+    'close': 'transition-reducing'
+  };
+
+  AppWindow.prototype._transitionTimeout = 300;
+
+  /**
+   * Open the app window.
+   * We shouldn't direcly modify this.
+   *
+   * Currently we have these predefined opening transition in window.css:
+   *
+   * @example
+   * app.open(AppWindow.defaultTransition.ENLARGING);
+   * app.open(AppWindow.defaultTransition.ZOOMOUT);
+   * app.open(AppWindow.defaultTransition.INVOKED);
+   *
+   * @param {String} [transition] The capitalized name of css transition.
+   */
+  AppWindow.prototype.open = function aw_open(transition) {
+    if (transition) {
+      transition = transition.toLowerCase();
     }
+    if (transition && transition.indexOf('transition-') < 0) {
+      transition = 'transition-' + transition;
+    }
+    this._setTransition('open', transition || this.defaultTransition['open']);
+    this._processTransitionEvent(this.TRANSITION_EVENT.OPEN);
+    this._setTransition('open', this.defaultTransition['open']);
   };
 
-  AppError.prototype.view = function() {
-    return '<div id="' + this.id() + '" class="' +
-        AppError.className + ' visible" role="dialog">' +
-      '<div class="modal-dialog-message-container inner">' +
-        '<h3 data-l10n-id="error-title" class="title">' +
-          this.getTitle() + '</h3>' +
-        '<p>' +
-         '<span data-l10n-id="error-message" class="message">' +
-            this.getMessage() + '</span>' +
-        '</p>' +
-      '</div>' +
-      '<menu data-items="2">' +
-        '<button class="close" data-l10n-id="try-again">' +
-          _('close') + '</button>' +
-        '<button class="reload" data-l10n-id="try-again">' +
-          _('try-again') + '</button>' +
-      '</menu>' +
-    '</div>';
+  /**
+   * Close the app window.
+   * We shouldn't direcly modify this.
+   *
+   * @example
+   * app.close(AppWindow.defaultTransition.REDUCING);
+   * app.close(AppWindow.defaultTransition.ZOOMIN);
+   * app.close(AppWindow.defaultTransition.INVOKING);
+   *
+   * @param {String} [transition] The capitalized name of css transition.
+   */
+  AppWindow.prototype.close = function aw_close(transition) {
+    if (transition) {
+      transition = transition.toLowerCase();
+    }
+    if (transition && transition.indexOf('transition-') < 0) {
+      transition = 'transition-' + transition;
+    }
+    this._setTransition('close', transition || this.defaultTransition['close']);
+    this._processTransitionEvent(this.TRANSITION_EVENT.CLOSE);
+    this._setTransition('close', this.defaultTransition['close']);
   };
+  
+  /**
+   * Fetch the splash icon,
+   * used when we open the app.
+   */
+  AppWindow.prototype.getIconForSplash = function aw_getIconForSplash() {
+    if (this._splash)
+      return this._splash;
 
-  window.AppWindow = function AppWindow(configuration) {
-    for (var key in configuration) {
-      this[key] = configuration[key];
+    var manifest = this.config.manifest;
+    var icons = 'icons' in manifest ? manifest['icons'] : null;
+    if (!icons) {
+      return null;
+    } else if (!this._preloadSplash) {
+      var a = document.createElement('a');
+      a.href = this.config.origin;
+      var splash = a.protocol + '//' + a.hostname + ':' + (a.port || 80) + splash;
+
+      // Start to load the image in background to avoid flickering if possible.
+      this._preloadSplash = new Image();
+      this._preloadSplash.src = splash;
     }
 
     // Check if it's a fullscreen app.
@@ -152,11 +219,25 @@
     if (ENABLE_LOG)
       this.appLog = new AppLog(this);
 
-    this.render();
+    var sizes = Object.keys(icons).map(function parse(str) {
+      return parseInt(str, 10);
+    });
 
-    return this;
+    sizes.sort(function(x, y) { return y - x; });
+
+    this._splash = icons[sizes[0]];
+    return icons[sizes[0]];
   };
 
+  /**
+   * Class name is used to add a type-specific class on the element.
+   * We also use the className + _id to specify <code>element.id</code>.
+   * @static
+   * @type {String}
+   */
+  AppWindow.prototype.className = 'appWindow';
+
+  AppWindow.prototype.windowType = 'window';
 
   /**
    * Represent the current visibility state,
@@ -203,6 +284,8 @@
    * 6. Switching from 'screenshot' to 'none' state:
    *   _hideScreenshotOverlay is called
    *
+   * @memberOf AppWindow
+   *
    */
 
   AppWindow.prototype.setVisible =
@@ -237,8 +320,8 @@
       this._waitForNextPaint(this._hideScreenshotOverlay.bind(this));
     }
 
-    this.iframe.classList.remove('hidden');
-    this.iframe.setVisible(true);
+    this._browser.element.classList.remove('hidden');
+    this._browser.element.setVisible(true);
   };
 
   /**
@@ -248,28 +331,45 @@
    */
   AppWindow.prototype._hideFrame = function aw__hideFrame() {
     if (this._visibilityState !== 'frame') {
-      this.iframe.setVisible(false);
-      this.iframe.classList.add('hidden');
+      this._browser.element.setVisible(false);
+      this._browser.element.classList.add('hidden');
     }
   };
 
   AppWindow.prototype.reload = function aw_reload() {
-    this.iframe.reload(true);
+    this._browser.element.reload(true);
   };
 
   AppWindow.prototype.kill = function aw_kill() {
     if (this._screenshotURL) {
       URL.revokeObjectURL(this._screenshotURL);
     }
-    // XXX: A workaround because a AppWindow instance shouldn't
-    // reference Window Manager directly here.
-    // In the future we should make every app maintain and execute the events
-    // in itself like resize, setVisibility...
-    // And Window Manager is in charge of cross app management.
-    WindowManager.kill(this.origin);
+
+    // If we're active window, perform a close transition
+    // before being removed.
+    if (this.isActive) {
+      this.close(this.destroy.bind(this));
+    } else {
+      this.destroy();
+    }
   };
 
   AppWindow.prototype.render = function aw_render() {
+    var element = document.createElement('div');
+    element.id = this.className.replace(' ', '-') + this._id;
+    this.className.split(' ').forEach(function iterator(name) {
+      element.classList.add(name);
+    });
+    this._browser = new BrowserFrame(this.config);
+    this._start = Date.now();
+    element.appendChild(this._browser.element);
+    this.containerElement.appendChild(element);
+
+    this.element = this.frame = element;
+
+    this.element.addEventListener('transitionend', this._transitionHandler.bind(this));
+    this.element.addEventListener('animationend', this._transitionHandler.bind(this));
+
     var screenshotOverlay = document.createElement('div');
     screenshotOverlay.classList.add('screenshot-overlay');
     this.frame.appendChild(screenshotOverlay);
@@ -308,7 +408,7 @@
         return;
 
       var nextPaintTimer;
-      var iframe = this.iframe;
+      var iframe = this._browser.element;
       var onNextPaint = function aw_onNextPaint() {
         iframe.removeNextPaintListener(onNextPaint);
         clearTimeout(nextPaintTimer);
@@ -355,7 +455,7 @@
           'url(' + this._screenshotURL + ')';
         this.screenshotOverlay.classList.add('visible');
 
-        if (!this.iframe.classList.contains('hidden'))
+        if (!this._browser.element.classList.contains('hidden'))
           this._hideFrame();
 
         // XXX: we ought not to change screenshots at Window Manager
@@ -402,8 +502,8 @@
       return;
     }
 
-    var req = this.iframe.getScreenshot(
-      this.iframe.offsetWidth, this.iframe.offsetHeight);
+    var req = this._browser.element.getScreenshot(
+      this._browser.element.offsetWidth, this._browser.element.offsetHeight);
 
     req.onsuccess = function gotScreenshotFromFrame(evt) {
       var result = evt.target.result;
@@ -531,6 +631,188 @@
     // if changeActivityFrame is not explicitly set to false.
     dispatchEvent(new CustomEvent('appresize',
         {changeActivityFrame: changeActivityFrame}));
+  };
+  /**
+   * Trace the current inline activity window opened by
+   * this app window.
+   * Note: an inline activity window may also opens a
+   * new inline activity window.
+   * @type {AppWindow}
+   */
+  AppWindow.prototype.inlineActivityWindow = null;
+
+  /**
+   * Get the configuration of this app window object.
+   * @param  {String} name The key of configuration, e.g. "url".
+   * @return {Object|String|Boolean} The configuration value of specific key
+   */
+  AppWindow.prototype.getConfig = function aw_getConfig(name) {
+    return this.config[name];
+  };
+
+  /**
+   * A public method used by Window Manager.
+   * Currently we don't know who wants to open the inline activity,
+   * but since web activity could only be triggered by user action,
+   * we could assume that only the focused app could invoke inline activity.
+   * And Window Manager is the one who knows which app window is active now.
+   * @param  {Object} config The configuration of the inline activity frame.
+   */
+  AppWindow.prototype.startInlineActivity = function(config) {
+    // If the same inline activity frame is existed and showing,
+    // we reuse its iframe.
+    var focusedActivityWindow = this.getFocusedActivityWindow();
+    if (focusedActivityWindow &&
+        focusedActivityWindow.getConfig('url') == config.url) {
+        return;
+    }
+    this.inlineActivityWindow = new ActivityWindow(this, config);
+  };
+
+  /**
+   * Go through this.inlineActivityWindow to find the latest window.
+   * @return {ActivityWindow} The focused activity window.
+   */
+  AppWindow.prototype.getFocusedActivityWindow = function() {
+    if (this.inlineActivityWindow) {
+      return this.inlineActivityWindow.getFocusedActivityWindow();
+    } else if (this instanceof ActivityWindow) {
+      // If this is an instance of ActivityWindow and
+      // doesn't have another inlineActivityWindow,
+      // return itself.
+      return this;
+    } else {
+      return null;
+    }
+  };
+
+  /**
+   * Event prefix presents the object type
+   * when publishing an event from the element.
+   *
+   * For example, before an AppWindow instance is opened,
+   * it would publish 'appwillopen' event. But when an ActivityWindow instance
+   * is opened, it would publish 'activitywillopen' event.
+   * 
+   * @type {String}
+   */
+  AppWindow.prototype.eventPrefix = 'app';
+
+  /**
+   * Publish an event.
+   * 
+   * @param  {String} event  Event name, without object type prefix.
+   * @param  {Object} detail Parameters in JSON format.
+   */
+  AppWindow.prototype.publish = function(event, detail) {
+    console.log('publish: ', this.eventPrefix + event);
+    var evt = document.createEvent('CustomEvent');
+    evt.initCustomEvent(this.eventPrefix + event,
+                        true, false, detail || this.config);
+    this.element.dispatchEvent(evt);
+  };
+
+  /**
+   * Remove the DOM and release the resource.
+   */
+  AppWindow.prototype.destroy = function() {
+    if (this._killed)
+      return;
+
+    // Avoid to be killed twice.
+    this._killed = true;
+
+    // Destroy inline activity window if we have one.
+    // This would recursively destroy the chained inline activities.
+    if (this.inlineActivityWindow) {
+      this.inlineActivityWindow.destroy();
+    }
+
+    // If frame is never set visible, we can remove the frame directly
+    // without closing transition
+    // 
+    // @todo defer the transition state.
+    // 
+    if (!this.element.classList.contains('active')) {
+      /**
+       * The appWindow is terminated or killed. 
+       * 
+       * @event AppWindow#appterminated
+       * @memberOf AppWindow
+       * @type {object}
+       * @property {string} origin - The origin of this appWindow instance.
+       */
+      this.publish('terminated');
+      this.element.parentNode.removeChild(this.element);
+      return;
+    } else {
+      var self = this;
+      this._leaveClosing = function _leaveClosingCallback() {
+        self._leaveClosing = function() {};
+        self.publish('terminated');
+        self.element.parentNode.removeChild(self.element);
+      }
+      this.close();
+    }
+    // Take keyboard focus away from the closing window
+    this.element.firstChild.blur();
+  };
+
+  AppWindow.prototype.requireFullscreen = function aw_requireFullscreen() {
+    if (this._fullscreen !== undefined) {
+      return this._fullscreen;
+    }
+
+    var manifest = this.config.manifest;
+    if ('entry_points' in manifest && manifest.entry_points &&
+        manifest.type == 'certified') {
+       manifest = manifest.entry_points[origin.split('/')[3]];
+    }
+
+    this._fullscreen = 'fullscreen' in manifest ? manifest.fullscreen : false;
+
+    return this._fullscreen;
+  };
+
+  /**
+   * Resize the app window.
+   *
+   * If width and height are not provided,
+   * We will use these parameters to calulate width and height.
+   *
+   * 1. Statusbar.Height
+   * 2. Fullscreen or not
+   * 3. Keyboard.getHeight()
+   * 
+   * @param  {Number} [width] The width of the app window.
+   * @param  {Number} [height] The height of the app window.
+   * @param {Boolean} [ignoreKeyboard] Ignore keyboard height or not.
+   */
+  AppWindow.prototype.resize = function aw_resize(width, height, ignoreKeyboard) {
+    if (this.inlineActivityWindow) {
+      this.inlineActivityWindow.resize(width, height);
+      return;
+    }
+  
+    if (width && height) {
+      this.element.style.width = width + 'px';
+      this.element.style.height = height + 'px';
+      return;
+    }
+
+    // If width and height is not provided, calculate it on our own.
+    var manifest = this.config.manifest;
+
+    var cssWidth = window.innerWidth + 'px';
+    var cssHeight = window.innerHeight - StatusBar.height - (ignoreKeyboard ? 0 : KeyboardManager.getHeight()) + 'px';
+
+    if (!screenElement.classList.contains('attention') &&
+        this.requireFullscreen()) {
+      cssHeight = window.innerHeight - (ignoreKeyboard ? 0 : KeyboardManager.getHeight()) + 'px';
+    }
+
+    this.element.style.width = cssWidth;
+    this.element.style.height = cssHeight;
   };
 
 }(this));

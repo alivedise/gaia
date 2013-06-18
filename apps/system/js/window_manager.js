@@ -141,6 +141,7 @@ var WindowManager = (function() {
       return null;
   }
 
+<<<<<<< HEAD
   // XXX: appWindow.resize needs to call setInlineActivityFramseSize().
   // We should maintain a link in appWindow to activity frame
   // so that appWindow can resize activity by itself.
@@ -175,6 +176,8 @@ var WindowManager = (function() {
     }
   }
 
+=======
+>>>>>>> WIP new ActivityWindow!
   var openFrame = null;
   var closeFrame = null;
   var openCallback = null;
@@ -1037,6 +1040,7 @@ var WindowManager = (function() {
 
     return app;
   }
+<<<<<<< HEAD
 
   function startInlineActivity(origin, url, name, manifest, manifestURL) {
     // If the same inline activity frame is existed and showing,
@@ -1192,6 +1196,9 @@ var WindowManager = (function() {
     }
   }
 
+=======
+  
+>>>>>>> WIP new ActivityWindow!
   // Watch activity completion here instead of activity.js
   // Because we know when and who to re-launch when activity ends.
   window.addEventListener('mozChromeEvent', function(e) {
@@ -1439,13 +1446,8 @@ var WindowManager = (function() {
         resetDeviceLockedTimer();
         break;
       case 'lock':
-        // XXX: We couldn't avoid to stop inline activities
-        // when screen is turned off and lockscreen is enabled
-        // to avoid two cameras iframes are competing resources
-        // if the user opens a app to call camera activity and
-        // at the same time open camera app from lockscreen.
         if (inlineActivityFrames.length) {
-          stopInlineActivity(true);
+          setVisibilityForInlineActivity(false);
         }
 
         // If the audio is active, the app should not set non-visible
@@ -1534,6 +1536,15 @@ var WindowManager = (function() {
       topFrame.setVisible(visible);
     }
 
+    if (inlineActivityFrames.length > 1) {
+      for (var i = 0; i < inlineActivityFrames.length - 1; i++) {
+        var frame = inlineActivityFrames[i].firstChild;
+        if ('setVisible' in frame) {
+          frame.setVisible(false);
+        }
+      }
+    }
+
     // Restore/give away focus on visiblity change
     // so that the app can take back its focus
     if (visible) {
@@ -1547,15 +1558,9 @@ var WindowManager = (function() {
     var app = runningApps[displayedApp];
     if (!app)
       return;
-    if ('setVisible' in app.iframe)
-      app.iframe.setVisible(visible);
 
-    // Restore/give away focus on visiblity change
-    // so that the app can take back its focus
-    if (visible)
-      app.iframe.focus();
-    else
-      app.iframe.blur();
+    // Call appWindow's setVisible.
+    app.setVisible(visible);
   }
 
   function handleAppCrash(origin, manifestURL) {
@@ -1812,23 +1817,12 @@ var WindowManager = (function() {
       return;
     }
 
-    // As we can't immediatly remove runningApps entry,
-    // we flag it as being killed in order to avoid trying to remove it twice.
-    // (Check required because of bug 814583)
-    if (runningApps[origin].killed) {
-      if (callback) {
-        setTimeout(callback);
-      }
-      return;
-    }
-    runningApps[origin].killed = true;
-
     // If the app is the currently displayed app, switch to the homescreen
     if (origin === displayedApp) {
       // when the homescreen is displayed and being
       // killed we need to forcibly restart it...
       if (origin === homescreen) {
-        removeFrame(origin);
+        runningApps[origin].kill();
 
         // XXX workaround bug 810431.
         // we need this here and not in other situations
@@ -1842,7 +1836,7 @@ var WindowManager = (function() {
         });
       } else {
         setDisplayedApp(homescreen, function() {
-          removeFrame(origin);
+          runningApps[origin].kill();
           if (callback) {
             setTimeout(callback);
           }
@@ -1855,13 +1849,6 @@ var WindowManager = (function() {
         setTimeout(callback);
       }
     }
-
-    // Send a synthentic 'appterminated' event.
-    // Let other system app module know an app is
-    // being killed, removed or crashed.
-    var evt = document.createEvent('CustomEvent');
-    evt.initCustomEvent('appterminated', true, false, { origin: origin });
-    window.dispatchEvent(evt);
   }
 
   // Reload the frame of the running app

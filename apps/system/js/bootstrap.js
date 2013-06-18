@@ -4,19 +4,6 @@
 'use strict';
 
 window.addEventListener('load', function startup() {
-  function safelyLaunchFTU() {
-    WindowManager.retrieveHomescreen(FtuLauncher.retrieve.bind(FtuLauncher));
-  }
-
-  if (Applications.ready) {
-    safelyLaunchFTU();
-  } else {
-    window.addEventListener('applicationready', function appListReady(event) {
-      window.removeEventListener('applicationready', appListReady);
-      safelyLaunchFTU();
-    });
-  }
-
   window.addEventListener('ftudone', function doneWithFTU() {
     window.removeEventListener('ftudone', doneWithFTU);
 
