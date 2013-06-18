@@ -1187,7 +1187,6 @@ Camera.init();
 document.addEventListener('mozvisibilitychange', function() {
   if (document.mozHidden) {
     Camera.stopPreview();
-    Camera.cancelPick();
     Camera.cancelPositionUpdate();
     if (this._secureMode) // If the lockscreen is locked
       Filmstrip.clear();  // then forget everything when closing camera

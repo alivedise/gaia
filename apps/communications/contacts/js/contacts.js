@@ -835,10 +835,6 @@ var Contacts = (function() {
     window.addEventListener('offline', Contacts.onLineChanged);
 
     document.addEventListener('mozvisibilitychange', function visibility(e) {
-      if (ActivityHandler.currentlyHandling && document.mozHidden) {
-        ActivityHandler.postCancel();
-        return;
-      }
       Contacts.checkCancelableActivity();
       if (document.mozHidden === false &&
                                 navigation.currentView() === 'view-settings') {

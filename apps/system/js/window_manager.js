@@ -1170,9 +1170,7 @@ var WindowManager = (function() {
     // Open the frame, first, store the reference
     openFrame = frame;
 
-    // set the frame to visible state
-    if ('setVisible' in iframe)
-      iframe.setVisible(true);
+    setVisibilityForInlineActivity(true);
 
     if ('orientation' in manifest) {
       frame.dataset.orientation = manifest.orientation;
@@ -1246,7 +1244,7 @@ var WindowManager = (function() {
     } else {
       // stop all activity frames
       // Remore the inlineActivityFrame reference
-      inlineActivityFrames.foreach(function(frame) {
+      inlineActivityFrames.forEach(function(frame) {
         removeInlineFrame(frame);
       });
       inlineActivityFrames = [];
@@ -1264,6 +1262,9 @@ var WindowManager = (function() {
       }
       screenElement.classList.remove('inline-activity');
     } else {
+      // XXX: Check the app who opens the inline activities are focused.
+      setVisibilityForInlineActivity(true);
+
       setOrientationForInlineActivity(
         inlineActivityFrames[inlineActivityFrames.length - 1]);
     }
@@ -1516,13 +1517,8 @@ var WindowManager = (function() {
         resetDeviceLockedTimer();
         break;
       case 'lock':
-        // XXX: We couldn't avoid to stop inline activities
-        // when screen is turned off and lockscreen is enabled
-        // to avoid two cameras iframes are competing resources
-        // if the user opens a app to call camera activity and
-        // at the same time open camera app from lockscreen.
         if (inlineActivityFrames.length) {
-          stopInlineActivity(true);
+          setVisibilityForInlineActivity(false);
         }
 
         // If the audio is active, the app should not set non-visible
@@ -1609,6 +1605,15 @@ var WindowManager = (function() {
       .firstChild;
     if ('setVisible' in topFrame) {
       topFrame.setVisible(visible);
+    }
+
+    if (inlineActivityFrames.length > 1) {
+      for (var i = 0; i < inlineActivityFrames.length - 1; i++) {
+        var frame = inlineActivityFrames[i].firstChild;
+        if ('setVisible' in frame) {
+          frame.setVisible(false);
+        }
+      }
     }
 
     // Restore/give away focus on visiblity change
