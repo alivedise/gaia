@@ -13,6 +13,7 @@ window.onload = function () {
   document.getElementById('button').onclick = go;
   document.getElementById('cancelButton').onclick = cancel;
   document.getElementById('promptButton').onclick = promptButton;
+  document.getElementById('closeButton').onclick = closeMe;
 
   // If the app is being loaded because a inline disposition web activity,
   // it will came with a pending system message.
@@ -49,9 +50,6 @@ var cancel = function cancel() {
     return;
   }
 
-  activityRequest.postError('canceled');
-  activityRequest = null;
-
   // close app, currently useless,
   // see https://bugzilla.mozilla.org/show_bug.cgi?id=789392
   window.close();
@@ -61,12 +59,6 @@ var promptButton = function promptButton() {
   prompt('inline-activty prompt!');
 };
 
-// When the app is being closed or killed, we will cancel the pending
-// request.
-document.addEventListener('mozvisibilitychange', function visibility(e) {
-  if (!document.mozHidden || !activityRequest)
-    return;
-
-  activityRequest.postError('canceled');
-  activityRequest = null;
-});
+var closeMe = function closeMe() {
+  window.close();
+}
