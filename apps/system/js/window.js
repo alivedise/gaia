@@ -204,21 +204,6 @@
       this._preloadSplash.src = splash;
     }
 
-    // Check if it's a fullscreen app.
-    var manifest = this.manifest;
-    if ('entry_points' in manifest && manifest.entry_points &&
-        manifest.type == 'certified') {
-      manifest = manifest.entry_points[this.origin.split('/')[3]];
-    }
-    this._fullScreen = 'fullscreen' in manifest ? manifest.fullscreen : false;
-
-    // We keep the appError object here for the purpose that
-    // we may need to export the error state of AppWindow instance
-    // to the other module in the future.
-    this.appError = new AppError(this);
-    if (ENABLE_LOG)
-      this.appLog = new AppLog(this);
-
     var sizes = Object.keys(icons).map(function parse(str) {
       return parseInt(str, 10);
     });
@@ -599,39 +584,6 @@
       window.addEventListener('appclose', onClearRotate);
     };
 
-  // Set the size of the app's iframe to match the size of the screen.
-  // We have to call this on resize events (which happen when the
-  // phone orientation is changed). And also when an app is launched
-  // and each time an app is brought to the front, since the
-  // orientation could have changed since it was last displayed
-  // @param {changeActivityFrame} to denote if needed to change inline
-  //                              activity size
-  AppWindow.prototype.resize = function aw_resize(changeActivityFrame) {
-    var keyboardHeight = KeyboardManager.getHeight();
-    var cssWidth = window.innerWidth + 'px';
-    var cssHeight = window.innerHeight -
-                    StatusBar.height -
-                    SoftwareButtonManager.height -
-                    keyboardHeight;
-    if (!keyboardHeight && 'wrapper' in this.frame.dataset) {
-      cssHeight -= 10;
-    }
-    cssHeight += 'px';
-
-    if (!AttentionScreen.isFullyVisible() && !AttentionScreen.isVisible() &&
-        this.isFullScreen()) {
-      cssHeight = window.innerHeight - keyboardHeight -
-                  SoftwareButtonManager.height + 'px';
-    }
-
-    this.frame.style.width = cssWidth;
-    this.frame.style.height = cssHeight;
-
-    // We will call setInlineActivityFrameSize()
-    // if changeActivityFrame is not explicitly set to false.
-    dispatchEvent(new CustomEvent('appresize',
-        {changeActivityFrame: changeActivityFrame}));
-  };
   /**
    * Trace the current inline activity window opened by
    * this app window.
