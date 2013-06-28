@@ -30,6 +30,8 @@
      */
     _homescreenWindow: null,
 
+    _displayedApp: null,
+
     /**
      * The init process of AppWindowManager:
      * 1. Create a Homescreen Window instance.
@@ -47,6 +49,8 @@
       window.addEventListener('homescreenready', this);
       window.addEventListener('home', this);
       window.addEventListener('unlock', this);
+      window.addEventListener('appopen', this);
+      window.addEventListener('homescreenopen', this);
 
       if (Applications.ready) {
         window.addEventListener('mozChromeEvent', this);
@@ -61,7 +65,7 @@
     handleEvent: function awm_handleEvent(evt) {
       switch (evt.type) {
         case 'unlock':
-          //this._homescreenWindow.open();
+          this._homescreenWindow.open();
           break;
 
         case 'mozChromeEvent':
@@ -81,12 +85,10 @@
                 // No need to append a frame if is homescreen
                 this.setDisplayedApp();
               } else {
-                debugger;
                 if (!(this.isRunning(config.origin))) {
                   this._runningApps[config.origin] = new AppWindow(evt.detail.url, evt.detail.manifestURL);
                 }
                 this.setDisplayedApp(config.origin);
-                window.removeEventListener('mozChromeEvent', this);
               }
               break;
             }
@@ -115,10 +117,13 @@
           break;
 
         case 'home':
-          if (this._displayedApp != this._homescreenWindow.getConfig('origin')) {
-            this._runningApps[this._displayedApp].close();
-            this._homescreenWindow.open(); 
-          }
+          this.setDisplayedApp();
+          break;
+
+        case 'appopen':
+        case 'homescreenopen':
+          if (this.isRunning(evt.detail.origin))
+            this._displayedApp = evt.detail.origin;
           break;
       }
     },
@@ -132,12 +137,22 @@
     },
 
     setDisplayedApp: function awm_setDisplayedApp(origin) {
-      if (!origin || this.isRunning(origin)) {
-        this._ensureHomescreen();
-        return;
+      if (this.isRunning(origin)) {
+        if (origin != this._homescreenWindow.getConfig('origin')) {
+          if (this._displayedApp != this._homescreenWindow.getConfig('origin')) {
+            this._runningApps[this._displayedApp].close(AppWindow.defaultTransition.INVOKING);
+            this._runningApps[origin].open(AppWindow.defaultTransition.INVOKED);
+          } else {
+            this._runningApps[origin].open();
+            this._homescreenWindow.close();
+          }
+          return;
+        }
       }
-
-      this._runningApps[origin].open();
+      this._homescreenWindow.open();
+      if (this._displayedApp != this._homescreenWindow.getConfig('origin')) {
+        this._runningApps[this._displayedApp].close();
+      }
     },
 
     getRunningApps: function awm_getRunningApps() {
@@ -154,38 +169,13 @@
     _ensureHomescreen: function awm__ensureHomescreen() {
       if (!this._homescreenWindow) {
         this._homescreenWindow = new HomescreenWindow();
+        this._homescreenWindow.open();
       } else {
         this._homescreenWindow.goHome();
       }
     },
 
-    /**
-     * @deprecated Moved into AppWindow.
-     * @memberOf AppWindowManager
-     */
-    launch: function awm_launch() {
-    },
-
-    /**
-     * @deprecated Moved into AppWindow.
-     * @memberOf AppWindowManager
-     */
-    kill: function awm_kill() {
-    },
-
-    /**
-     * @deprecated Moved into AppWindow.
-     * @memberOf AppWindowManager
-     */
-    reload: function awn_reload() {
-
-    },
-
     setOrientationForApp: function awm_setOrientationForApp() {
-
-    },
-
-    getAppFrame: function awm_getAppFrame() {
 
     },
 

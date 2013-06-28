@@ -39,6 +39,7 @@
     this._id = nextID++;
     this.config = new BrowserConfig(url, manifestURL);
     this._splash = this.getIconForSplash();
+    console.log(this._splash);
     
     this.render();
     // We keep the appError object here for the purpose that

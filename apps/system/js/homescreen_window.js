@@ -76,7 +76,7 @@
     },
 
     goHome: function hw_goHome() {
-      this._browser.src = homescreenURL;
+      this._browser.element.src = homescreenURL;
       this.resize();
     },
 
