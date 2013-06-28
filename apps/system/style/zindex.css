@@ -177,8 +177,8 @@
 }
 
 #screen > [data-z-index-level="app"] > .appWindow.active,
-#screen > [data-z-index-level="app"] > .appWindow.opening,
-#screen > [data-z-index-level="app"] > .appWindow.closing {
+#screen > [data-z-index-level="app"] > .appWindow.transition-closing,
+#screen > [data-z-index-level="app"] > .appWindow.transition-opening {
   z-index: 4;
 }
 

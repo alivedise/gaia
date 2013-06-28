@@ -146,6 +146,7 @@
         // Only publish |willopen| event when previous state is "closed".
         this.publish('willopen');
       }
+      this.element.classList.add('transition-opening');
       this.element.classList.add(this._transition['open']);
     },
 
@@ -168,6 +169,7 @@
         // Only publish |willclose| event when previous state is "opened".
         this.publish('willclose');
       }
+      this.element.classList.add('transition-closing');
       this.element.classList.add(this._transition['close']);
     },
     

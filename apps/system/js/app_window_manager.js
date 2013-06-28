@@ -139,7 +139,7 @@
     setDisplayedApp: function awm_setDisplayedApp(origin) {
       if (this.isRunning(origin)) {
         if (origin != this._homescreenWindow.getConfig('origin')) {
-          if (this._displayedApp != this._homescreenWindow.getConfig('origin')) {
+          if (this._displayedApp && this._displayedApp != this._homescreenWindow.getConfig('origin')) {
             this._runningApps[this._displayedApp].close(AppWindow.defaultTransition.INVOKING);
             this._runningApps[origin].open(AppWindow.defaultTransition.INVOKED);
           } else {

@@ -39,7 +39,6 @@
     this._id = nextID++;
     this.config = new BrowserConfig(url, manifestURL);
     this._splash = this.getIconForSplash();
-    console.log(this._splash);
     
     this.render();
     // We keep the appError object here for the purpose that
@@ -98,15 +97,6 @@
   AppWindow.prototype.containerElement = document.getElementById('windows');
 
   /**
-   * AppWindow's default transition name.
-   */
-  
-  AppWindow.prototype.defaultTransition = {
-    'open': 'transition-enlarging',
-    'close': 'transition-reducing'
-  };
-
-  /**
    * This transition is implemented in css3 animation
    * or transition in |window.css|.
    * We catch the |animationend| or |transitionend|
@@ -129,11 +119,13 @@
    */
   
   AppWindow.prototype._transition = {
-    'open': 'transition-enlarging',
-    'close': 'transition-reducing'
+    'open': AppWindow.defaultTransition.ENLARGING,
+    'close': AppWindow.defaultTransition.REDUCING
   };
 
   AppWindow.prototype._transitionTimeout = 300;
+
+  AppWindow.prototype._unloaded = true;
 
   /**
    * Open the app window.
@@ -155,9 +147,14 @@
     if (transition && transition.indexOf('transition-') < 0) {
       transition = 'transition-' + transition;
     }
-    this._setTransition('open', transition || this.defaultTransition['open']);
+    if (this._unloaded) {
+      this._removeSplash();
+    } else {
+      this._appendSplash();
+    }
+    this._setTransition('open', transition || this.constructor.defaultTransition['open']);
     this._processTransitionEvent(this.TRANSITION_EVENT.OPEN);
-    this._setTransition('open', this.defaultTransition['open']);
+    this._setTransition('open', this.constructor.defaultTransition['open']);
   };
 
   /**
@@ -181,6 +178,16 @@
     this._setTransition('close', transition || this.defaultTransition['close']);
     this._processTransitionEvent(this.TRANSITION_EVENT.CLOSE);
     this._setTransition('close', this.defaultTransition['close']);
+  };
+
+  AppWindow.prototype._removeSplash = function aw_removeSplash(first_argument) {
+    if (this.element)
+      this.element.style.backgroundImage = '';
+  };
+
+  AppWindow.prototype._appendSplash = function aw_appendSplash(first_argument) {
+    if (this.element)
+      this.element.style.backgroundImage = this._splash;
   };
   
   /**
@@ -340,6 +347,15 @@
     }
   };
 
+  AppWindow.prototype.handleEvent = function(evt) {
+    switch (evt.type) {
+      case 'mozbrowserloadend':
+        delete this._unloaded;
+        this._removeSplash();
+        break;
+    }
+  };
+
   AppWindow.prototype.render = function aw_render() {
     var element = document.createElement('div');
     element.id = this.className.replace(' ', '-') + this._id;
@@ -347,6 +363,7 @@
       element.classList.add(name);
     });
     this._browser = new BrowserFrame(this.config);
+    this._browser.element.addEventListener('mozbrowserloadend', this);
     this._start = Date.now();
     element.appendChild(this._browser.element);
     this.containerElement.appendChild(element);
