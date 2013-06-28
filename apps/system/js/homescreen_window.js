@@ -38,11 +38,6 @@
 
     constructor: HomescreenWindow,
 
-    defaultTransition: {
-      'open': 'transition-zoomout',
-      'close': 'transition-zoomin'
-    },
-
     /**
      * HomescreenWindow has specific opening/closing
      * transitions, see |window.css| for implementation
@@ -108,6 +103,11 @@
       this.element = null;
       this.ensure();
     }
+  };
+
+  HomescreenWindow.defaultTransition = {
+    'open': AppWindow.transition.ZOOMOUT,
+    'close': AppWindow.transition.ZOOMIN
   };
 
   window.HomescreenWindow = HomescreenWindow;

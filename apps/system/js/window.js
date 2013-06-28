@@ -74,7 +74,7 @@
    * @static
    * @type {Object}
    */
-  AppWindow.defaultTransition = {
+  AppWindow.transition = {
     'ENLARGING': 'transition-enlarging',
     'REDUCING': 'transition-reducing',
     'ZOOMIN': 'transition-zoomin',
@@ -118,9 +118,14 @@
    * @type {Object}
    */
   
+  AppWindow.defaultTransition = {
+    'open': AppWindow.transition.ENLARGING,
+    'close': AppWindow.transition.REDUCING
+  };
+
   AppWindow.prototype._transition = {
-    'open': AppWindow.defaultTransition.ENLARGING,
-    'close': AppWindow.defaultTransition.REDUCING
+    'open': AppWindow.transition.ENLARGING,
+    'close': AppWindow.transition.REDUCING
   };
 
   AppWindow.prototype._transitionTimeout = 300;
@@ -148,9 +153,9 @@
       transition = 'transition-' + transition;
     }
     if (this._unloaded) {
-      this._removeSplash();
-    } else {
       this._appendSplash();
+    } else {
+      this._removeSplash();
     }
     this._setTransition('open', transition || this.constructor.defaultTransition['open']);
     this._processTransitionEvent(this.TRANSITION_EVENT.OPEN);
@@ -175,9 +180,9 @@
     if (transition && transition.indexOf('transition-') < 0) {
       transition = 'transition-' + transition;
     }
-    this._setTransition('close', transition || this.defaultTransition['close']);
+    this._setTransition('close', transition || this.constructor.defaultTransition['close']);
     this._processTransitionEvent(this.TRANSITION_EVENT.CLOSE);
-    this._setTransition('close', this.defaultTransition['close']);
+    this._setTransition('close', this.constructor.defaultTransition['close']);
   };
 
   AppWindow.prototype._removeSplash = function aw_removeSplash(first_argument) {
@@ -187,7 +192,7 @@
 
   AppWindow.prototype._appendSplash = function aw_appendSplash(first_argument) {
     if (this.element)
-      this.element.style.backgroundImage = this._splash;
+      this.element.style.backgroundImage = 'url(' + this._splash + ')';
   };
   
   /**
@@ -348,6 +353,7 @@
   };
 
   AppWindow.prototype.handleEvent = function(evt) {
+    console.log(evt, this);
     switch (evt.type) {
       case 'mozbrowserloadend':
         delete this._unloaded;
@@ -363,7 +369,8 @@
       element.classList.add(name);
     });
     this._browser = new BrowserFrame(this.config);
-    this._browser.element.addEventListener('mozbrowserloadend', this);
+    this._browser.element.addEventListener('mozbrowserloadstart', this.handleEvent.bind(this));
+    this._browser.element.addEventListener('mozbrowserloadend', this.handleEvent.bind(this));
     this._start = Date.now();
     element.appendChild(this._browser.element);
     this.containerElement.appendChild(element);

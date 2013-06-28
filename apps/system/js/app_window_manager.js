@@ -140,8 +140,8 @@
       if (this.isRunning(origin)) {
         if (origin != this._homescreenWindow.getConfig('origin')) {
           if (this._displayedApp && this._displayedApp != this._homescreenWindow.getConfig('origin')) {
-            this._runningApps[this._displayedApp].close(AppWindow.defaultTransition.INVOKING);
-            this._runningApps[origin].open(AppWindow.defaultTransition.INVOKED);
+            this._runningApps[this._displayedApp].close(AppWindow.transition.INVOKING);
+            this._runningApps[origin].open(AppWindow.transition.INVOKED);
           } else {
             this._runningApps[origin].open();
             this._homescreenWindow.close();
@@ -152,6 +152,7 @@
       this._homescreenWindow.open();
       if (this._displayedApp != this._homescreenWindow.getConfig('origin')) {
         this._runningApps[this._displayedApp].close();
+        this._displayedApp = this._homescreenWindow.getConfig('origin');
       }
     },
 
