@@ -53,7 +53,7 @@
      * Ensure we're alive before going to homescreen.
      * (HomescreenWindow.open()).
      */
-    _leaveClosed: function hw__leaveNone(from, to, evt) {
+    _leaveClosed: function hw__leaveClosed(from, to, evt) {
       if (to == 'opening') {
         this.ensure();
       }
@@ -64,7 +64,8 @@
      * doesn't exist.
      */
     ensure: function hw_ensure() {
-      if (!this.element) {
+      if (!this.element && this.config) {
+        // Reconstruct the homescreen iframe if we're killed in background.
         this.render();
       }
       this.resize();
@@ -93,6 +94,9 @@
           self.resize();
           // Dispatch an event here for battery check.
           self.publish('ready');
+          if (callback) {
+            callback();
+          }
         }
       };
     },

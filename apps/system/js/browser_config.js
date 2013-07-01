@@ -41,7 +41,7 @@
       // entry point.
       var entryPoints = manifest.entry_points;
       if (entryPoints && manifest.type == 'certified') {
-        var givenPath = e.detail.url.substr(origin.length);
+        var givenPath = this.url.substr(origin.length);
 
         // Workaround here until the bug (to be filed) is fixed
         // Basicly, gecko is sending the URL without launch_path sometimes
@@ -57,6 +57,11 @@
               (currentEp.launch_path == path)) {
             origin = origin + currentEp.launch_path;
             name = new ManifestHelper(currentEp).name;
+            for (var key in currentEp) {
+              if (key !== 'locale' && key !== 'name') {
+                app.manifest[key] = currentEp[key];
+              }
+            }
           }
         }
       }

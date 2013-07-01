@@ -53,9 +53,8 @@
      * 
      * @event AppWindow#appcreated
      * @type {object}
-     * @property {string} origin - The origin of this appWindow instance.
      */
-    this.publish('created', this.config);
+    this.publish('created', this);
   };
 
   /**
@@ -186,12 +185,13 @@
   };
 
   AppWindow.prototype._removeSplash = function aw_removeSplash(first_argument) {
+    this._splash = null;
     if (this.element)
       this.element.style.backgroundImage = '';
   };
 
   AppWindow.prototype._appendSplash = function aw_appendSplash(first_argument) {
-    if (this.element)
+    if (this.element && this._splash)
       this.element.style.backgroundImage = 'url(' + this._splash + ')';
   };
   
@@ -208,23 +208,25 @@
     if (!icons) {
       return null;
     } else if (!this._preloadSplash) {
+      console.log(icons)
+      var sizes = Object.keys(icons).map(function parse(str) {
+        return parseInt(str, 10);
+      });
+
+      sizes.sort(function(x, y) { return y - x; });
+      var splash = icons[sizes[0]];
+
+      // Preload
       var a = document.createElement('a');
       a.href = this.config.origin;
-      var splash = a.protocol + '//' + a.hostname + ':' + (a.port || 80) + splash;
+      splash = a.protocol + '//' + a.hostname + ':' + (a.port || 80) + splash;
 
       // Start to load the image in background to avoid flickering if possible.
       this._preloadSplash = new Image();
       this._preloadSplash.src = splash;
+      this._splash = splash;
+      return splash;
     }
-
-    var sizes = Object.keys(icons).map(function parse(str) {
-      return parseInt(str, 10);
-    });
-
-    sizes.sort(function(x, y) { return y - x; });
-
-    this._splash = icons[sizes[0]];
-    return icons[sizes[0]];
   };
 
   /**
@@ -353,7 +355,6 @@
   };
 
   AppWindow.prototype.handleEvent = function(evt) {
-    console.log(evt, this);
     switch (evt.type) {
       case 'mozbrowserloadend':
         delete this._unloaded;
@@ -363,6 +364,7 @@
   };
 
   AppWindow.prototype.render = function aw_render() {
+    try{
     var element = document.createElement('div');
     element.id = this.className.replace(' ', '-') + this._id;
     this.className.split(' ').forEach(function iterator(name) {
@@ -384,6 +386,9 @@
     screenshotOverlay.classList.add('screenshot-overlay');
     this.frame.appendChild(screenshotOverlay);
     this.screenshotOverlay = screenshotOverlay;
+    } catch (e) {
+      console.log(e.stack);
+    }
   };
 
   /**
@@ -413,7 +418,7 @@
    *                             after we get next paint event.
    */
   AppWindow.prototype._waitForNextPaint =
-    function aw__waitForNextPaint(callback) {
+    function aw__waitForNextPaint(callback, timeout) {
       if (!callback)
         return;
 
@@ -430,7 +435,7 @@
         iframe.removeNextPaintListener(onNextPaint);
 
         callback();
-      }, this.NEXTPAINT_TIMEOUT);
+      }, timeout || this.NEXTPAINT_TIMEOUT);
 
       iframe.addNextPaintListener(onNextPaint);
     };
@@ -682,7 +687,7 @@
    * @param  {Object} detail Parameters in JSON format.
    */
   AppWindow.prototype.publish = function(event, detail) {
-    console.log('publish: ', this.eventPrefix + event);
+    console.log('[appWindow]['+this.config.origin+'] publish: ', this.eventPrefix + event);
     var evt = document.createEvent('CustomEvent');
     evt.initCustomEvent(this.eventPrefix + event,
                         true, false, detail || this.config);
@@ -741,11 +746,6 @@
     }
 
     var manifest = this.config.manifest;
-    if ('entry_points' in manifest && manifest.entry_points &&
-        manifest.type == 'certified') {
-       manifest = manifest.entry_points[origin.split('/')[3]];
-    }
-
     this._fullscreen = 'fullscreen' in manifest ? manifest.fullscreen : false;
 
     return this._fullscreen;

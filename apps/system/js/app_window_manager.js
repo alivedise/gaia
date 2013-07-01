@@ -11,6 +11,12 @@
 (function(window) {
   'use strict';
 
+  var System = {
+    debug: function s_debug(msg) {
+      console.log('[System]: ', msg);
+    }
+  };
+
   var AppWindowManager = {
     /**
      * The list of currently running AppWindow instances.
@@ -50,7 +56,10 @@
       window.addEventListener('home', this);
       window.addEventListener('unlock', this);
       window.addEventListener('appopen', this);
+      window.addEventListener('appcreated', this);
+      window.addEventListener('appterminated', this);
       window.addEventListener('homescreenopen', this);
+      window.addEventListener('appwillclose', this);
 
       if (Applications.ready) {
         window.addEventListener('mozChromeEvent', this);
@@ -65,19 +74,18 @@
     handleEvent: function awm_handleEvent(evt) {
       switch (evt.type) {
         case 'unlock':
-          this._homescreenWindow.open();
+          this.setDisplayedApp();
           break;
 
         case 'mozChromeEvent':
           var manifestURL = evt.detail.manifestURL;
           if (!manifestURL)
-            return;
+            break;
 
           var config = new BrowserConfig(evt.detail.url, evt.detail.manifestURL);
-
           switch (evt.detail.type) {
             case 'webapps-close':
-              this._runningApps[origin].kill();
+              this._runningApps[config.origin].kill();
               break;
 
             case 'webapps-launch':
@@ -87,6 +95,8 @@
               } else {
                 if (!(this.isRunning(config.origin))) {
                   this._runningApps[config.origin] = new AppWindow(evt.detail.url, evt.detail.manifestURL);
+                } else {
+                  System.debug('App of ' + config.origin + 'is already created and managed by AppWindowManager');
                 }
                 this.setDisplayedApp(config.origin);
               }
@@ -125,6 +135,19 @@
           if (this.isRunning(evt.detail.origin))
             this._displayedApp = evt.detail.origin;
           break;
+
+        case 'appcreated':
+          break;
+
+        case 'appterminated':
+          if (this.isRunning(evt.detail.origin)) {
+            delete this._runningApps[evt.detail.origin];
+          }
+          break;
+
+        case 'appwillclose':
+          // show homescreen is an app is closed by itself.
+          break;
       }
     },
 
@@ -140,20 +163,28 @@
       if (this.isRunning(origin)) {
         if (origin != this._homescreenWindow.getConfig('origin')) {
           if (this._displayedApp && this._displayedApp != this._homescreenWindow.getConfig('origin')) {
-            this._runningApps[this._displayedApp].close(AppWindow.transition.INVOKING);
+            // Require a next paint before opening,
+            // because after turning on the visibility it takes some time to paint.
+            this._runningApps[origin]._waitForNextPaint(function onNextPaint() {
+              this._runningApps[this._displayedApp].close(AppWindow.transition.INVOKING);
+            }.bind(this), 300);
             this._runningApps[origin].open(AppWindow.transition.INVOKED);
           } else {
+            this._runningApps[origin]._waitForNextPaint(function onNextPaint() {
+              this._homescreenWindow.close();
+            }.bind(this), 300);
             this._runningApps[origin].open();
-            this._homescreenWindow.close();
           }
           return;
         }
       }
-      this._homescreenWindow.open();
+      
       if (this._displayedApp != this._homescreenWindow.getConfig('origin')) {
-        this._runningApps[this._displayedApp].close();
-        this._displayedApp = this._homescreenWindow.getConfig('origin');
+        this._homescreenWindow._waitForNextPaint(function onNextPaint() {
+          this._runningApps[this._displayedApp].close();
+        }.bind(this), 300);
       }
+      this._homescreenWindow.open();
     },
 
     getRunningApps: function awm_getRunningApps() {
@@ -170,7 +201,6 @@
     _ensureHomescreen: function awm__ensureHomescreen() {
       if (!this._homescreenWindow) {
         this._homescreenWindow = new HomescreenWindow();
-        this._homescreenWindow.open();
       } else {
         this._homescreenWindow.goHome();
       }

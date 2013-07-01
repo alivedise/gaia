@@ -127,6 +127,8 @@
       if (this._unloaded) {
         //this.element.style.backgroundImage = 'url(' + this._splash + ')';
       }
+
+      // Turn of visibility once we're entering opening state.
       this.setVisible(true);
 
       // Make sure the transition is terminated.
