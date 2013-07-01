@@ -77,8 +77,39 @@
    * `_leaveOpening`
    * `_enterOpening`
    *
+   * Every callback here is for internal usage and would be executed only once.
+   *
+   * However you could utilize inner event in other functions.
+   * 
+   *
    * @mixin WindowTransition
    */
+  /**
+   * @event AppWindow#_onTransitionOpen
+   * @private
+   * @memberof AppWindow
+   */
+  /**
+   * @event AppWindow#_onTransitionClose
+   * @private
+   * @memberof AppWindow
+   */
+  /**
+   * @event AppWindow#_onTransitionEnd
+   * @private
+   * @memberof AppWindow
+   */
+  /**
+   * @event AppWindow#_onTransitionFinish
+   * @private
+   * @memberof AppWindow
+   */
+  /**
+   * @event AppWindow#_onTransitionCancel
+   * @private
+   * @memberof AppWindow
+   */
+  
   var WindowTransition = {
     TRANSITION_EVENT: EVT,
 
@@ -184,30 +215,47 @@
 
       var from = this._transitionState;
 
-      this._leaveState(from, to, evt);
-      this._onEvent(from, to, evt);
-      this._enterState(from, to, evt);
+      this.leaveState(from, to, evt);
+      this.onEvent(from, to, evt);
+      this.enterState(from, to, evt);
 
       this._previousTransitionState = from;
       this._transitionState = to;
     },
 
-    _enterState: function aw__enterState(from, to, evt) {
-      if (typeof(this['_enter' + capitalize(to.toLowerCase())]) == 'function') {
-        this['_enter' + capitalize(to.toLowerCase())](from, to, evt);
+    enterState: function aw_enterState(from, to, evt) {
+      var funcName = '_enter' + capitalize(to.toLowerCase());
+      if (typeof(this[funcName]) == 'function') {
+        setTimeout(function(){
+          this[funcName](from, to, evt);
+        }.bind(this), 0);
+      } else if (this[funcName] && Array.isArray(this[funcName])) {
+        this[funcName].forEach(function(func) {
+          setTimeout(function(){
+            func(from, to, evt);
+          }.bind(this), 0);
+        }, this);
       }
     },
 
-    _leaveState: function aw__leaveState(from, to, evt) {
-      if (typeof(this['_leave' + capitalize(from.toLowerCase())]) == 'function') {
-        this['_leave' + capitalize(from.toLowerCase())](from, to, evt);
+    leaveState: function aw_leaveState(from, to, evt) {
+      var funcName = '_leave' + capitalize(from.toLowerCase());
+      if (typeof(this[funcName]) == 'function') {
+        setTimeout(function(){
+          this[funcName](from, to, evt);
+        }.bind(this), 0);
+      } else if (this[funcName] && Array.isArray(this[funcName])) {
+        this[funcName].forEach(function(func) {
+          setTimeout(function(){
+            func(from, to, evt);
+          }.bind(this), 0);
+        }, this);
       }
     },
 
-    _onEvent: function aw__onEvent(from, to, evt) {
-      if (typeof(this['_on' + capitalize(_EVTARRAY[evt].toLowerCase())]) == 'function') {
-        this['_on' + capitalize(_EVTARRAY[evt].toLowerCase())](from, to, evt);
-      }
+    onEvent: function aw_onEvent(from, to, evt) {
+      var funcName = '_onTransition' + capitalize(_EVTARRAY[evt].toLowerCase());
+      this._invoke(funcName);
     },
 
     _enterOpened: function aw__enterOpened(from, to, evt) {

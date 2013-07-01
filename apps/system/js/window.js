@@ -34,6 +34,10 @@
    * @mixes WindowTransition into AppWindow.prototype
    */
   
+  /**
+   * @event AppWindow#_onRenderend
+   */
+  
 
   window.AppWindow = function AppWindow(url, manifestURL) {
     this._id = nextID++;
@@ -64,8 +68,31 @@
   AppWindow.addMixin = function (mixin) {    
     for (var prop in mixin) {
       if (mixin.hasOwnProperty(prop)) {
-        this.prototype[prop] = mixin[prop];
+        // Put event handler function into an array,
+        // if the name of the propery is '_on'.
+        if (this.prototype.hasOwnProperty(prop) &&
+            typeof(mixin[prop]) == 'function' &&
+            prop.indexOf('_on') == 0) {
+          this.prototype[prop] = [this.prototype[prop]];
+          this.prototype[prop].push(mixin[prop]);
+        } else {
+          this.prototype[prop] = mixin[prop];
+        }
       }
+    }
+  };
+
+  AppWindow.prototype._invoke = function(funcName) {
+    if (typeof(this[funcName]) == 'function') {
+      setTimeout(function(){
+        this[funcName](from, to, evt);
+      }.bind(this), 0);
+    } else if (this[funcName] && Array.isArray(this[funcName])) {
+      this[funcName].forEach(function(func) {
+        setTimeout(function(){
+          func(from, to, evt);
+        }.bind(this), 0);
+      }, this);
     }
   };
 
@@ -371,13 +398,16 @@
       element.classList.add(name);
     });
     this._browser = new BrowserFrame(this.config);
-    this._browser.element.addEventListener('mozbrowserloadstart', this.handleEvent.bind(this));
     this._browser.element.addEventListener('mozbrowserloadend', this.handleEvent.bind(this));
     this._start = Date.now();
     element.appendChild(this._browser.element);
     this.containerElement.appendChild(element);
 
     this.element = this.frame = element;
+    /**
+     * @fire AppWindow#_onRenderEnd
+     */
+    this.invoke('_onRenderEnd');
 
     this.element.addEventListener('transitionend', this._transitionHandler.bind(this));
     this.element.addEventListener('animationend', this._transitionHandler.bind(this));
@@ -687,11 +717,41 @@
    * @param  {Object} detail Parameters in JSON format.
    */
   AppWindow.prototype.publish = function(event, detail) {
-    console.log('[appWindow]['+this.config.origin+'] publish: ', this.eventPrefix + event);
+    System.debug('[appWindow][' + this.config.origin + '] publish: ', this.eventPrefix + event);
     var evt = document.createEvent('CustomEvent');
     evt.initCustomEvent(this.eventPrefix + event,
                         true, false, detail || this.config);
     this.element.dispatchEvent(evt);
+  };
+
+  AppWindow._stoppedInnerEvent = {};
+
+  /**
+   * Dispatch an inner event only used in this element.
+   *
+   * Every inner event name has a '_' prefix.
+   * 
+   * @param  {String} event  Event name, without object type prefix.
+   * @param  {Object} detail Parameters in JSON format.
+   */
+  AppWindow.prototype._dispatchInnerEvent = function(event, detail) {
+    System.debug('[appWindow][' + this.config.origin + '] inner event: _', this.eventPrefix + event);
+    var evt = document.createEvent('CustomEvent');
+    var evtName = '_' + this.eventPrefix + event;
+    evt.initCustomEvent(evtName, true, false, detail);
+
+    // Prevent others outside this.element to see this event.
+    if (!this.constructor._stoppedInnerEvent[evtName]) {
+      this.element.parentNode.addEventListener(evtName, function onEvent(evt) {
+        evt.stopImmediatePropagation();
+      });
+      this.constructor._stoppedInnerEvent[evtName] = true;
+    }
+    this.element.dispatchEvent(evt);
+  };
+
+  AppWindow.prototype._registerInnerEvent = function(event, callback) {
+    this.element.addEventListener(event, callback.bind(this));
   };
 
   /**

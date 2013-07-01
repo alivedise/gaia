@@ -24,6 +24,7 @@
 
     /**
      * Specify we're belong to which appWindow instance.
+     * @member {AppWindow}
      * @type {AppWindow}
      */
     this.parentWindow = app;
@@ -144,7 +145,7 @@
     // without closing transition
     if (!this.element.classList.contains('active')) {
       /**
-       * @event ActivityWindow#activityterminated.
+       * @event ActivityWindow#activityterminated
        */
       this.publish('terminated');
       this.element.parentNode.removeChild(this.element);

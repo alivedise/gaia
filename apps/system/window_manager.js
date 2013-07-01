@@ -141,7 +141,7 @@ var WindowManager = (function() {
       return null;
   }
 
-<<<<<<< HEAD
+//<<<<<<< HEAD
   // XXX: appWindow.resize needs to call setInlineActivityFramseSize().
   // We should maintain a link in appWindow to activity frame
   // so that appWindow can resize activity by itself.
@@ -1196,9 +1196,9 @@ var WindowManager = (function() {
     }
   }
 
-=======
+//=======
   
->>>>>>> WIP new ActivityWindow!
+//>>>>>>> WIP new ActivityWindow!
   // Watch activity completion here instead of activity.js
   // Because we know when and who to re-launch when activity ends.
   window.addEventListener('mozChromeEvent', function(e) {
