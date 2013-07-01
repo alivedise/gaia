@@ -77,15 +77,15 @@
    * `_leaveOpening`
    * `_enterOpening`
    *
-   * @mixin TransitionStateMachine
+   * @mixin WindowTransition
    */
-  var TransitionStateMachine = {
+  var WindowTransition = {
     TRANSITION_EVENT: EVT,
 
     /**
      * _transitionState indicates current transition state of appWindow.
      *
-     * @memberOf TransitionStateMachine
+     * @memberOf WindowTransition
      * @default
      * @type {String}
      */
@@ -97,13 +97,13 @@
      * **Only updated if the state changes successfully.**
      * 
      * @type {String|null}
-     * @memberOf TransitionStateMachine
+     * @memberOf WindowTransition
      */
     _previousTransitionState: null,
 
     /**
      * Handle the transition event.
-     * @memberOf TransitionStateMachine
+     * @memberOf WindowTransition
      */
     _transitionHandler: function aw__transitionHandler() {
       this._cancelTransition();
@@ -251,7 +251,7 @@
      * Set the transition way of opening or closing transition.
      * @param  {String} type       'open' or 'close'
      * @param  {String} transition The CSS rule name about window transition.
-     * @memberOf TransitionStateMachine
+     * @memberOf WindowTransition
      */
     _setTransition: function aw__setTransition(type, transition) {
       if (type != 'open' && type != 'close')
@@ -261,5 +261,5 @@
     }
   };
 
-  AppWindow.addMixin(TransitionStateMachine);
+  AppWindow.addMixin(WindowTransition);
 }(this));

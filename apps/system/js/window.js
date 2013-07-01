@@ -31,7 +31,7 @@
    * app.open();
    *
    * @constructor AppWindow
-   * @mixes TransitionStateMachine into AppWindow.prototype
+   * @mixes WindowTransition into AppWindow.prototype
    */
   
 
