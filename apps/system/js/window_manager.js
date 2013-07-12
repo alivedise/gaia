@@ -1099,6 +1099,9 @@ var WindowManager = (function() {
     if ('setVisible' in iframe)
       iframe.setVisible(true);
 
+    if (runningApps[displayedApp])
+      runningApps[displayedApp].setVisible(false);
+
     if ('orientation' in manifest) {
       frame.dataset.orientation = manifest.orientation;
       setOrientationForInlineActivity(frame);
