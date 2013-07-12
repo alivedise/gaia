@@ -1255,6 +1255,13 @@ var WindowManager = (function() {
     });
     runningApps[origin] = app;
 
+    var evt = document.createEvent('CustomEvent');
+    evt.initCustomEvent('appcreated', true, false, {
+      manifestURL: manifestURL,
+      origin: origin
+    });
+    frame.dispatchEvent(evt);
+
     if (app.isFullScreen()) {
       frame.classList.add('fullscreen-app');
     }
