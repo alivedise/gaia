@@ -394,6 +394,8 @@
     try{
     var element = document.createElement('div');
     element.id = this.className.replace(' ', '-') + this._id;
+    //HACK XXX
+    window[element.id] = this;
     this.className.split(' ').forEach(function iterator(name) {
       element.classList.add(name);
     });
@@ -407,7 +409,7 @@
     /**
      * @fire AppWindow#_onRenderEnd
      */
-    this.invoke('_onRenderEnd');
+    //this.invoke('_onRenderEnd');
 
     this.element.addEventListener('transitionend', this._transitionHandler.bind(this));
     this.element.addEventListener('animationend', this._transitionHandler.bind(this));
@@ -575,10 +577,10 @@
    * @param  {String} event  Event name, without object type prefix.
    * @param  {Object} detail Parameters in JSON format.
    */
-  AppWindow.prototype.publish = function(event, detail) {
+  AppWindow.prototype.publish = function(event) {
     var evt = document.createEvent('CustomEvent');
     evt.initCustomEvent(this.eventPrefix + event,
-                        true, false, detail || this.config);
+                        true, false, this);
     this.frame.dispatchEvent(evt);
   };
 
@@ -742,7 +744,7 @@
     System.debug('[appWindow][' + this.config.origin + '] publish: ' + this.eventPrefix + event);
     var evt = document.createEvent('CustomEvent');
     evt.initCustomEvent(this.eventPrefix + event,
-                        true, false, detail || this.config);
+                        true, false, this);
     this.element.dispatchEvent(evt);
   };
 

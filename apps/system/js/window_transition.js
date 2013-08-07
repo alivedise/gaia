@@ -43,8 +43,8 @@
               /* OPEN|CLOSE|FINISH|END|CANCEL */
     'closed':  ['opening', null, null, null, null],
     'opened':  [null, 'closing', null, null, null],
-    'closing': ['opened', null, 'closed', 'closed', 'opened'],
-    'opening': [null, 'closed', 'opened', 'opened', 'closed']
+    'closing': [null, null, 'closed', 'closed', 'opened'],
+    'opening': [null, null, 'opened', 'opened', 'closed']
   };
 
   /**
@@ -198,7 +198,7 @@
        * @memberof AppWindow
        */
       
-      if (from !== 'opened') {
+      if (from == 'opened') {
         // Only publish |willclose| event when previous state is "opened".
         this.publish('willclose');
       }
@@ -221,6 +221,13 @@
 
       this._previousTransitionState = from;
       this._transitionState = to;
+
+      try {
+        throw new Error('t');
+      } catch (e) {
+        console.log(e.stack);
+      }
+      System.debug('From: ' + from + ' To: ' + to + ' By: ' + _EVTARRAY[evt]);
     },
 
     enterState: function aw_enterState(from, to, evt) {

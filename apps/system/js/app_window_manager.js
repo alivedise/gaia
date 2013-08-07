@@ -1,21 +1,11 @@
 /**
- * AppWindowManager manages the life cycle of AppWindow instances.
- *
- * It on demand creates a new AppWindow instance,
- * resize an existing AppWindow instance,
- * destroy a closing AppWindow instance.
+ * AppWindowManager manages the opened AppWindow instances.
  *
  * @namespace AppWindowManager
  */
 
 (function(window) {
   'use strict';
-
-  var System = {
-    debug: function s_debug(msg) {
-      console.log('[System]: ', msg);
-    }
-  };
 
   var AppWindowManager = {
     /**
@@ -60,15 +50,6 @@
       window.addEventListener('appterminated', this);
       window.addEventListener('homescreenopen', this);
       window.addEventListener('appwillclose', this);
-
-      if (Applications.ready) {
-        window.addEventListener('mozChromeEvent', this);
-        InitLogoHandler.animate();
-        //this.safelyLaunchFTU();
-        this._ensureHomescreen();
-      } else {
-        window.addEventListener('applicationready', this);
-      }
     },
 
     handleEvent: function awm_handleEvent(evt) {
@@ -77,53 +58,12 @@
           this.setDisplayedApp();
           break;
 
-        case 'mozChromeEvent':
-          var manifestURL = evt.detail.manifestURL;
-          if (!manifestURL)
-            break;
-
-          var config = new BrowserConfig(evt.detail.url, evt.detail.manifestURL);
-          switch (evt.detail.type) {
-            case 'webapps-close':
-              this._runningApps[config.origin].kill();
-              break;
-
-            case 'webapps-launch':
-              if (config.origin == this._homescreenWindow.getConfig('origin')) {
-                // No need to append a frame if is homescreen
-                this.setDisplayedApp();
-              } else {
-                if (!(this.isRunning(config.origin))) {
-                  this._runningApps[config.origin] = new AppWindow(evt.detail.url, evt.detail.manifestURL);
-                } else {
-                  System.debug('App of ' + config.origin + 'is already created and managed by AppWindowManager');
-                }
-                this.setDisplayedApp(config.origin);
-              }
-              break;
-            }
-          break;
-
         case 'homescreenready':
-          //FtuLauncher.retrieve();
+          this._homescreenWindow = evt.detail;
           break;
 
-        // Animate init logo when FTU is launched.
-        case 'ftuopen':
-          InitLogoHandler.animate();
-          break;
-
-        case 'ftuskip':
-          InitLogoHandler.animate();
         case 'ftudone':
           this.setDisplayedApp();
-          break;
-
-        case 'applicationready':
-          window.removeEventListener('applicationready', this);
-          window.addEventListener('mozChromeEvent', this);
-          InitLogoHandler.animate();
-          this._ensureHomescreen();
           break;
 
         case 'home':
@@ -132,16 +72,18 @@
 
         case 'appopen':
         case 'homescreenopen':
-          if (this.isRunning(evt.detail.origin))
-            this._displayedApp = evt.detail.origin;
+          if (this.isRunning(evt.detail.config.origin))
+            this._displayedApp = evt.detail.config.origin;
           break;
 
         case 'appcreated':
+          this._runningApps[evt.detail.config.origin] = evt.detail;
+          System.publish('requestopen', evt.detail);
           break;
 
         case 'appterminated':
-          if (this.isRunning(evt.detail.origin)) {
-            delete this._runningApps[evt.detail.origin];
+          if (this.isRunning(evt.detail.config.origin)) {
+            delete this._runningApps[evt.detail.config.origin];
           }
           break;
 
@@ -149,10 +91,6 @@
           // show homescreen is an app is closed by itself.
           break;
       }
-    },
-
-    safelyLaunchFTU: function awm_safelyLaunchFTU() {
-      FtuLauncher.retrieve();
     },
 
     isRunning: function awm_isRunning(origin) {
@@ -189,52 +127,7 @@
 
     getRunningApps: function awm_getRunningApps() {
       return this._runningApps;
-    },
-
-    /**
-     * The function is to ensure homescreen app window is
-     * running, otherwise we will relaunch it.
-     * 
-     * @private
-     * @memberOf AppWindowManager
-     */
-    _ensureHomescreen: function awm__ensureHomescreen() {
-      if (!this._homescreenWindow) {
-        this._homescreenWindow = new HomescreenWindow();
-      } else {
-        this._homescreenWindow.goHome();
-      }
-    },
-
-    setOrientationForApp: function awm_setOrientationForApp() {
-
-    },
-
-    getCurrentDisplayedApp: function awm_getCurrentDisplayedApp() {
-      return this._runningApps[this._displayedApp];
-    },
-
-    getOrientationForApp: function awm_getOrientationForApp(origin) {
-      var app = this._runningApps[origin];
-
-      if (!app || !app.manifest)
-        return null;
-
-      return app.manifest.orientation;
-    },
-
-    toggleHomescreen: function awm_toggleHomescreen(visible) {
-      this._ensureHomescreen();
-      if (this._homescreenWindow)
-        this._homescreenWindow.setVisible(visible);
-    },
-
-    /**
-     * @deprecated Decrecated. Use AppWindow.screenshot instead.
-     * @type {Array}
-     * @memberOf AppWindowManager
-     */
-    screenshots: []
+    }
   };
 
   window.AppWindowManager = AppWindowManager;
