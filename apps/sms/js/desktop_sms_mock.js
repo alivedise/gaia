@@ -181,6 +181,52 @@
     });
   });
 
+  getTestFile('/test/unit/media/kitten-45.bmp', function(testImageBlob) {
+    messagesDb.messages.push({
+      id: messagesDb.id++,
+      threadId: 6,
+      sender: '052780',
+      type: 'mms',
+      read: true,
+      delivery: 'received',
+      subject: 'Test MMS bmp format Image message',
+      smil: '<smil><body><par><img src="example.bmp"/>' +
+            '<text src="text1"/></par></body></smil>',
+      attachments: [{
+        location: 'text1',
+        content: new Blob(['This is a bmp image message'],
+            { type: 'text/plain' })
+      },{
+        location: 'example.bmp',
+        content: testImageBlob
+      }],
+      timestamp: new Date()
+    });
+  });
+
+  getTestFile('/test/unit/media/grid.wbmp', function(testImageBlob) {
+    messagesDb.messages.push({
+      id: messagesDb.id++,
+      threadId: 6,
+      sender: '052780',
+      type: 'mms',
+      read: true,
+      delivery: 'received',
+      subject: 'Test MMS wbmp format Image message',
+      smil: '<smil><body><par><img src="grid.wbmp"/>' +
+            '<text src="text1"/></par></body></smil>',
+      attachments: [{
+        location: 'text1',
+        content: new Blob(['This is a wbmp image message'],
+            { type: 'text/plain' })
+      },{
+        location: 'grid.wbmp',
+        content: testImageBlob
+      }],
+      timestamp: new Date()
+    });
+  });
+
   var participants = [
     '101', '102', '103', '104', '105', '106', '107', '108', '109'
   ];
@@ -263,6 +309,17 @@
         type: 'sms',
         timestamp: new Date(Date.now() - 600000)
        },
+      {
+        threadId: 4,
+        sender: null,
+        receiver: '197746797',
+        body: 'This message is intended to demonstrate natural line ' +
+          'wrapping. (delivery: sent ; deliveryStatus: success)',
+        delivery: 'sent',
+        deliveryStatus: 'success',
+        type: 'sms',
+        timestamp: new Date(Date.now() - 550000)
+       },
        {
         threadId: 4,
         sender: '197746797',
@@ -305,6 +362,17 @@
       },
       {
         threadId: 4,
+        sender: null,
+        receiver: '197746797',
+        read: true,
+        body: 'short (delivery success)',
+        delivery: 'sent',
+        deliveryStatus: 'success',
+        type: 'sms',
+        timestamp: new Date(Date.now() - 150000)
+      },
+      {
+        threadId: 4,
         sender: '197746797',
         read: true,
         body: 'short (delivery: received)',
@@ -341,6 +409,18 @@
         subject: 'Error download',
         timestamp: new Date(Date.now() - 150000),
         expiryDate: new Date(Date.now() - ONE_DAY_TIME)
+      },
+      {
+        threadId: 8,
+        sender: '123456',
+        type: 'mms',
+        delivery: 'received',
+        deliveryStatus: ['success'],
+        subject: 'No attachment error',
+        smil: '<smil><body><par><text src="text1"/></par></body></smil>',
+        attachments: null,
+        timestamp: new Date(Date.now() - 150000),
+        expiryDate: new Date(Date.now() + ONE_DAY_TIME)
       }
     ],
     threads: [
@@ -349,7 +429,7 @@
         participants: ['1977'],
         lastMessageType: 'sms',
         body: 'Alo, how are you today, my friend? :)',
-        timestamp: new Date(now - (60000 * 12)),
+        timestamp: new Date(now - 172800000),
         unreadCount: 0
       },
       {
@@ -364,7 +444,7 @@
         id: 4,
         participants: ['197746797'],
         body: 'short (delivery: received)',
-        timestamp: new Date(Date.now() - 100000),
+        timestamp: new Date(Date.now() - 172800000),
         lastMessageType: 'sms',
         unreadCount: 0
       },
@@ -373,14 +453,14 @@
         participants: ['14886783487'],
         lastMessageType: 'sms',
         body: 'Hello world!',
-        timestamp: new Date(Date.now() - 60000000),
+        timestamp: new Date(Date.now() - 600000000),
         unreadCount: 2
       },
       {
         id: 6,
         participants: ['052780'],
         lastMessageType: 'mms',
-        timestamp: new Date(now - (60000 * 10)),
+        timestamp: new Date(now - (60000000 * 10)),
         unreadCount: 0
       },
       {
@@ -394,21 +474,21 @@
         id: 8,
         participants: ['123456'],
         lastMessageType: 'mms',
-        timestamp: new Date(Date.now() - 150000),
+        timestamp: new Date(Date.now() - 150000000),
         unreadCount: 0
       },
       {
         id: 9,
         participants: participants,
         lastMessageType: 'mms',
-        timestamp: new Date(now),
+        timestamp: new Date(new Date(now) - 150000000),
         unreadCount: 0
       },
       {
         id: 10,
         participants: ['+12125551234', '+15551237890'],
         lastMessageType: 'mms',
-        timestamp: new Date(now),
+        timestamp: new Date(new Date(now) - 874554444444),
         unreadCount: 0
       }
     ]
@@ -498,11 +578,17 @@
     attachments: [{
       location: 'text1',
       content: new Blob(
-        ['one contact with two numbers'], { type: 'text/plain' }
+        ['one contact with two numbers.\n\n ' +
+         'This matches a contact:  +12125551234\n\n' +
+         'This does not:  +14327659801\n\n' +
+         'A URL:  http://mozilla.com\n\n' +
+         'An email address:  a@b.com'],
+         { type: 'text/plain' }
       )
     }],
     timestamp: new Date()
   });
+
 
   // Internal publisher/subscriber implementation
   var allHandlers = {};
@@ -616,13 +702,21 @@
           name: 'mock send error'
         };
         if (typeof request.onerror === 'function') {
-          request.onerror();
+          request.onerror({
+            target: {
+              result: request
+            }
+          });
         }
         trigger('failed', sendInfo);
       } else {
         sendInfo.message.delivery = 'sent';
         if (typeof request.onsuccess === 'function') {
-          request.onsuccess();
+          request.onsuccess({
+            target: {
+              result: request
+            }
+          });
         }
         trigger('sent', sendInfo);
 
@@ -653,7 +747,7 @@
 
     setTimeout(initiateSend, simulation.delay());
 
-    return request;
+    return [request];
   };
 
   function hasSameParticipants(a, b) {
@@ -732,13 +826,21 @@
           name: 'mock send error'
         };
         if (typeof request.onerror === 'function') {
-          request.onerror();
+          request.onerror({
+            target: {
+              result: request
+            }
+          });
         }
         trigger('failed', sendInfo);
       } else {
         sendInfo.message.delivery = 'sent';
         if (typeof request.onsuccess === 'function') {
-          request.onsuccess();
+          request.onsuccess({
+            target: {
+              result: request
+            }
+          });
         }
         trigger('sent', sendInfo);
 
@@ -780,7 +882,7 @@
 
     setTimeout(initiateSend, simulation.delay());
 
-    return request;
+    return [request];
   };
 
   // getThreads

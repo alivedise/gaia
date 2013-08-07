@@ -1,12 +1,21 @@
 'use strict';
 
 var FixedHeader = (function FixedHeader() {
-  var headings;
   var selector;
   var view;
   var fixedContainer;
+  var fixedContainerHeight;
   var currentlyFixed;
-  var notApplyEffect;
+  var refreshTimeout;
+
+  var hideClass = 'no-fixed-header';
+
+  // matches(element, selector)
+  var matches = document.documentElement.matches ||
+    document.documentElement.mozMatchesSelector ||
+    document.documentElement.webkitMatchesSelector ||
+    document.documentElement.msMatchesSelector;
+  matches = matches.call.bind(matches);
 
   /**
    * Start listening scroll event, and applying the fixed header effect
@@ -15,74 +24,134 @@ var FixedHeader = (function FixedHeader() {
    *                             going to contain the top header.
    * @param  {String} select     Selector of the headers to be checked.
    */
-  var init = function init(scrollView, container, select, noEffect) {
+  var init = function init(scrollView, container, select) {
     selector = select;
     view = document.querySelector(scrollView);
     fixedContainer = document.querySelector(container);
+    fixedContainerHeight = fixedContainer.offsetHeight;
     refresh();
-    view.addEventListener('scroll', scrolling);
-    notApplyEffect = typeof noEffect === 'undefined' ? false : noEffect;
+    view.addEventListener('scroll', refresh);
+    refreshTimeout = null;
   };
 
   var refresh = function refresh() {
-    headings = view.querySelectorAll(selector);
-    // after setting up a new headings selection, check the scroll again
-    // in case we removed the header we have currently fixed.
-    scrolling();
-  };
-
-  var scrolling = function scrolling() {
-    var currentScroll = view.scrollTop;
-    for (var i = headings.length - 1; i >= 0; i--) {
-      var currentHeader = headings[i];
-      var headingPosition = currentHeader.offsetTop - view.offsetTop;
-      var offset = headingPosition - currentScroll;
-      var currentHeight = currentHeader.offsetHeight;
-      var differentHeaders = currentlyFixed != currentHeader;
-      // Effect
-      if (!notApplyEffect && Math.abs(offset) < currentHeight &&
-          differentHeaders) {
-        var toMove = Math.abs(offset) - currentHeight;
-        var inEffect = toMove <= 0;
-        var translateTop = 'translateY(' + toMove + 'px)';
-        var transform = inEffect ? translateTop : null;
-        fixedContainer.style.transform = transform;
-      }
-
-      // Switching Header
-      if (offset <= 0) {
-        if (differentHeaders) {
-          if (!notApplyEffect)
-            fixedContainer.style.transform = 'translateY(0)';
-          currentlyFixed = currentHeader;
-          fixedContainer.textContent = currentHeader.textContent;
-          if (currentHeader.id == 'group-favorites') {
-            fixedContainer.innerHTML = currentHeader.innerHTML;
-          }
-        }
-        return;
-      }
+    if (refreshTimeout === null) {
+      refreshTimeout = setTimeout(immediateRefresh);
     }
-    currentlyFixed = null;
-    if (!notApplyEffect)
-      fixedContainer.style.transform = 'translateY(-100%)';
   };
+
+  function findNextHeader(header) {
+    var nextHeader = header;
+    do {
+      nextHeader = nextHeader.nextElementSibling;
+    } while (nextHeader && !matches(nextHeader, selector));
+
+    return nextHeader;
+  }
+
+  function immediateRefresh() {
+    if (!view) {
+      // init was not called yet
+      return;
+    }
+
+    if (refreshTimeout) {
+      clearTimeout(refreshTimeout);
+    }
+    refreshTimeout = null;
+
+    findFixedHeader();
+    updatePosition();
+  }
+
+  function findFixedHeader() {
+    var currentHeader = view.querySelector(selector);
+    if (!currentHeader) {
+      // empty list
+      setCurrentlyFixed(null);
+      return;
+    }
+
+    var prevHeader, newFixed;
+    var viewPadding = currentHeader.offsetTop - view.offsetTop;
+
+    do {
+      var currentScroll = view.scrollTop;
+      var headingPosition = currentHeader.offsetTop - view.offsetTop;
+      var offset = headingPosition - currentScroll - viewPadding;
+
+      // Found a header that's below the top
+      // the fixed header should be the previous one
+      // unless it's the first one
+      if (offset > 0) {
+        newFixed = prevHeader || currentHeader;
+        break;
+      }
+
+      prevHeader = currentHeader;
+    } while ((currentHeader = findNextHeader(currentHeader)));
+
+    // if we found no header below the top, this means the last one should be
+    // fixed
+    setCurrentlyFixed(newFixed || prevHeader);
+  }
+
+  function updatePosition() {
+    if (!currentlyFixed) {
+      fixedContainer.classList.add(hideClass);
+      return;
+    }
+
+    var nextHeader = findNextHeader(currentlyFixed);
+    if (!nextHeader) {
+      fixedContainer.style.transform = null;
+      return;
+    }
+
+    var viewPadding = view.querySelector(selector).offsetTop - view.offsetTop;
+    var currentScroll = view.scrollTop;
+    var headingPosition = nextHeader.offsetTop - view.offsetTop;
+    var offset = headingPosition - currentScroll - viewPadding;
+
+    if (offset < fixedContainerHeight) {
+      var toMove = offset - fixedContainerHeight;
+      fixedContainer.style.transform = 'translateY(' + toMove + 'px)';
+    } else {
+      fixedContainer.style.transform = null;
+    }
+  }
+
+  function setCurrentlyFixed(newFixed) {
+    if (newFixed !== currentlyFixed) {
+      currentlyFixed = newFixed;
+      updateHeaderContent();
+    }
+  }
+
+  function updateHeaderContent() {
+    if (!fixedContainer) {
+      return;
+    }
+
+    if (currentlyFixed) {
+      var newContent = currentlyFixed.textContent;
+      if (fixedContainer.textContent !== newContent) {
+        fixedContainer.textContent = newContent;
+      }
+      fixedContainer.classList.remove(hideClass);
+    } else {
+      fixedContainer.classList.add(hideClass);
+    }
+  }
 
   var stop = function stop() {
-    view.removeEventListener('scroll', scrolling);
-  };
-
-  var start = function start() {
-    var header = headings[0];
-    if (header) {
-      fixedContainer.textContent = header.textContent;
-    }
+    view.removeEventListener('scroll', refresh);
   };
 
   return {
-    'init': init,
-    'refresh': refresh,
-    'start': start,
-    'stop': stop
+    init: init,
+    refresh: refresh,
+    updateHeaderContent: updateHeaderContent,
+    stop: stop
   };
 })();

@@ -56,6 +56,7 @@ HandledCall.prototype.handleEvent = function hc_handle(evt) {
       this.disconnected();
       break;
     case 'resuming':
+      OnCallHandler.updateKeypadEnabled();
       this.node.classList.remove('held');
       if (this.photo) {
         CallScreen.setCallerContactImage(this.photo, true, false);
@@ -63,6 +64,7 @@ HandledCall.prototype.handleEvent = function hc_handle(evt) {
       CallScreen.syncSpeakerEnabled();
       break;
     case 'held':
+      OnCallHandler.updateKeypadEnabled();
       this.node.classList.add('held');
       break;
     case 'busy':
@@ -83,7 +85,9 @@ HandledCall.prototype.startTimer = function hc_startTimer() {
   this.durationNode.classList.add('isTimer');
   LazyL10n.get((function localized(_) {
     this._ticker = setInterval(function hc_updateTimer(self, startTime) {
-      var elapsed = new Date(Date.now() - startTime);
+      // Bug 834334: Ensure that 28.999 -> 29.000
+      var delta = Math.round((Date.now() - startTime) / 1000) * 1000;
+      var elapsed = new Date(delta);
       var duration = {
         h: padNumber(elapsed.getUTCHours()),
         m: padNumber(elapsed.getUTCMinutes()),
@@ -99,10 +103,12 @@ HandledCall.prototype.updateCallNumber = function hc_updateCallNumber() {
   var number = this.call.number;
   var node = this.numberNode;
   var additionalInfoNode = this.additionalInfoNode;
+  var self = this;
 
   if (!number) {
     LazyL10n.get(function localized(_) {
       node.textContent = _('withheld-number');
+      self._cachedInfo = _('withheld-number');
     });
     return;
   }
@@ -111,15 +117,16 @@ HandledCall.prototype.updateCallNumber = function hc_updateCallNumber() {
   if (isEmergencyNumber) {
     LazyL10n.get(function localized(_) {
       node.textContent = _('emergencyNumber');
+      self._cachedInfo = _('emergencyNumber');
     });
     return;
   }
 
-  var self = this;
   Voicemail.check(number, function(isVoicemailNumber) {
     if (isVoicemailNumber) {
       LazyL10n.get(function localized(_) {
         node.textContent = _('voiceMail');
+        self._cachedInfo = _('voiceMail');
       });
     } else {
       Contacts.findByNumber(number, lookupContact);
@@ -130,6 +137,7 @@ HandledCall.prototype.updateCallNumber = function hc_updateCallNumber() {
     if (contact) {
       var primaryInfo = Utils.getPhoneNumberPrimaryInfo(matchingTel, contact);
       var contactCopy = {
+        id: contact.id,
         name: contact.name,
         org: contact.org,
         tel: contact.tel
@@ -145,7 +153,7 @@ HandledCall.prototype.updateCallNumber = function hc_updateCallNumber() {
       }
       self.formatPhoneNumber('end', true);
       self._cachedAdditionalInfo =
-        Utils.getPhoneNumberAdditionalInfo(matchingTel, contact, number);
+        Utils.getPhoneNumberAdditionalInfo(matchingTel);
       self.replaceAdditionalContactInfo(self._cachedAdditionalInfo);
       if (contact.photo && contact.photo.length > 0) {
         self.photo = contact.photo[0];

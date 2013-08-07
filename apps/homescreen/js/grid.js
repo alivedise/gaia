@@ -2,19 +2,18 @@
 
 var GridManager = (function() {
   var MAX_ICONS_PER_PAGE = 4 * 4;
-  var PREFERRED_ICON_SIZE = 60;
+
+  // Be aware that the current manifest icon description syntax does
+  // not distinguish between 60@1.5x and 90@1x, so we would have to use
+  // the latter as the former.
+  var PREFERRED_ICON_SIZE = 60 * (window.devicePixelRatio || 1);
+
   var SAVE_STATE_TIMEOUT = 100;
   var BASE_WIDTH = 320;
-  var BASE_HEIGHT = 480;
+  var BASE_HEIGHT = 460; // 480 - 20 (status bar height)
   var DEVICE_HEIGHT = window.innerHeight;
-  var SCALE_RATIO = window.innerWidth / BASE_WIDTH;
-  var AVAILABLE_SPACE = DEVICE_HEIGHT - (BASE_HEIGHT * SCALE_RATIO);
   var OPACITY_STEPS = 40; // opacity steps between [0,1]
-
-  // Check if there is space for another row of icons
-  if (AVAILABLE_SPACE > BASE_HEIGHT / 5) {
-    var MAX_ICONS_PER_PAGE = 4 * 5;
-  }
+  var HIDDEN_ROLES = ['system', 'keyboard', 'homescreen'];
 
   var container;
 
@@ -39,6 +38,14 @@ var GridManager = (function() {
     left: 0,
     right: 0
   };
+
+  // Check if there is space for another row of icons
+  // For WVGA, 800x480, we also want to show 4 x 5 grid on homescreen
+  // the homescreen size would be 770 x 480, and 770/480 ~= 1.6
+  if (DEVICE_HEIGHT - BASE_HEIGHT > BASE_HEIGHT / 5 ||
+      DEVICE_HEIGHT / windowWidth >= 1.6) {
+    MAX_ICONS_PER_PAGE = 4 * 5;
+  }
 
   var startEvent, isPanning = false, startX, currentX, deltaX, removePanHandler,
       noop = function() {};
@@ -158,6 +165,7 @@ var GridManager = (function() {
   function addActive(target) {
     if ('isIcon' in target.dataset) {
       target.classList.add('active');
+      removeActive !== noop && removeActive();
       removeActive = function _removeActive() {
         target.classList.remove('active');
         removeActive = noop;
@@ -179,7 +187,7 @@ var GridManager = (function() {
   function handleEvent(evt) {
     switch (evt.type) {
       case touchstart:
-        if (currentPage || numberOfSpecialPages === 1)
+        if (currentPage)
           evt.stopPropagation();
         touchStartTimestamp = evt.timeStamp;
         startEvent = isTouch ? evt.touches[0] : evt;
@@ -300,6 +308,9 @@ var GridManager = (function() {
             };
           } else if (currentPage === landingPage) {
             setOpacityToOverlay = function() {
+              if (!forward)
+                return;
+
               var opacity = (Math.abs(deltaX) / windowWidth) *
                             opacityOnAppGridPageMax;
               overlayStyle.opacity = opacityStepFunction(opacity);
@@ -372,6 +383,19 @@ var GridManager = (function() {
         }
 
         break;
+
+      case 'wheel':
+        if (evt.deltaMode === evt.DOM_DELTA_PAGE && evt.deltaX) {
+          // XXX: Scroll one page at a time
+          if (evt.deltaX > 0 && currentPage < pages.length - 1) {
+            GridManager.goToNextPage();
+          } else if (evt.deltaX < 0 && currentPage > 0) {
+            GridManager.goToPreviousPage();
+          }
+          evt.stopPropagation();
+          evt.preventDefault();
+        }
+        break;
     }
   }
 
@@ -391,9 +415,7 @@ var GridManager = (function() {
       var forward = dirCtrl.goesForward(deltaX);
       if (forward && currentPage < pages.length - 1) {
         page = page + 1;
-      } else if (!forward && page > 0 &&
-                 (page === landingPage || page >= nextLandingPage + 1 ||
-                    (page === nextLandingPage && !Homescreen.isInEditMode()))) {
+      } else if (!forward && page > 0) {
         page = page - 1;
       }
     } else if (!isPanning && evt) {
@@ -444,17 +466,6 @@ var GridManager = (function() {
     }
   }
 
-  var captureHashchange = false;
-
-  function hashchange(evt) {
-    if (!captureHashchange) {
-      return;
-    }
-
-    captureHashchange = false;
-    evt.stopImmediatePropagation();
-  }
-
   function goToPageCallback(index, fromPage, toPage, dispatchEvents, callback) {
     delete document.body.dataset.transitioning;
 
@@ -484,6 +495,9 @@ var GridManager = (function() {
     current.MozTransition = '';
     current.MozTransform = 'translateX(0)';
 
+    delete fromPage.container.dataset.currentPage;
+    toPage.container.dataset.currentPage = 'true';
+
     togglePagesVisibility(index - 1, index + 1);
 
     if (callback) {
@@ -498,14 +512,6 @@ var GridManager = (function() {
   function goToPage(index, callback) {
     if (index < 0 || index >= pages.length)
       return;
-
-    if (index === landingPage) {
-      // Homescreen won't call to this method due to stop the propagation
-      captureHashchange = true;
-      document.location.hash = 'root';
-    } else {
-      document.location.hash = '';
-    }
 
     var delay = touchEndTimestamp - lastGoingPageTimestamp ||
                 kPageTransitionDuration;
@@ -856,6 +862,7 @@ var GridManager = (function() {
 
     container = document.querySelector(selector);
     container.addEventListener('contextmenu', handleEvent);
+    container.addEventListener('wheel', handleEvent);
     ensurePanning();
 
     limits.left = container.offsetWidth * 0.05;
@@ -869,6 +876,7 @@ var GridManager = (function() {
     // See also pageHelper.saveAll().
     numberOfSpecialPages = container.children.length;
     landingPage = numberOfSpecialPages - 1;
+    currentPage = numberOfSpecialPages - 1;
     prevLandingPage = landingPage - 1;
     nextLandingPage = landingPage + 1;
     for (var i = 0; i < container.children.length; i++) {
@@ -958,18 +966,14 @@ var GridManager = (function() {
    * points, each one is represented as an icon.)
    */
   function processApp(app, callback) {
-    // Ignore system apps.
-    if (HIDDEN_APPS.indexOf(app.manifestURL) != -1)
-      return;
-
     appsByOrigin[app.origin] = app;
 
     var manifest = app.manifest ? app.manifest : app.updateManifest;
-    if (!manifest)
+    if (!manifest || HIDDEN_ROLES.indexOf(manifest.role) !== -1)
       return;
 
     var entryPoints = manifest.entry_points;
-    if (!entryPoints || manifest.type != 'certified') {
+    if (!entryPoints || manifest.type !== 'certified') {
       createOrUpdateIconForApp(app);
       return;
     }
@@ -1175,7 +1179,6 @@ var GridManager = (function() {
     kPageTransitionDuration = options.swipeTransitionDuration;
     overlayTransition = 'opacity ' + kPageTransitionDuration + 'ms ease';
 
-    window.addEventListener('hashchange', hashchange);
     IconRetriever.init();
 
     // Initialize the grid from the state saved in IndexedDB.
@@ -1202,6 +1205,9 @@ var GridManager = (function() {
   }
 
   return {
+
+    hiddenRoles: HIDDEN_ROLES,
+
     /*
      * Initializes the grid manager
      *

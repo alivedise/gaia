@@ -37,13 +37,13 @@
   /**
    * @event AppWindow#_onRenderend
    */
-  
+
 
   window.AppWindow = function AppWindow(url, manifestURL) {
     this._id = nextID++;
     this.config = new BrowserConfig(url, manifestURL);
     this._splash = this.getIconForSplash();
-    
+
     this.render();
     // We keep the appError object here for the purpose that
     // we may need to export the error state of AppWindow instance
@@ -84,12 +84,12 @@
 
   AppWindow.prototype._invoke = function(funcName) {
     if (typeof(this[funcName]) == 'function') {
-      setTimeout(function(){
+      setTimeout(function() {
         this[funcName](from, to, evt);
       }.bind(this), 0);
     } else if (this[funcName] && Array.isArray(this[funcName])) {
       this[funcName].forEach(function(func) {
-        setTimeout(function(){
+        setTimeout(function() {
           func(from, to, evt);
         }.bind(this), 0);
       }, this);
@@ -558,6 +558,28 @@
     req.onerror = function gotScreenshotFromFrameError(evt) {
       callback();
     };
+  };
+
+  /**
+   * Event prefix presents the object type
+   * when publishing an event from the element.
+   * Always 'app' for now.
+   *
+   * @type {String}
+   */
+  AppWindow.prototype.eventPrefix = 'app';
+
+  /**
+   * Publish an event.
+   *
+   * @param  {String} event  Event name, without object type prefix.
+   * @param  {Object} detail Parameters in JSON format.
+   */
+  AppWindow.prototype.publish = function(event, detail) {
+    var evt = document.createEvent('CustomEvent');
+    evt.initCustomEvent(this.eventPrefix + event,
+                        true, false, detail || this.config);
+    this.frame.dispatchEvent(evt);
   };
 
   /**

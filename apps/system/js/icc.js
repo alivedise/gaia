@@ -7,10 +7,12 @@ var icc = {
   _iccLastCommand: null,
   _displayTextTimeout: 40000,
   _defaultURL: null,
+  _inputTimeout: 40000,
 
   init: function icc_init() {
     this._icc = this.getICC();
     this.hideViews();
+    this.protectForms();
     this.getIccInfo();
     var self = this;
     this.clearMenuCache(function() {
@@ -26,6 +28,12 @@ var icc = {
     reqDisplayTimeout.onsuccess = function icc_getDisplayTimeout() {
       this._displayTextTimeout =
         reqDisplayTimeout.result['icc.displayTextTimeout'];
+    };
+    // Update inputTimeout with settings parameter
+    var reqInputTimeout = window.navigator.mozSettings.createLock().get(
+      'icc.inputTextTimeout');
+    reqInputTimeout.onsuccess = function icc_getInputTimeout() {
+      this._inputTimeout = reqInputTimeout.result['icc.inputTextTimeout'];
     };
   },
 
@@ -75,6 +83,16 @@ var icc = {
 
   handleSTKCommand: function icc_handleSTKCommand(command) {
     DUMP('STK Proactive Command:', command);
+    if (FtuLauncher.isFtuRunning()) {
+      // Delay the stk command until FTU is done
+      var self = this;
+      window.addEventListener('ftudone', function ftudone() {
+        DUMP('FTU is done!... processing STK command:', command);
+        self.handleSTKCommand(command);
+      });
+      return DUMP('FTU is running, delaying STK...');
+    }
+
     this._iccLastCommand = command;
 
     var cmdId = '0x' + command.typeOfCommand.toString(16);
@@ -82,44 +100,7 @@ var icc = {
       return icc_worker[cmdId](command, this);
     }
 
-    // Command not yet supported in system (Bug #875679)
-    // transferring to settings...
-    DUMP('STK -> Settings: ', command);
-    var application = document.location.protocol + '//' +
-      document.location.host.replace('system', 'settings');
-    DUMP('application: ', application);
-    var reqIccData = window.navigator.mozSettings.createLock().set({
-      'icc.data': JSON.stringify(command)
-    });
-    reqIccData.onsuccess = function icc_getIccData() {
-      if (WindowManager.getRunningApps()[application]) {
-        DUMP('Settings is running. Ignoring');
-        return;   // If settings is opened, we don't manage it
-      }
-
-      function launchSettings() {
-        DUMP('Locating settings . . .');
-        navigator.mozApps.mgmt.getAll().onsuccess =
-        function gotApps(evt) {
-          var apps = evt.target.result;
-          apps.forEach(function appIterator(app) {
-            if (app.origin != application)
-              return;
-            DUMP('Launching ', app.origin);
-            app.launch();
-          }, this);
-        };
-      }
-      if (FtuLauncher.isFtuRunning()) {
-        // Delay the stk command until FTU is done
-        window.addEventListener('ftudone', function ftudone() {
-          DUMP('ftu is done!');
-          launchSettings();
-        });
-      } else {
-        launchSettings();
-      }
-    };
+    DUMP('STK Command not recognized ! - ', command);
   },
 
 
@@ -147,6 +128,36 @@ var icc = {
     this.responseSTKCommand({
       resultCode: this._icc.STK_RESULT_BACKWARD_MOVE_BY_USER
     });
+  },
+
+  /**
+   * Protect forms from reloading system app
+   */
+  protectForms: function() {
+    var protect = function(event) {
+      if (!event) {
+        return;
+      }
+
+      event.preventDefault();
+    };
+
+    // Prevents from reloading the system app when
+    // the user taps on the Enter key
+    var iccView = document.getElementById('icc-view');
+    if (!iccView) {
+      return;
+    }
+
+    var forms = iccView.getElementsByTagName('form');
+    if (!forms) {
+      return;
+    }
+
+    for (var i = 0; i < forms.length; i++) {
+      var form = forms[i];
+      form.onsubmit = protect;
+    }
   },
 
   /******************************************
@@ -311,6 +322,109 @@ var icc = {
         openURL(url);
       }
     }
+  },
+
+  input: function(message, timeout, options, callback) {
+    /**
+     * Check if the length of the input is valid.
+     *
+     * @param {Integer} inputLen    The length of the input.
+     * @param {Integer} minLen      Minimum length required of the input.
+     * @param {Integer} maxLen      Maximum length required of the input.
+     */
+    function checkInputLengthValid(inputLen, minLen, maxLen) {
+      return (inputLen >= minLen) && (inputLen <= maxLen);
+    }
+
+    if (!this.icc_input) {
+      this.icc_input = document.getElementById('icc-input');
+      this.icc_input_msg = document.getElementById('icc-input-msg');
+      this.icc_input_box = document.getElementById('icc-input-box');
+      this.icc_input_btn = document.getElementById('icc-input-btn');
+      this.icc_input_btn_yes = document.getElementById('icc-input-btn_yes');
+      this.icc_input_btn_no = document.getElementById('icc-input-btn_no');
+      this.icc_input_btn_back = document.getElementById('icc-input-btn_back');
+      this.icc_input_btn_help = document.getElementById('icc-input-btn_help');
+    }
+
+    if (typeof callback != 'function') {
+      callback = function() {};
+    }
+    var self = this;
+    var timeoutId = null;
+
+    // Help
+    this.icc_input_btn_help.disabled = !options.isHelpAvailable;
+
+    if (!options.isYesNoRequired && !options.isYesNoRequested) {
+      this.icc_input.classList.remove('yesnomode');
+
+      this.icc_input_box.maxLength = options.maxLength;
+      this.icc_input_box.placeholder = message;
+      this.icc_input_box.type = options.isAlphabet ? 'text' : 'tel';
+      if (options.defaultText) {
+        this.icc_input_box.value = options.defaultText;
+      }
+      if (options.hideInput) {
+        this.icc_input_box.type = 'password';
+      }
+      if (options.hidden) {
+        this.icc_input_box.type = 'hidden';
+      }
+      this.icc_input_btn.disabled = !checkInputLengthValid(
+        this.icc_input_box.value.length, options.minLength, options.maxLength);
+      this.icc_input_box.onkeyup = function(event) {
+        clearTimeout(timeoutId);
+        if (self.icc_input_box.type === 'tel') {
+          // Removing unauthorized characters
+          self.icc_input_box.value =
+            self.icc_input_box.value.replace(/[()-]/g, '');
+        }
+        self.icc_input_btn.disabled = !checkInputLengthValid(
+          self.icc_input_box.value.length, options.minLength,
+          options.maxLength);
+      };
+      this.icc_input_btn.onclick = function() {
+        clearTimeout(timeoutId);
+        self.hideViews();
+        callback(true, self.icc_input_box.value);
+      };
+      this.icc_input_box.focus();
+    } else {
+      this.icc_input.classList.add('yesnomode');
+      this.icc_input_box.type = 'hidden';
+      this.icc_input_btn_yes.onclick = function(event) {
+        clearTimeout(timeoutId);
+        self.hideViews();
+        callback(true, 1);
+      };
+      this.icc_input_btn_no.onclick = function(event) {
+        clearTimeout(timeoutId);
+        self.hideViews();
+        callback(true, 0);
+      };
+    }
+
+    this.icc_input_box.value = '';
+    this.icc_input_msg.textContent = message;
+    this.icc_input.classList.add('visible');
+    this.icc_view.classList.add('visible');
+
+    // STK Default response (BACK and HELP)
+    this.icc_input_btn_back.onclick = function() {
+      clearTimeout(timeoutId);
+      self.hideViews();
+      self.backResponse();
+      callback(null);
+    };
+    this.icc_input_btn_help.onclick = function() {
+      clearTimeout(timeoutId);
+      self.hideViews();
+      self.responseSTKCommand({
+        resultCode: self._icc.STK_RESULT_HELP_INFO_REQUIRED
+      });
+      callback(null);
+    };
   }
 };
 

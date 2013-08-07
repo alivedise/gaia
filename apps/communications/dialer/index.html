@@ -9,12 +9,11 @@
     <script defer src="/shared/js/lazy_loader.js"></script>
     <script defer src="/shared/js/lazy_l10n.js"></script>
     <link rel="resource" type="application/l10n" href="/dialer/locales/locales.ini">
+    <link rel="resource" type="application/l10n" href="/contacts/locales/locales.ini">
     <link rel="resource" type="application/l10n" href="/shared/locales/date.ini">
     <!-- Needed to not duplicate PIN/PUK management strings -->
     <link rel="resource" type="application/l10n" href="/ftu/locales/locales.ini">
 
-    <!-- multi-resolution support -->
-    <link rel="stylesheet" href="/shared/style/responsive.css">
     <!-- CSS -->
     <link rel="stylesheet" type="text/css" href="/contacts/style/animations.css">
     <link rel="stylesheet" type="text/css" href="/dialer/style/dialer.css">
@@ -22,7 +21,6 @@
     <link rel="stylesheet" type="text/css" href="/shared/style_unstable/tabs.css">
 
     <!-- JS -->
-    <script defer src="/shared/js/mouse_event_shim.js"></script>
     <script defer src="/dialer/js/utils.js"></script>
     <script defer src="/dialer/js/tone_player.js"></script>
     <script defer src="/dialer/js/keypad.js"></script>
@@ -31,6 +29,9 @@
 
     <!-- for perf-measurement related utilities -->
     <script defer src='/shared/js/performance_testing_helper.js'></script>
+
+    <!-- IccHelper -->
+    <script defer src='/shared/js/icc_helper.js'></script>
 
     <!-- Lazy load all the things:
     <link rel="stylesheet" type="text/css" href="/shared/style/action_menu.css">
@@ -55,7 +56,6 @@
     <script defer src="/dialer/js/contacts.js"></script>
     <script defer src="/dialer/js/contact_data_manager.js"></script>
     <script defer src="/dialer/js/suggestion_bar.js"></script>
-    <script defer src="/dialer/js/recents.js"></script>
     <script defer src="/dialer/js/telephony_helper.js"></script>
     <script defer src="/dialer/js/mmi.js"></script>
     <script defer src="/dialer/js/mmi_ui.js"></script>
@@ -86,10 +86,25 @@
             <div class="view-body">
               <div id="fixed-container" class="fixed-title"></div>
               <article id="call-log-container" class="view-body-inner" data-type="list">
+                <div id="no-result-container" hidden>
+                  <div id="no-result-message">
+                    <p id="no-result-msg1" data-l10n-id="no-logs-msg-1"></p>
+                    <p id="no-result-msg2" data-l10n-id="no-logs-msg-2"></p>
+                    <p id="no-result-msg3" data-l10n-id="no-logs-msg-3" hidden></p>
+                  </div>
+                </div>
               </article>
             </div>
           </section>
         </div>
+        <form role="dialog" data-type="confirm" id="call-log-upgrading" class="hide">
+          <section>
+            <div role="status">
+              <span id="call-log-upgrade-percent" class="loading-header">0%</span>
+              <progress id="call-log-upgrade-progress" class="pack-activity" value="0" max="100"></progress>
+            </div>
+          </section>
+        </form>
       </article>
       <article class="view" role="tab" id="contacts-view">
         <a id="option-contacts" href="#contacts-view" class="icon icon-contacts">contacts</a>
@@ -212,8 +227,8 @@
         </header>
       </section>
       <menu>
-        <button id="deselect-all-threads" class="edit-button" disabled="disabled" data-l10n-id="deselectAll">Deselect all</button>
-        <button id="select-all-threads" class="edit-button" data-l10n-id="selectAll">Select all</button>
+        <button id="deselect-all-threads" class="edit-button" disabled="disabled" data-l10n-id="deselectAll">Deselect All</button>
+        <button id="select-all-threads" class="edit-button" data-l10n-id="selectAll">Select All</button>
       </menu>
       -->
     </form>
@@ -223,6 +238,7 @@
       <header data-l10n-id="addNewNumber"> Add New Number </header>
       <menu>
         <button id="call-menuitem" data-l10n-id="call"> Call </button>
+        <button id="send-sms-menuitem" data-l10n-id="sendSms"> Send Message </button>
         <button id="create-new-contact-menuitem" data-l10n-id="createNewContact"> Create New Contact </button>
         <button id="add-to-existing-contact-menuitem" data-l10n-id="addToExistingContact"> Add to Existing Contact </button>
         <button id="cancel-action-menu" data-l10n-id="cancel">  Cancel  </button>

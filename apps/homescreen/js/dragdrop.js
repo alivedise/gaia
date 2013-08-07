@@ -14,6 +14,11 @@ const DragDropManager = (function() {
   var REARRANGE_DELAY = 50;
 
   /*
+   * It defines the time (in ms) to ensure that the dragend event is performed
+   */
+  var ENSURE_DRAG_END_DELAY = 1000;
+
+  /*
    * Drop feature is disabled (in the borders of the icongrid)
    */
   var isDisabledDrop = false;
@@ -93,7 +98,6 @@ const DragDropManager = (function() {
       draggableIcon.addClassToDragElement('overDock');
       DragLeaveEventManager.send(pageHelper.getCurrent(), function end(done) {
         DockManager.page.appendIcon(draggableIcon);
-        overlapElem = document.elementFromPoint(cx, cy);
         drop(DockManager.page);
         done();
       });
@@ -115,6 +119,7 @@ const DragDropManager = (function() {
       draggableIcon.removeClassToDragElement('overDock');
       DragLeaveEventManager.send(DockManager.page, function end(done) {
         curPageObj.appendIconVisible(draggableIcon);
+        drop(pageHelper.getCurrent());
         done();
       });
     } else if (!isDisabledCheckingLimits) {
@@ -199,13 +204,28 @@ const DragDropManager = (function() {
     isDisabledDrop = false;
     transitioning = false;
     var page = getPage();
+    var ensureCallbackID = null;
     DragLeaveEventManager.send(page, function(done) {
-      draggableIcon.onDragStop(callback);
+      if (ensureCallbackID !== null) {
+        window.clearTimeout(ensureCallbackID);
+        draggableIcon.onDragStop(callback);
+      }
       done();
     }, true);
+
+    // We ensure that there is not an icon lost on the grid
+    ensureCallbackID = window.setTimeout(function() {
+      ensureCallbackID = null;
+      draggableIcon.onDragStop(callback);
+    }, ENSURE_DRAG_END_DELAY);
   }
 
   function drop(page) {
+    overlapElem = document.elementFromPoint(cx, cy);
+    doDrop(page);
+  }
+
+  function doDrop(page) {
     if (!overlapElem) {
       return;
     }
@@ -310,7 +330,7 @@ const DragDropManager = (function() {
           }, REARRANGE_DELAY);
         }
       } else {
-        overlapingTimeout = setTimeout(drop, REARRANGE_DELAY, page);
+        overlapingTimeout = setTimeout(doDrop, REARRANGE_DELAY, page);
       }
     }
 
@@ -318,11 +338,14 @@ const DragDropManager = (function() {
   }
 
   function onEnd(evt) {
-    clearTimeout(overlapingTimeout);
+    if (overlapingTimeout !== null) {
+      clearTimeout(overlapingTimeout);
+    }
     window.removeEventListener(touchmove, onMove);
     window.removeEventListener(touchend, onEnd);
     stop(function dg_stop() {
       DockManager.onDragStop(GridManager.onDragStop);
+      window.dispatchEvent(new CustomEvent('dragend'));
     });
   }
 
@@ -364,6 +387,14 @@ const DragDropManager = (function() {
     };
 
     return {
+     /*
+      * This method initializes the component
+      */
+      init: function init() {
+        events = [];
+        working = false;
+      },
+
      /*
       * This method performs all operations needed before changing of page
       *
@@ -407,11 +438,12 @@ const DragDropManager = (function() {
     start: function ddm_start(evt, initCoords) {
       window.addEventListener(touchend, onEnd);
       window.addEventListener(touchmove, onMove);
+      DragLeaveEventManager.init();
       GridManager.onDragStart();
       DockManager.onDragStart();
       sx = initCoords.x;
       sy = initCoords.y;
-      isDockDisabled = false;
+      isDockDisabled = isDisabledDrag = isDisabledDrop = false;
       overlapingDock = (initCoords.y >= limitY) ? true : false;
       originElem = evt.target;
       onStart(originElem.classList.contains('options') ? originElem.parentNode :

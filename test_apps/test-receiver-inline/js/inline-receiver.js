@@ -59,6 +59,12 @@ var promptButton = function promptButton() {
   prompt('inline-activty prompt!');
 };
 
-var closeMe = function closeMe() {
-  window.close();
-}
+// When the app is being closed or killed, we will cancel the pending
+// request.
+document.addEventListener('visibilitychange', function visibility(e) {
+  if (!document.hidden || !activityRequest)
+    return;
+
+  activityRequest.postError('canceled');
+  activityRequest = null;
+});

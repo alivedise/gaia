@@ -21,11 +21,12 @@ const DEFAULT_TIME = 0;
  * Add a file to a zip file with the specified time
  */
 function addEntryFileWithTime(zip, pathInZip, file, time) {
-  let fis = Cc["@mozilla.org/network/file-input-stream;1"].
+  let fis = Cc['@mozilla.org/network/file-input-stream;1'].
               createInstance(Ci.nsIFileInputStream);
   fis.init(file, -1, -1, 0);
 
-  zip.addEntryStream(pathInZip, time, Ci.nsIZipWriter.COMPRESSION_DEFAULT, fis, false);
+  zip.addEntryStream(
+    pathInZip, time, Ci.nsIZipWriter.COMPRESSION_DEFAULT, fis, false);
   fis.close();
 }
 
@@ -54,13 +55,14 @@ function addToZip(zip, pathInZip, file) {
 
     if (GAIA_DEV_PIXELS_PER_PX !== '1') {
       if (matchResult && matchResult[1] === GAIA_DEV_PIXELS_PER_PX) {
-        // Save the hidpi file to the zip, stripping the name to be more generic.
+        // Save the hidpi file to the zip, strip the name to be more generic.
         pathInZip = pathInZip.replace(suffix, '');
       } else {
-        // Check if there a hidpi file. If yes, let's ignore this bitmap since it will
-        // be loaded later (or it has already been loaded, depending on how the OS
-        // organize files.
-        let hqfile = new FileUtils.File(file.path.replace(/(\.[a-z]+$)/, suffix + '$1'));
+        // Check if there a hidpi file. If yes, let's ignore this bitmap since
+        // it will be loaded later (or it has already been loaded, depending on
+        // how the OS organize files.
+        let hqfile = new FileUtils.File(
+            file.path.replace(/(\.[a-z]+$)/, suffix + '$1'));
         if (hqfile.exists()) {
           return;
         }
@@ -202,12 +204,17 @@ Gaia.webapps.forEach(function(webapp) {
 
   // Add webapp folder to the zip
   debug('# Create zip for: ' + webapp.domain);
-  let files = ls(webapp.sourceDirectoryFile);
+  let files = ls(webapp.buildDirectoryFile);
   files.forEach(function(file) {
-      // Ignore l10n files if they have been inlined
-      if (GAIA_INLINE_LOCALES &&
+      // Ignore l10n files if they have been inlined or concatenated
+      if ((GAIA_INLINE_LOCALES === '1' || GAIA_CONCAT_LOCALES === '1') &&
           (file.leafName === 'locales' || file.leafName === 'locales.ini'))
         return;
+
+      // Ignore concatenated l10n files if GAIA_CONCAT_LOCALES is not set
+      if (file.leafName === 'locales-obj' && GAIA_CONCAT_LOCALES !== '1')
+        return;
+
       // Ignore files from /shared directory (these files were created by
       // Makefile code). Also ignore files in the /test directory.
       if (file.leafName !== 'shared' && file.leafName !== 'test')
@@ -215,7 +222,7 @@ Gaia.webapps.forEach(function(webapp) {
     });
 
   if (webapp.sourceDirectoryName === 'system' && Gaia.distributionDir) {
-    if(getFile(Gaia.distributionDir, 'power').exists()) {
+    if (getFile(Gaia.distributionDir, 'power').exists()) {
       customizeFiles(zip, 'power', 'resources/power/');
     }
   }
@@ -239,7 +246,40 @@ Gaia.webapps.forEach(function(webapp) {
     unstable_styles: []  // List of unstable style names to copy
   };
 
-  let files = ls(webapp.sourceDirectoryFile, true);
+  function sortResource(kind, path) {
+    switch (kind) {
+      case 'js':
+        if (used.js.indexOf(path) == -1)
+          used.js.push(path);
+        break;
+      case 'locales':
+        if (GAIA_INLINE_LOCALES !== '1') {
+          let localeName = path.substr(0, path.lastIndexOf('.'));
+          if (used.locales.indexOf(localeName) == -1) {
+            used.locales.push(localeName);
+          }
+        }
+        break;
+      case 'resources':
+        if (used.resources.indexOf(path) == -1) {
+          used.resources.push(path);
+        }
+        break;
+      case 'style':
+        let styleName = path.substr(0, path.lastIndexOf('.'));
+        if (used.styles.indexOf(styleName) == -1)
+          used.styles.push(styleName);
+        break;
+      case 'style_unstable':
+        let unstableStyleName = path.substr(0, path.lastIndexOf('.'));
+        if (used.unstable_styles.indexOf(unstableStyleName) == -1)
+          used.unstable_styles.push(unstableStyleName);
+        break;
+    }
+  }
+
+  // Scan the files
+  let files = ls(webapp.buildDirectoryFile, true);
   files.filter(function(file) {
       // Process only files that may require a shared file
       let extension = file.leafName
@@ -253,37 +293,21 @@ Gaia.webapps.forEach(function(webapp) {
       while ((matches = SHARED_USAGE.exec(content)) !== null) {
         let kind = matches[1]; // js | locales | resources | style
         let path = matches[2];
-        switch (kind) {
-          case 'js':
-            if (used.js.indexOf(path) == -1)
-              used.js.push(path);
-            break;
-          case 'locales':
-            if (!GAIA_INLINE_LOCALES) {
-              let localeName = path.substr(0, path.lastIndexOf('.'));
-              if (used.locales.indexOf(localeName) == -1) {
-                used.locales.push(localeName);
-              }
-            }
-            break;
-          case 'resources':
-            if (used.resources.indexOf(path) == -1) {
-              used.resources.push(path);
-            }
-            break;
-          case 'style':
-            let styleName = path.substr(0, path.lastIndexOf('.'));
-            if (used.styles.indexOf(styleName) == -1)
-              used.styles.push(styleName);
-            break;
-          case 'style_unstable':
-            let unstableStyleName = path.substr(0, path.lastIndexOf('.'));
-            if (used.unstable_styles.indexOf(unstableStyleName) == -1)
-              used.unstable_styles.push(unstableStyleName);
-            break;
-        }
+        sortResource(kind, path);
       }
     });
+
+  // Look for gaia_shared.json in case app uses resources not specified in HTML
+  let sharedDataFile = webapp.buildDirectoryFile.clone();
+  sharedDataFile.append('gaia_shared.json');
+  if (sharedDataFile.exists()) {
+    let sharedData = JSON.parse(getFileContent(sharedDataFile));
+    Object.keys(sharedData).forEach(function(kind) {
+      sharedData[kind].forEach(function(path) {
+        sortResource(kind, path);
+      });
+    });
+  }
 
   used.js.forEach(function(path) {
     // Compute the nsIFile for this shared JS file
@@ -335,7 +359,14 @@ Gaia.webapps.forEach(function(webapp) {
       return;
     }
 
-    addToZip(zip, '/shared/resources/' + path, file);
+    // Add not only file itself but all its hidpi-suffixed versions.
+    let fileNameRegexp = new RegExp(
+        '^' + file.leafName.replace(/(\.[a-z]+$)/, '(@.*x)?\\$1') + '$');
+    ls(file.parent, false).forEach(function(listFile) {
+      if (fileNameRegexp.test(listFile.leafName)) {
+        addToZip(zip, '/shared/resources/' + path, listFile);
+      }
+    });
 
     if (path === 'media/ringtones/' && Gaia.distributionDir &&
       getFile(Gaia.distributionDir, 'ringtones').exists()) {

@@ -8,10 +8,12 @@
 // This file depends on JPEGMetadataParser.js and blobview.js
 //
 var metadataParser = (function() {
+  var DEVICE_RATIO = window.devicePixelRatio;
   // If we generate our own thumbnails, aim for this size.
   // Calculate needed size from longer side of the screen.
   var THUMBNAIL_WIDTH = Math.round(
-                          Math.max(window.innerWidth, window.innerHeight) / 4);
+                          Math.max(window.innerWidth, window.innerHeight) *
+                            DEVICE_RATIO / 4);
   var THUMBNAIL_HEIGHT = THUMBNAIL_WIDTH;
 
   // Don't try to decode image files of unknown type if bigger than this
@@ -116,7 +118,7 @@ var metadataParser = (function() {
 
   var VIDEOFILE = /DCIM\/\d{3}MZLLA\/VID_\d{4}\.jpg/;
 
-  function metadataParser(file, metadataCallback, metadataError) {
+  function metadataParser(file, metadataCallback, metadataError, bigFile) {
     // If the file is a poster image for a video file, then we've want
     // video metadata, not image metadata
     if (VIDEOFILE.test(file.name)) {
@@ -152,7 +154,11 @@ var metadataParser = (function() {
       }
 
       // If it is not too big create a preview and thumbnail.
-      createThumbnailAndPreview(file, metadataCallback, metadataError);
+      createThumbnailAndPreview(file,
+                                metadataCallback,
+                                metadataError,
+                                false,
+                                bigFile);
     }
 
     function gotImageSize(metadata) {
@@ -176,13 +182,21 @@ var metadataParser = (function() {
       else {
         // If there wasn't a preview image, then generate a preview and
         // thumbnail from the full size image.
-        createThumbnailAndPreview(file, metadataCallback, metadataError);
+        createThumbnailAndPreview(file,
+                                  metadataCallback,
+                                  metadataError,
+                                  false,
+                                  bigFile);
       }
 
       function previewerror(msg) {
         // The preview isn't a valid jpeg file, so use the full image to
         // create a preview and a thumbnail
-        createThumbnailAndPreview(file, metadataCallback, metadataError);
+        createThumbnailAndPreview(file,
+                                  metadataCallback,
+                                  metadataError,
+                                  false,
+                                  bigFile);
       }
 
       function previewsuccess(previewmetadata) {
@@ -209,13 +223,20 @@ var metadataParser = (function() {
                                                    ' from preview:', errmsg);
                                       createThumbnailAndPreview(file,
                                                                metadataCallback,
-                                                               metadataError);
+                                                               metadataError,
+                                                               false,
+                                                               bigFile);
                                     },
-                                    true);
+                                    true,
+                                    bigFile);
         }
         else {
           // Preview isn't big enough so get one the hard way
-          createThumbnailAndPreview(file, metadataCallback, metadataError);
+          createThumbnailAndPreview(file,
+                                    metadataCallback,
+                                    metadataError,
+                                    false,
+                                    bigFile);
         }
       }
     }
@@ -226,7 +247,8 @@ var metadataParser = (function() {
   // a metadata object, and pass the object to the callback function.
   // If anything goes wrong, pass an error message to the error function.
   // If it is a large image, create and save a preview for it as well.
-  function createThumbnailAndPreview(file, callback, error, nopreview) {
+  function createThumbnailAndPreview(file, callback, error, nopreview,
+                                     bigFile) {
     var metadata = {};
     var url = URL.createObjectURL(file);
     offscreenImage.src = url;
@@ -252,8 +274,8 @@ var metadataParser = (function() {
       // XXX: When bug 854795 is fixed, we'll be able to create previews
       // for large images without using so much memory, and we can remove
       // this flag then.
-      if (iw * ih > 2 * 1024 * 1024)
-        scanningBigImages = true;
+      if (iw * ih > 2 * 1024 * 1024 && bigFile)
+        bigFile();
 
       // If the image was already thumbnail size, it is its own thumbnail
       // and it does not need a preview

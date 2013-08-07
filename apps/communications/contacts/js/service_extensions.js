@@ -38,6 +38,17 @@ if (typeof Contacts.extServices === 'undefined') {
       loadService('live');
     };
 
+    extServices.match = function(contactId) {
+      closeRequested = canClose = true;
+      extensionFrame.src = currentURI = 'matching_contacts.html?contactId=' +
+                                                                      contactId;
+    };
+
+    extServices.showDuplicateContacts = function() {
+      closeRequested = canClose = true;
+      extensionFrame.src = currentURI = 'matching_contacts.html';
+    };
+
     function loadService(serviceName) {
       closeRequested = false;
       canClose = false;
@@ -70,7 +81,7 @@ if (typeof Contacts.extServices === 'undefined') {
           closeRequested = true;
         }
 
-        if (message) {
+        if (message && message.trim().length > 0) {
           Contacts.showStatus(message);
         }
       // Otherwise we do nothing as the sync process will finish sooner or later
@@ -346,6 +357,14 @@ if (typeof Contacts.extServices === 'undefined') {
             type: 'token',
             data: access_token
           }, fb.CONTACTS_APP_ORIGIN);
+
+        case 'show_duplicate_contacts':
+          extensionFrame.contentWindow.postMessage(data,
+                                                    fb.CONTACTS_APP_ORIGIN);
+
+        case 'duplicate_contacts_merged':
+          extensionFrame.contentWindow.postMessage(data,
+                                                    fb.CONTACTS_APP_ORIGIN);
         break;
       }
     }

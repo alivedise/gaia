@@ -4,7 +4,6 @@ var ConfigManager = (function() {
   'use strict';
 
   var today = new Date();
-  var connection = window.navigator.mozMobileConnection;
 
   var DEFAULT_SETTINGS = {
     'dataLimit': false,
@@ -68,6 +67,10 @@ var ConfigManager = (function() {
 
   // Load the operator configuration according to MCC_MNC pair
   function requestConfiguration(callback) {
+    if (!IccHelper || !IccHelper.iccInfo) {
+      console.error('No iccInfo available');
+      return;
+    }
 
     function returnConfiguration() {
       if (typeof callback === 'function') {
@@ -97,8 +100,8 @@ var ConfigManager = (function() {
   }
 
   function getConfigFilePath() {
-    var mcc = connection.iccInfo.mcc;
-    var mnc = connection.iccInfo.mnc;
+    var mcc = IccHelper.iccInfo.mcc;
+    var mnc = IccHelper.iccInfo.mnc;
     var key = mcc + '_' + mnc;
     var configDir = configurationIndex[key];
     if (!configDir) {
@@ -149,8 +152,7 @@ var ConfigManager = (function() {
   var NO_ICCID = 'NOICCID';
   var settings;
   function requestSettings(callback) {
-    var currentICCID = window.navigator.mozMobileConnection.iccInfo.iccid ||
-                       NO_ICCID;
+    var currentICCID = IccHelper.iccInfo.iccid || NO_ICCID;
     asyncStorage.getItem(currentICCID, function _wrapGetItem(localSettings) {
       // No entry: set defaults
       try {
@@ -215,8 +217,7 @@ var ConfigManager = (function() {
     }
 
     // Set items and dispatch the events
-    var currentICCID = window.navigator.mozMobileConnection.iccInfo.iccid ||
-                       NO_ICCID;
+    var currentICCID = IccHelper.iccInfo.iccid || NO_ICCID;
     asyncStorage.setItem(currentICCID, JSON.stringify(settings),
       function _onSet() {
         requestSettings(function _onSettings(settings) {

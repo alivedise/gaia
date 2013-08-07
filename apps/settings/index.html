@@ -5,8 +5,8 @@
     <meta http-equiv="pragma" content="no-cache"/>
     <title>Settings</title>
 
-    <!-- multi-resolution support -->
-    <link rel="stylesheet" href="/shared/style/responsive.css">
+    <!-- Debug/DUMP method support -->
+    <script defer src="/shared/js/dump.js"></script>
 
     <!-- Common style -->
     <link rel="stylesheet" type="text/css" href="shared/style/headers.css"/>
@@ -47,12 +47,16 @@
     <link rel="resource" type="application/l10n" href="shared/locales/tz.ini"/>
     <link rel="resource" type="application/l10n" href="locales/locales.ini"/>
     <script defer src="shared/js/l10n.js"></script>
+    <script defer src="shared/js/l10n_date.js"></script>
 
     <!-- For perf-measurement related utilities -->
     <script defer src="/shared/js/performance_testing_helper.js"></script>
 
     <!-- Lazy loader -->
     <script defer src="/shared/js/lazy_loader.js"></script>
+
+    <!-- IccHelper -->
+    <script defer src="/shared/js/icc_helper.js"></script>
 
     <!-- Specific code -->
     <script defer src="js/settings.js"></script>
@@ -154,7 +158,7 @@
             <input type="text" data-ignore name="identity" />
           </li>
           <li class="password">
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" data-ignore name="show-pwd" id="pwd-auth" />
               <span></span>
             </label>
@@ -201,7 +205,7 @@
             <input type="text" data-ignore name="identity" />
           </li>
           <li class="password">
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" data-ignore name="show-pwd" id="pwd-joinHidden" />
               <span></span>
             </label>
@@ -231,21 +235,21 @@
         </header>
         <ul>
           <li>
-            <label>
+            <label class="pack-radio">
               <input type="radio" data-setting="wifi.wps.method" name="wpsMethodSelection" value="pbc" checked />
               <span></span>
             </label>
             <a data-l10n-id="wpsPbcLabel">Button connection</a>
           </li>
           <li>
-            <label>
+            <label class="pack-radio">
               <input type="radio" data-setting="wifi.wps.method" name="wpsMethodSelection" value="myPin" />
               <span></span>
             </label>
             <a data-l10n-id="wpsMyPinLabel">My PIN connection</a>
           </li>
           <li>
-            <label>
+            <label class="pack-radio">
               <input type="radio" data-setting="wifi.wps.method" name="wpsMethodSelection" value="apPin" />
               <span></span>
             </label>
@@ -254,6 +258,10 @@
           <li id="wifi-wps-pin-area">
             <p data-l10n-id="wpsPinDescription">PIN is 4 or 8 digits</p>
             <input type="text" />
+          </li>
+          <li id="wifi-wps-pin-aps">
+            <p data-l10n-id="wpsPinAps">Select an opposite device</p>
+            <select></select>
           </li>
         </ul>
       </div>
@@ -314,14 +322,14 @@
       <div>
         <ul>
           <li id="wifi-enabled">
-            <label>
-              <input type="checkbox" data-type="switch" data-ignore/>
+            <label class="pack-switch">
+              <input type="checkbox" data-ignore/>
               <span></span>
             </label>
             <a data-l10n-id="wifi">Wi-Fi</a>
           </li>
           <li hidden>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="wifi.notification"/>
               <span></span>
             </label>
@@ -385,8 +393,8 @@
             <input type="tel" id="cf-notreachable-number" data-setting="ril.cf.notreachable.number" disabled/>
           </li>
           <li>
-            <label>
-              <input type="checkbox" data-type="switch" data-setting="ril.cf.notreachable.enabled"/>
+            <label class="pack-switch">
+              <input type="checkbox" data-setting="ril.cf.notreachable.enabled"/>
               <span></span>
             </label>
             <small data-l10n-id="callForwardingNotReachableShort">When unreachable</small>
@@ -415,8 +423,8 @@
             <input type="tel" id="cf-noreply-number" data-setting="ril.cf.noreply.number" disabled/>
           </li>
           <li>
-            <label>
-              <input type="checkbox" data-type="switch" data-setting="ril.cf.noreply.enabled"/>
+            <label class="pack-switch">
+              <input type="checkbox" data-setting="ril.cf.noreply.enabled"/>
               <span></span>
             </label>
             <small data-l10n-id="callForwardingNoReplyShort">When unanswered</small>
@@ -445,8 +453,8 @@
             <input type="tel" id="cf-mobilebusy-number" data-setting="ril.cf.mobilebusy.number" disabled/>
           </li>
           <li>
-            <label>
-              <input type="checkbox" data-type="switch" data-setting="ril.cf.mobilebusy.enabled"/>
+            <label class="pack-switch">
+              <input type="checkbox" data-setting="ril.cf.mobilebusy.enabled"/>
               <span></span>
             </label>
             <small data-l10n-id="callForwardingMobileBusyShort">When busy</small>
@@ -475,8 +483,8 @@
             <input type="tel" id="cf-unconditional-number" data-setting="ril.cf.unconditional.number" disabled/>
           </li>
           <li>
-            <label>
-              <input type="checkbox" data-type="switch" data-setting="ril.cf.unconditional.enabled"/>
+            <label class="pack-switch">
+              <input type="checkbox" data-setting="ril.cf.unconditional.enabled"/>
               <span></span>
             </label>
             <small data-l10n-id="callForwardingUnconditionalShort">Always</small>
@@ -527,8 +535,8 @@
 
         <ul>
           <li id="menuItem-callWaiting" data-state="off">
-            <label class="checkbox-label">
-              <input type="checkbox" data-type="switch" data-ignore/>
+            <label class="pack-switch checkbox-label">
+              <input type="checkbox" data-ignore/>
               <span></span>
             </label>
             <label class="alert-label" hidden>
@@ -537,11 +545,22 @@
             <a data-l10n-id="callWaiting">Call Waiting</a>
           </li>
           <li id="menuItem-cellBroadcast" class="disabled">
-            <label class="checkbox-label">
-              <input type="checkbox" data-type="switch" data-ignore disabled />
+            <label class="pack-switch checkbox-label">
+              <input type="checkbox" data-ignore disabled />
               <span></span>
             </label>
             <a data-l10n-id="callBroadcastService">Cell broadcast service</a>
+          </li>
+          <li id="menuItem-callerId" class="disabled">
+            <a data-l10n-id="callerId">Caller ID</a>
+            <p class="fake-select">
+              <button class="icon icon-dialog">empty</button>
+              <select id="ril-callerId" data-setting="ril.callerId">
+                <option value="CLIR_DEFAULT" data-l10n-id="callerId-default">Network default</option>
+                <option value="CLIR_INVOCATION" data-l10n-id="callerId-hide">Hide number</option>
+                <option value="CLIR_SUPPRESSION" data-l10n-id="callerId-show">Show number</option>
+              </select>
+            </p>
           </li>
         </ul>
 
@@ -575,8 +594,8 @@
             <strong data-l10n-id="confirmCallWaitingDesc">The device is currently unable to communicate with the carrier. Try setting the preference again.</strong>
           </p>
           <p class="cw-alert-sub-p">
-            <label class="cw-alert-checkbox-label">
-              <input type="checkbox" data-type="switch" data-ignore/>
+            <label class="pack-switch cw-alert-checkbox-label">
+              <input type="checkbox" data-ignore/>
               <span></span>
             </label>
             <span data-l10n-id="callWaiting">Call Waiting</span>
@@ -626,8 +645,8 @@
             </p>
           </li>
           <li id="operator-autoSelect">
-            <label>
-              <input type="checkbox" data-type="switch" data-ignore/>
+            <label class="pack-switch">
+              <input type="checkbox" data-ignore/>
               <span></span>
             </label>
             <small></small>
@@ -669,7 +688,7 @@
       <div>
         <ul class="apnSettings-list">
           <li class="apnSettings-custom">
-            <label>
+            <label class="pack-radio">
               <input type="radio" data-setting="ril.data.carrier" name="dataApnSettingsCarrier" value="_custom_" checked />
               <span></span>
             </label>
@@ -736,8 +755,8 @@
         </header>
         <ul id="text-message-list">
           <li class="hint">
-            <label>
-              <input type="checkbox" data-type="switch" data-setting="ril.sms.requestStatusReport.enabled"/>
+            <label class="pack-switch">
+              <input type="checkbox" data-setting="ril.sms.requestStatusReport.enabled"/>
               <span></span>
             </label>
             <a data-l10n-id="delivery-reports"> Delivery reports </a>
@@ -766,7 +785,7 @@
         </header>
         <ul class="apnSettings-list">
           <li class="apnSettings-custom">
-            <label>
+            <label class="pack-radio">
               <input type="radio" data-setting="ril.mms.carrier" name="mmsApnSettingsCarrier" value="_custom_" checked />
               <span></span>
             </label>
@@ -841,7 +860,7 @@
       <div>
         <ul class="apnSettings-list">
           <li class="apnSettings-custom">
-            <label>
+            <label class="pack-radio">
               <input type="radio" data-setting="ril.supl.carrier" name="suplApnSettingsCarrier" value="_custom_" checked />
               <span></span>
             </label>
@@ -958,8 +977,8 @@
         </header>
         <ul>
           <li>
-            <label>
-              <input type="checkbox" data-type="switch" name="ril.data.enabled" class="uninit"/>
+            <label class="pack-switch">
+              <input type="checkbox" name="ril.data.enabled" class="uninit"/>
               <span></span>
             </label>
             <small id="dataConnection-desc"></small>
@@ -967,8 +986,8 @@
           </li>
           <li id="dataConnection-expl" class="explanation" data-l10n-id="dataConnection-warning-message" hidden></li>
           <li>
-            <label>
-              <input type="checkbox" data-type="switch" name="ril.data.roaming_enabled" class="uninit"/>
+            <label class="pack-switch">
+              <input type="checkbox" name="ril.data.roaming_enabled" class="uninit"/>
               <span></span>
             </label>
             <a data-l10n-id="dataRoaming">Data Roaming</a>
@@ -1022,8 +1041,8 @@
       <div>
         <ul>
           <li id="bluetooth-status" class="hint">
-            <label>
-              <input type="checkbox" data-type="switch" data-ignore/>
+            <label class="pack-switch">
+              <input type="checkbox" data-ignore/>
               <span></span>
             </label>
             <a data-l10n-id="bluetooth">Bluetooth</a>
@@ -1032,8 +1051,8 @@
             </p>
           </li>
           <li hidden id="device-visible">
-            <label>
-              <input type="checkbox" data-type="switch" data-ignore />
+            <label class="pack-switch">
+              <input type="checkbox" data-ignore />
               <span></span>
             </label>
             <small id="bluetooth-device-name"></small>
@@ -1078,6 +1097,17 @@
         </menu>
       </form>
 
+      <form role="dialog" data-type="confirm" id="unpair-device" hidden>
+        <section>
+          <h1>Confirmation</h1>
+          <p data-l10n-id="device-option-unpair-device">Unpair Device?</p>
+        </section>
+        <menu>
+          <button data-l10n-id="cancel">Cancel</button>
+          <button data-l10n-id="device-option-confirm" id="confirm-option" class="danger">Confirm</button>
+        </menu>
+      </form>
+
       <script src="js/bluetooth.js"></script>
       -->
     </section>
@@ -1100,7 +1130,7 @@
             <input type="text" data-setting="tethering.wifi.ssid" />
           </li>
           <li class="password">
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" data-ignore name="show_password" />
               <span></span>
             </label>
@@ -1138,8 +1168,8 @@
         </header>
         <ul>
           <li>
-            <label>
-              <input type="checkbox" data-type="switch" name="tethering.wifi.enabled" class="uninit"/>
+            <label class="pack-switch">
+              <input type="checkbox" name="tethering.wifi.enabled" class="uninit"/>
               <span></span>
             </label>
             <a data-l10n-id="wifi-hotspot">Wi-Fi Hotspot</a>
@@ -1175,8 +1205,8 @@
         </header>
         <ul>
           <li>
-            <label>
-              <input type="checkbox" data-type="switch" name="tethering.usb.enabled" class="uninit"/>
+            <label class="pack-switch">
+              <input type="checkbox" name="tethering.usb.enabled" class="uninit"/>
               <span></span>
             </label>
             <a data-l10n-id="usb-tethering">USB Tethering</a>
@@ -1233,8 +1263,8 @@
       <div>
         <ul>
           <li>
-            <label>
-              <input type="checkbox" data-type="switch" name="vibration.enabled" checked class="uninit"/>
+            <label class="pack-switch">
+              <input type="checkbox" name="vibration.enabled" checked class="uninit"/>
               <span></span>
             </label>
             <a data-l10n-id="vibrate">Vibrate</a>
@@ -1278,35 +1308,35 @@
         </header>
         <ul>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="phone.ring.keypad" checked />
               <span></span>
             </label>
             <a data-l10n-id="keypad">Keypad</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="camera.shutter.enabled" checked />
               <span></span>
             </label>
             <a data-l10n-id="camera-shutter">Camera Shutter</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="mail.sent-sound.enabled" checked />
               <span></span>
             </label>
             <a data-l10n-id="sent-mail">Sent Mail</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="message.sent-sound.enabled" checked />
               <span></span>
             </label>
             <a data-l10n-id="sent-message">Sent Message</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="lockscreen.unlock-sound.enabled" checked />
               <span></span>
             </label>
@@ -1340,7 +1370,7 @@
         </header>
         <ul>
           <li id="brightness-auto">
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="screen.automatic-brightness" checked />
               <span></span>
             </label>
@@ -1383,7 +1413,7 @@
       <div>
         <ul>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="lockscreen.notifications-preview.enabled" checked />
               <span></span>
             </label>
@@ -1405,8 +1435,8 @@
       <div>
         <ul id="time-auto" data-state="auto" hidden>
           <li>
-            <label>
-              <input type="checkbox" data-type="switch" name="time.nitz.automatic-update.enabled" class="uninit"/>
+            <label class="pack-switch">
+              <input type="checkbox" name="time.nitz.automatic-update.enabled" class="uninit"/>
               <span></span>
             </label>
             <a data-l10n-id="setTimeAutomatically">Set Automatically</a>
@@ -1452,7 +1482,6 @@
         </ul>
       </div>
 
-      <script src="shared/js/l10n_date.js"></script>
       <script src="shared/js/tz_select.js"></script>
       <script src="js/date_time.js"></script>
       -->
@@ -1503,8 +1532,43 @@
           </li>
         </ul>
       </div>
+      -->
+    </section>
 
-      <script src="shared/js/l10n_date.js"></script>
+    <!-- Personalization :: Homescreen :: details -->
+    <section role="region" id="homescreen-details">
+      <!--
+      <header>
+        <a href="#homescreen"><span class="icon icon-back">back</span></a>
+        <h1> </h1>
+      </header>
+      <div>
+        <header>
+          <h2 class="description" data-l10n-id="description">Description</h2>
+        </header>
+        <p></p>
+        <header>
+          <h2 data-l10n-id="changeHomescreen">Change Homescreen</h2>
+        </header>
+        <button id="change-homescreen" data-l10n-id="changeHomescreenButton">Change</button>
+      </div>
+      -->
+    </section>
+
+    <!-- Personalization :: Homescreen -->
+    <section role="region" id="homescreen">
+      <!--
+      <header>
+        <a href="#root"><span class="icon icon-back">back</span></a>
+        <h1 data-l10n-id="homescreen"> Homescreen </h1>
+      </header>
+
+      <div>
+        <ul></ul>
+      </div>
+
+      <script type="application/javascript" src="shared/js/manifest_helper.js"></script>
+      <script src="js/homescreen.js"></script>
       -->
     </section>
 
@@ -1519,28 +1583,28 @@
       <div>
         <ul>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="keyboard.vibration"/>
               <span></span>
             </label>
             <a data-l10n-id="vibration">Vibration</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="keyboard.clicksound" checked />
               <span></span>
             </label>
             <a data-l10n-id="clickSound">Click sound</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="keyboard.autocorrect"/>
               <span></span>
             </label>
             <a data-l10n-id="autoCorrect">Auto correction</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="keyboard.wordsuggestion"/>
               <span></span>
             </label>
@@ -1557,86 +1621,119 @@
             <a></a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="keyboard.layouts.english" checked />
               <span></span>
             </label>
             <a data-l10n-id="english">English</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="keyboard.layouts.dvorak"/>
               <span></span>
             </label>
             <a data-l10n-id="dvorak">English (Dvorak)</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="keyboard.layouts.spanish"/>
               <span></span>
             </label>
             <a data-l10n-id="spanish">Spanish</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="keyboard.layouts.portuguese"/>
               <span></span>
             </label>
             <a data-l10n-id="portuguese">Portuguese (Brazilian)</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="keyboard.layouts.polish"/>
               <span></span>
             </label>
             <a data-l10n-id="polish">Polish</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="keyboard.layouts.catalan"/>
               <span></span>
             </label>
             <a data-l10n-id="catalan">Catalan</a>
           </li>
           <li>
-            <label>
-              <input type="checkbox" name="keyboard.layouts.otherlatins"/>
+            <label class="pack-checkbox">
+              <input type="checkbox" name="keyboard.layouts.czech"/>
               <span></span>
             </label>
-            <small data-l10n-id="latin-desc">French, German, Norwegian Bokmal, Slovak, Turkish</small>
-            <a data-l10n-id="latin">Other Latin scripts</a>
+            <a data-l10n-id="czech">Czech</a>
           </li>
           <li>
-            <label>
-              <input type="checkbox" name="keyboard.layouts.cyrillic"/>
+            <label class="pack-checkbox">
+              <input type="checkbox" name="keyboard.layouts.french"/>
               <span></span>
             </label>
-            <small data-l10n-id="cyrillic-desc">Russian, Serbian (Cyrillic)</small>
-            <a data-l10n-id="cyrillic">Cyrillic scripts</a>
+            <a data-l10n-id="french">French</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
+              <input type="checkbox" name="keyboard.layouts.german"/>
+              <span></span>
+            </label>
+            <a data-l10n-id="german">German</a>
+          </li>
+          <li>
+            <label class="pack-checkbox">
+              <input type="checkbox" name="keyboard.layouts.norwegian"/>
+              <span></span>
+            </label>
+            <a data-l10n-id="norwegian">Norwegian</a>
+          </li>
+          <li>
+            <label class="pack-checkbox">
+              <input type="checkbox" name="keyboard.layouts.russian"/>
+              <span></span>
+            </label>
+            <a data-l10n-id="russian">Russian</a>
+          </li>
+          <li>
+            <label class="pack-checkbox">
               <input type="checkbox" name="keyboard.layouts.serbian"/>
               <span></span>
             </label>
             <a data-l10n-id="serbian">Serbian</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
+              <input type="checkbox" name="keyboard.layouts.slovak"/>
+              <span></span>
+            </label>
+            <a data-l10n-id="slovak">Slovak</a>
+          </li>
+          <li>
+            <label class="pack-checkbox">
+              <input type="checkbox" name="keyboard.layouts.turkish"/>
+              <span></span>
+            </label>
+            <a data-l10n-id="turkish">Turkish</a>
+          </li>
+          <li>
+            <label class="pack-checkbox">
               <input type="checkbox" name="keyboard.layouts.arabic"/>
               <span></span>
             </label>
             <a data-l10n-id="arabic">Arabic</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="keyboard.layouts.hebrew"/>
               <span></span>
             </label>
             <a data-l10n-id="hebrew">Hebrew</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="keyboard.layouts.greek"/>
               <span></span>
             </label>
@@ -1699,15 +1796,15 @@
       <div>
         <ul>
           <li>
-            <label>
-              <input type="checkbox" data-type="switch" name="lockscreen.enabled" id="lockscreen-enable" class="uninit"/>
+            <label class="pack-switch">
+              <input type="checkbox" name="lockscreen.enabled" id="lockscreen-enable" class="uninit"/>
               <span></span>
             </label>
             <a data-l10n-id="lockScreen">Lock Screen</a>
           </li>
           <li class="lockscreen-enabled">
-            <label>
-              <input type="checkbox" data-type="switch" name="lockscreen.passcode-lock.enabled" id="passcode-enable" class="uninit"/>
+            <label class="pack-switch">
+              <input type="checkbox" name="lockscreen.passcode-lock.enabled" id="passcode-enable" class="uninit"/>
               <span></span>
             </label>
             <a data-l10n-id="passcode-lock">Passcode Lock</a>
@@ -1833,8 +1930,8 @@
         </ul>
         <ul>
           <li id="simpin-enabled">
-            <label>
-              <input type="checkbox" data-type="switch" data-ignore/>
+            <label class="pack-switch">
+              <input type="checkbox" data-ignore/>
               <span></span>
             </label>
             <a data-l10n-id="simPin">SIM PIN</a>
@@ -1925,7 +2022,6 @@
       </form>
 
       <script type="application/javascript" src="shared/js/manifest_helper.js"></script>
-      <script src="js/hiddenapps.js"></script>
       <script src="js/apps.js"></script>
       -->
     </section>
@@ -1957,7 +2053,7 @@
           </p>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="privacy.donottrackheader.enabled" />
               <span></span>
             </label>
@@ -1984,84 +2080,91 @@
         </header>
         <ul>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="debug.grid.enabled"/>
               <span></span>
             </label>
             <a data-l10n-id="grid">Grid</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="debug.fps.enabled"/>
               <span></span>
             </label>
             <a data-l10n-id="fps-monitor">Show frames per second</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="debug.paint-flashing.enabled"/>
               <span></span>
             </label>
             <a data-l10n-id="paint-flashing">Flash repainted area</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="layers.draw-borders"/>
               <span></span>
             </label>
             <a data-l10n-id="layers-draw-borders">Flash repainted area</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="debug.log-animations.enabled"/>
               <span></span>
             </label>
             <a data-l10n-id="log-animations">Log slow animations</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="debug.ttl.enabled"/>
               <span></span>
             </label>
             <a data-l10n-id="ttl-monitor">Show time to load</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="devtools.debugger.remote-enabled"/>
               <span></span>
             </label>
             <a data-l10n-id="remote-debugging">Remote Debugging</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="wifi.debugging.enabled" />
               <span></span>
             </label>
             <a data-l10n-id="wifi-debugging">Wi-Fi output in adb</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="bluetooth.debugging.enabled" />
               <span></span>
             </label>
             <a data-l10n-id="bluetooth-debugging">Bluetooth output in adb</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
+              <input type="checkbox" name="dom.mozContacts.debugging.enabled" />
+              <span></span>
+            </label>
+            <a data-l10n-id="contacts-debugging">Contacts debugging output in adb</a>
+          </li>
+          <li>
+            <label class="pack-checkbox">
               <input type="checkbox" name="debug.console.enabled"/>
               <span></span>
             </label>
             <a data-l10n-id="console-enabled">Console enabled</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="software-button.enabled"/>
               <span></span>
             </label>
             <a data-l10n-id="software-button-enabled">Software home button enabled</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="debug.gaia.enabled"/>
               <span></span>
             </label>
@@ -2079,7 +2182,7 @@
         </header>
         <ul>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="keyboard.layouts.zhuyin"/>
               <span></span>
             </label>
@@ -2087,7 +2190,7 @@
             <a data-l10n-id="traditionalChinese">Traditional Chinese</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="keyboard.layouts.pinyin"/>
               <span></span>
             </label>
@@ -2269,9 +2372,7 @@
         </h1>
       </header>
 
-      <div>
-        <iframe data-src="resources/open_source_license.html" id="os-license"></iframe>
-      </div>
+      <iframe data-src="resources/open_source_license.html" id="os-license"></iframe>
       -->
     </section>
 
@@ -2416,7 +2517,6 @@
         </ul>
       </div>
 
-      <script src="shared/js/l10n_date.js"></script>
       <script src="js/about.js"></script>
       -->
     </section>
@@ -2443,8 +2543,8 @@
         </header>
         <ul>
           <li>
-            <label>
-              <input type="checkbox" data-type="switch" name="powersave.enabled" class="uninit"/>
+            <label class="pack-switch">
+              <input type="checkbox" name="powersave.enabled" class="uninit"/>
               <span></span>
             </label>
             <a data-l10n-id="powerSaveMode">Power Save Mode</a>
@@ -2521,8 +2621,8 @@
       <div>
         <ul>
           <li>
-            <label>
-              <input id="ums-switch" type="checkbox" data-type="switch" data-ignore />
+            <label class="pack-switch">
+              <input id="ums-switch" type="checkbox" data-ignore />
               <span></span>
             </label>
             <small id="ums-desc">Disabled</small>
@@ -2550,11 +2650,11 @@
       </div>
       <form data-type="confirm" role="dialog" id="default-location-popup-container" hidden>
         <section>
-          <p>Changing the default media storage volume will effect where photos, videos, downloads and other media will be saved to by default. Existing data will remain in its current location.</p>
+          <p data-l10n-id="change-default-location-confirm">Changing the default media storage volume will effect where photos, videos, downloads and other media will be saved to by default. Existing data will remain in its current location.</p>
         </section>
         <menu>
-          <button id="default-location-cancel-btn">Cancel</button>
-          <button id="default-location-change-btn">Change</button>
+          <button id="default-location-cancel-btn" data-l10n-id="cancel">Cancel</button>
+          <button id="default-location-change-btn" data-l10n-id="change">Change</button>
         </menu>
       </form>
       <script src="js/media_storage.js"></script>
@@ -2572,14 +2672,14 @@
       <div>
         <ul>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="accessibility.invert"/>
               <span></span>
             </label>
             <a data-l10n-id="invertColors">Invert Colors</a>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="accessibility.screenreader"/>
               <span></span>
             </label>
@@ -2644,7 +2744,7 @@
             </p>
           </li>
           <li>
-            <label>
+            <label class="pack-checkbox">
               <input type="checkbox" name="debug.performance_data.shared" />
               <span></span>
             </label>
@@ -2666,21 +2766,21 @@
             </p>
           </li>
           <li>
-            <label>
+            <label class="pack-radio">
               <input type="radio" name="app.reportCrashes" value="always"/>
               <span></span>
             </label>
             <a data-l10n-id="alwaysSendReport">Always send a report</a>
           </li>
           <li>
-            <label>
+            <label class="pack-radio">
               <input type="radio" name="app.reportCrashes" value="never" />
               <span></span>
             </label>
             <a data-l10n-id="neverSendReport">Never send a report</a>
           </li>
           <li>
-            <label>
+            <label class="pack-radio">
               <input type="radio" name="app.reportCrashes" value="ask" checked />
               <span></span>
             </label>
@@ -2749,20 +2849,6 @@
         </ul>
       </div>
 
-      <form role="dialog" data-type="confirm" id="icc-stk-alert" class="hidden">
-        <section>
-          <h1 data-l10n-id="message">Message</h1>
-          <p id="icc-stk-alert-msg">
-          </p>
-        </section>
-        <menu>
-          <button data-l10n-id="close" id="icc-stk-alert-btn_close">Close</button>
-          <button data-l10n-id="back" id="icc-stk-alert-btn_back">Back</button>
-          <button data-l10n-id="ok" id="icc-stk-alert-btn" class="recommend">Ok</button>
-        </menu>
-      </form>
-
-      <script src="/shared/js/notification_helper.js"></script>
       <script src="js/icc.js"></script>
       -->
     </section>
@@ -2780,15 +2866,15 @@
         </header>
         <ul>
           <li>
-            <label>
-              <input type="checkbox" data-type="switch" name="ril.radio.disabled" class="uninit"/>
+            <label class="pack-switch">
+              <input type="checkbox" name="ril.radio.disabled" class="uninit"/>
               <span></span>
             </label>
             <a id="menuItem-airplaneMode" class="menu-item" data-l10n-id="airplaneMode">Airplane Mode</a>
           </li>
           <li>
-            <label>
-              <input type="checkbox" data-type="switch" name="geolocation.enabled" class="uninit"/>
+            <label class="pack-switch">
+              <input type="checkbox" name="geolocation.enabled" class="uninit"/>
               <span></span>
             </label>
             <a id="menuItem-gps" class="menu-item" data-l10n-id="geolocation">Geolocation</a>
@@ -2840,6 +2926,10 @@
             <a id="menuItem-languageAndRegion" class="menu-item" href="#languages" data-l10n-id="language">Language</a>
           </li>
           <li>
+            <small id="homescreen-desc" class="menu-item-desc"></small>
+            <a id="menuItem-homescreen" class="menu-item" href="#homescreen" data-l10n-id="homescreen">Homescreen</a>
+          </li>
+          <li>
             <small id="keyboard-desc" class="menu-item-desc"></small>
             <a id="menuItem-keyboard" class="menu-item" href="#keyboard" data-l10n-id="keyboard">Keyboard</a>
           </li>
@@ -2885,8 +2975,8 @@
         </header>
         <ul>
           <li>
-            <label>
-              <input type="checkbox" id="ums-switch-root" data-type="switch" data-ignore />
+            <label class="pack-switch">
+              <input type="checkbox" id="ums-switch-root" data-ignore />
               <span></span>
             </label>
             <small id="ums-desc-root" class="menu-item-desc">Disabled</small>

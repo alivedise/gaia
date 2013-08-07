@@ -19,9 +19,9 @@ function Icon(descriptor, app) {
 
 // Support rendering icons for different screens
 var BASE_WIDTH = 320;
-var SCALE_RATIO = window.innerWidth / BASE_WIDTH;
-var MIN_ICON_SIZE = 52 * SCALE_RATIO;
-var MAX_ICON_SIZE = 60 * SCALE_RATIO;
+var SCALE_RATIO = window.devicePixelRatio;
+var MIN_ICON_SIZE = 52;
+var MAX_ICON_SIZE = 60;
 var ICON_PADDING_IN_CANVAS = 4;
 var ICONS_PER_ROW = 4;
 
@@ -32,6 +32,9 @@ Icon.prototype = {
   MAX_ICON_SIZE: MAX_ICON_SIZE,
 
   MIN_ICON_SIZE: MIN_ICON_SIZE,
+
+  // It defines the time (in ms) to ensure that the onDragStop method finishes
+  FALLBACK_DRAG_STOP_DELAY: 1000,
 
   DEFAULT_BOOKMARK_ICON_URL: window.location.protocol + '//' +
                     window.location.host + '/style/images/default_favicon.png',
@@ -113,8 +116,8 @@ Icon.prototype = {
     // Image
     var img = this.img = new Image();
     img.setAttribute('role', 'presentation');
-    img.width = MAX_ICON_SIZE + ICON_PADDING_IN_CANVAS * SCALE_RATIO;
-    img.height = MAX_ICON_SIZE + ICON_PADDING_IN_CANVAS * SCALE_RATIO;
+    img.width = MAX_ICON_SIZE + ICON_PADDING_IN_CANVAS;
+    img.height = MAX_ICON_SIZE + ICON_PADDING_IN_CANVAS;
     img.style.visibility = 'hidden';
     if (descriptor.renderedIcon) {
       this.displayRenderedIcon();
@@ -272,8 +275,8 @@ Icon.prototype = {
   renderImageForBookMark: function icon_renderImageForBookmark(img) {
     var self = this;
     var canvas = document.createElement('canvas');
-    canvas.width = MAX_ICON_SIZE + ICON_PADDING_IN_CANVAS * SCALE_RATIO;
-    canvas.height = MAX_ICON_SIZE + ICON_PADDING_IN_CANVAS * SCALE_RATIO;
+    canvas.width = (MAX_ICON_SIZE + ICON_PADDING_IN_CANVAS) * SCALE_RATIO;
+    canvas.height = (MAX_ICON_SIZE + ICON_PADDING_IN_CANVAS) * SCALE_RATIO;
     var ctx = canvas.getContext('2d');
 
     // Draw the background
@@ -283,8 +286,8 @@ Icon.prototype = {
       ctx.shadowColor = 'rgba(0,0,0,0.8)';
       ctx.shadowBlur = 2;
       ctx.shadowOffsetY = 2;
-      ctx.drawImage(background, 2 * SCALE_RATIO,
-                    2 * SCALE_RATIO, MAX_ICON_SIZE, MAX_ICON_SIZE);
+      ctx.drawImage(background, 2 * SCALE_RATIO, 2 * SCALE_RATIO,
+                    MAX_ICON_SIZE * SCALE_RATIO, MAX_ICON_SIZE * SCALE_RATIO);
       // Disable smoothing on icon resize
       ctx.shadowBlur = 0;
       ctx.shadowOffsetY = 0;
@@ -302,8 +305,8 @@ Icon.prototype = {
     }
 
     var canvas = document.createElement('canvas');
-    canvas.width = MAX_ICON_SIZE + ICON_PADDING_IN_CANVAS * SCALE_RATIO;
-    canvas.height = MAX_ICON_SIZE + ICON_PADDING_IN_CANVAS * SCALE_RATIO;
+    canvas.width = (MAX_ICON_SIZE + ICON_PADDING_IN_CANVAS) * SCALE_RATIO;
+    canvas.height = (MAX_ICON_SIZE + ICON_PADDING_IN_CANVAS) * SCALE_RATIO;
 
     var ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -317,12 +320,10 @@ Icon.prototype = {
     img.height =
         Math.min(MAX_ICON_SIZE, Math.max(img.height, MAX_ICON_SIZE));
 
-    var width =
-        Math.min(img.width, canvas.width - ICON_PADDING_IN_CANVAS *
-                 SCALE_RATIO);
-    var height =
-        Math.min(img.width, canvas.height - ICON_PADDING_IN_CANVAS *
-                 SCALE_RATIO);
+    var width = Math.min(img.width * SCALE_RATIO,
+                         canvas.width - ICON_PADDING_IN_CANVAS * SCALE_RATIO);
+    var height = Math.min(img.width * SCALE_RATIO,
+                          canvas.height - ICON_PADDING_IN_CANVAS * SCALE_RATIO);
     ctx.drawImage(img,
                   (canvas.width - width) / 2,
                   (canvas.height - height) / 2,
@@ -526,15 +527,31 @@ Icon.prototype = {
     var style = draggableElem.style;
     style.MozTransition = '-moz-transform .4s';
     style.MozTransform = 'translate(' + x + 'px,' + y + 'px)';
-    draggableElem.querySelector('div').style.MozTransform = 'scale(1)';
 
-    draggableElem.addEventListener('transitionend', function draggableEnd(e) {
-      draggableElem.removeEventListener('transitionend', draggableEnd);
+    var finishDrag = function() {
       delete container.dataset.dragging;
-      document.body.removeChild(draggableElem);
-      var img = draggableElem.querySelector('img');
-      window.URL.revokeObjectURL(img.src);
+      if (draggableElem) {
+        var img = draggableElem.querySelector('img');
+        window.URL.revokeObjectURL(img.src);
+        draggableElem.parentNode.removeChild(draggableElem);
+      }
       callback();
+    };
+
+    // We ensure that there is not an icon lost on the grid
+    var fallbackID = window.setTimeout(function() {
+      fallbackID = null;
+      finishDrag();
+    }, this.FALLBACK_DRAG_STOP_DELAY);
+
+    var content = draggableElem.querySelector('div');
+    content.style.MozTransform = 'scale(1)';
+    content.addEventListener('transitionend', function tEnd(e) {
+      e.target.removeEventListener('transitionend', tEnd);
+      if (fallbackID !== null) {
+        window.clearTimeout(fallbackID);
+        finishDrag();
+      }
     });
   },
 
@@ -604,6 +621,8 @@ Page.prototype = {
   // After launching an app we disable the page during <this time> in order to
   // prevent multiple open-app animations
   DISABLE_TAP_EVENT_DELAY: 600,
+
+  FALLBACK_READY_EVENT_DELAY: 1000,
 
   /*
    * Renders a page for a list of apps
@@ -735,9 +754,10 @@ Page.prototype = {
     }
 
     if (!this.ready) {
-      var self = this, ensureCallbackID = null;
+      var self = this;
+      var ensureCallbackID = null;
       self.container.addEventListener('onpageready', function onPageReady(e) {
-        e.target.container.removeEventListener('onpageready', onPageReady);
+        e.target.removeEventListener('onpageready', onPageReady);
         if (ensureCallbackID !== null) {
           window.clearTimeout(ensureCallbackID);
           self.doDragLeave(callback, reflow);
@@ -745,10 +765,11 @@ Page.prototype = {
       });
 
       // We ensure that there is not a transitionend lost on dragging
-      var ensureCallbackID = window.setTimeout(function() {
+      ensureCallbackID = window.setTimeout(function() {
         ensureCallbackID = null;
+        self.container.removeEventListener('onpageready', onPageReady);
         self.doDragLeave(callback, reflow);
-      }, 300); // Dragging transition time
+      }, this.FALLBACK_READY_EVENT_DELAY);
 
       return;
     }
@@ -826,14 +847,12 @@ Page.prototype = {
    * @param{Object} icon object
    */
   prependIcon: function pg_prependIcon(icon) {
-    this.setReady(false);
     var olist = this.olist;
     if (olist.children.length > 0) {
       olist.insertBefore(icon.container, olist.firstChild);
     } else {
       olist.appendChild(icon.container);
     }
-    this.setReady(true);
   },
 
   /*
@@ -846,12 +865,10 @@ Page.prototype = {
   },
 
   insertBeforeLastIcon: function pg_insertBeforeLastIcon(icon) {
-    this.setReady(false);
     var olist = this.olist;
     if (olist.children.length > 0) {
       olist.insertBefore(icon.container, olist.lastChild);
     }
-    this.setReady(true);
   },
 
   /*
@@ -890,9 +907,7 @@ Page.prototype = {
       icon.render(this.olist, this.container);
       return;
     }
-    this.setReady(false);
     this.olist.appendChild(icon.container);
-    this.setReady(true);
   },
 
   /**

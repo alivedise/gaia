@@ -168,12 +168,7 @@ var Camera = {
     fileFormat: 'jpeg'
   },
 
-  _previewConfigVideo: {
-    profile: 'cif',
-    rotation: 0,
-    width: 352,
-    height: 288
-  },
+  _videoProfile: {},
 
   _shutterKey: 'camera.shutter.enabled',
   _shutterSound: null,
@@ -195,6 +190,8 @@ var Camera = {
 
   // Maximum image resolution for still photos taken with camera
   MAX_IMAGE_RES: 1600 * 1200, // Just under 2 megapixels
+  // An estimated JPEG file size is caluclated from 90% quality 24bit/pixel
+  ESTIMATED_JPEG_FILE_SIZE: 300 * 1024,
 
   get overlayTitle() {
     return document.getElementById('overlay-title');
@@ -244,12 +241,12 @@ var Camera = {
     return document.getElementById('cancel-pick');
   },
 
-  get retakeButton() {
-    return document.getElementById('retake-button');
+  get overlayCloseButton() {
+    return document.getElementById('overlay-close-button');
   },
 
-  get selectButton() {
-    return document.getElementById('select-button');
+  get overlayMenuGroup() {
+    return document.getElementById('overlay-menu-group');
   },
 
   // We have seperated init and delayedInit as we want to make sure
@@ -277,6 +274,7 @@ var Camera = {
       PerformanceTestingHelper.dispatch('camera-preview-loaded');
       var files = [
         'style/filmstrip.css',
+        'style/confirm.css',
         'style/VideoPlayer.css',
         '/shared/js/async_storage.js',
         '/shared/js/blobview.js',
@@ -286,7 +284,9 @@ var Camera = {
         '/shared/js/media/media_frame.js',
         '/shared/js/gesture_detector.js',
         '/shared/js/lazy_l10n.js',
-        'js/filmstrip.js'
+        'js/panzoom.js',
+        'js/filmstrip.js',
+        'js/confirm.js'
       ];
       loader.load(files, function() {
         LazyL10n.get(function localized() {
@@ -310,8 +310,8 @@ var Camera = {
 
     // We lock the screen orientation and deal with rotating
     // the icons manually
-    var css = '#switch-button span, #capture-button span, ' +
-      '#gallery-button span { -moz-transform: rotate(0deg); }';
+    var css = '#switch-button span, #capture-button span, #toggle-flash, ' +
+      '#toggle-camera, #gallery-button span { -moz-transform: rotate(0deg); }';
     var insertId = this._styleSheet.cssRules.length - 1;
     this._orientationRule = this._styleSheet.insertRule(css, insertId);
     window.addEventListener('deviceorientation', this.orientChange.bind(this));
@@ -328,10 +328,8 @@ var Camera = {
       .addEventListener('click', this.galleryBtnPressed.bind(this));
     this.cancelPickButton
       .addEventListener('click', this.cancelPick.bind(this));
-    this.retakeButton
-      .addEventListener('click', this.retakePressed.bind(this));
-    this.selectButton
-      .addEventListener('click', this.selectPressed.bind(this));
+    this.overlayCloseButton
+      .addEventListener('click', this.cancelPick.bind(this));
 
     if (!navigator.mozCameras) {
       this.captureButton.setAttribute('disabled', 'disabled');
@@ -457,24 +455,7 @@ var Camera = {
     }
   },
 
-  showConfirmation: function camera_showConfirmation(show) {
-    var controls = document.getElementById('controls');
-    var confirmation = document.getElementById('confirmation');
-
-    if (show) {
-      controls.classList.add('hidden');
-      confirmation.classList.remove('hidden');
-    }
-    else {
-      controls.classList.remove('hidden');
-      confirmation.classList.add('hidden');
-    }
-  },
-
   cancelPick: function camera_cancelPick() {
-    if (this.cancelPickButton.hasAttribute('disabled'))
-      return;
-
     if (this._pendingPick) {
       this._pendingPick.postError('pick cancelled');
     }
@@ -495,6 +476,7 @@ var Camera = {
     this.disableButtons();
     this.setCaptureMode(mode);
     this.updateFlashUI();
+    this.enableCameraFeatures(this._cameraObj.capabilities);
 
     function gotPreviewStream(stream) {
       this.viewfinder.mozSrcObject = stream;
@@ -505,14 +487,18 @@ var Camera = {
       this._cameraObj.getPreviewStream(this._previewConfig,
                                        gotPreviewStream.bind(this));
     } else {
-      this._previewConfigVideo.rotation = this._phoneOrientation;
-      this._cameraObj.getPreviewStreamVideoMode(this._previewConfigVideo,
+      this._videoProfile.rotation = this._phoneOrientation;
+      this._cameraObj.getPreviewStreamVideoMode(this._videoProfile,
                                                 gotPreviewStream.bind(this));
     }
   },
 
   toggleCamera: function camera_toggleCamera() {
     this._camera = 1 - this._camera;
+    // turn off flash light before switch to front camera
+    var flash = this._flashState[this._captureMode];
+    flash.currentMode = 0;
+    this.updateFlashUI();
     this.loadCameraPreview(this._camera, this.enableButtons.bind(this));
     this.setToggleCameraStyle();
   },
@@ -550,11 +536,16 @@ var Camera = {
       this.stopRecording();
       return;
     }
+    // Hide the filmstrip to prevent the users from
+    // entering the preview mode after Camera starts recording button pressed
+    if (Filmstrip.isShown())
+      Filmstrip.hide();
 
     this.startRecording();
   },
 
   startRecording: function camera_startRecording() {
+    this.toggleButton.classList.add('hidden');
     this._sizeLimitAlertActive = false;
     var captureButton = this.captureButton;
     var switchButton = this.switchButton;
@@ -568,13 +559,8 @@ var Camera = {
       this._recording = true;
       this.startRecordingTimer();
 
-      // Hide the filmstrip to prevent the users from
-      // entering the preview mode after Camera starts recording
-      if (Filmstrip.isShown())
-        Filmstrip.hide();
-
       // User closed app while recording was trying to start
-      if (document.mozHidden) {
+      if (document.hidden) {
         this.stopRecording();
       }
     }).bind(this);
@@ -652,6 +638,7 @@ var Camera = {
   },
 
   stopRecording: function camera_stopRecording() {
+    this.toggleButton.classList.remove('hidden');
     var self = this;
     this._cameraObj.stopRecording();
     this._recording = false;
@@ -663,16 +650,27 @@ var Camera = {
         if (e.reason === 'modified' && e.path === videofile) {
           // Un-register the listener itself
           videoStorage.removeEventListener('change', changeHandler);
-          if (self._pendingPick) {
-            // call Filmstrip.addVideo to generate poster image for gallery
-            Filmstrip.addVideo(videofile);
-            self._savedMedia = videofile;
-            self.stopPreview();
-            self.showConfirmation(true);
-          } else {
-            Filmstrip.addVideo(videofile);
-            Filmstrip.show(Camera.FILMSTRIP_DURATION);
-          }
+
+          // Now that the video file has been saved, save a poster
+          // image to match it. The Gallery app depends on this.
+          self.saveVideoPosterImage(videofile, function(video, poster, data) {
+
+            if (self._pendingPick) {
+              self._savedMedia = {
+                video: video,
+                poster: poster
+              };
+              ConfirmDialog.confirmVideo(video, poster,
+                                         data.width, data.height, data.rotation,
+                                         self.selectPressed.bind(self),
+                                         self.retakePressed.bind(self));
+
+            } else {
+              Filmstrip.addVideo(videofile, video, poster,
+                                 data.width, data.height, data.rotation);
+              Filmstrip.show(Camera.FILMSTRIP_DURATION);
+            }
+          });
         }
       });
     })(this._videoStorage, this._videoRootDir + this._videoPath);
@@ -680,6 +678,68 @@ var Camera = {
     window.clearInterval(this._videoTimer);
     this.enableButtons();
     document.body.classList.remove('capturing');
+  },
+
+  saveVideoPosterImage: function saveVideoPosterImage(filename, callback) {
+    // Given the filename of a newly recorded video, create a poster
+    // image for it, and save that poster as a jpeg file. When done,
+    // pass the video blob and the poster blob to  the callback function
+    // along with the video dimensions and rotation.
+    var getreq = this._videoStorage.get(filename);
+    getreq.onerror = function() {
+      console.warn('saveVideoPosterImage:', filename, request.error.name);
+    };
+    getreq.onsuccess = function() {
+      var videoblob = getreq.result;
+      getVideoRotation(videoblob, function(rotation) {
+        if (typeof rotation !== 'number') {
+          console.warn('Unexpected rotation:', rotation);
+          rotation = 0;
+        }
+
+        var offscreenVideo = document.createElement('video');
+        var url = URL.createObjectURL(videoblob);
+
+        offscreenVideo.preload = 'metadata';
+        offscreenVideo.src = url;
+
+        offscreenVideo.onerror = function() {
+          URL.revokeObjectURL(url);
+          offscreenVideo.removeAttribute('src');
+          offscreenVideo.load();
+          console.warn('not a video file', filename);
+        };
+
+        offscreenVideo.onloadedmetadata = function() {
+          var videowidth = offscreenVideo.videoWidth;
+          var videoheight = offscreenVideo.videoHeight;
+
+          // First, create a full-size unrotated poster image
+          var postercanvas = document.createElement('canvas');
+          var postercontext = postercanvas.getContext('2d');
+          postercanvas.width = videowidth;
+          postercanvas.height = videoheight;
+          postercontext.drawImage(offscreenVideo, 0, 0);
+
+          // We're done with the offscreen video element now
+          URL.revokeObjectURL(url);
+          offscreenVideo.removeAttribute('src');
+          offscreenVideo.load();
+
+          // Save the poster image to storage, then call the callback
+          // The Gallery app depends on this poster image being saved here
+          postercanvas.toBlob(function savePoster(poster) {
+            var posterfile = filename.replace('.3gp', '.jpg');
+            Camera._pictureStorage.addNamed(poster, posterfile);
+            callback(videoblob, poster, {
+              width: videowidth,
+              height: videoheight,
+              rotation: rotation
+            });
+          }, 'image/jpeg');
+        };
+      });
+    };
   },
 
   formatTimer: function camera_formatTimer(time) {
@@ -789,6 +849,8 @@ var Camera = {
         camera.capabilities.focusModes.indexOf('auto') !== -1;
       this._pictureSize =
         this.pickPictureSize(camera.capabilities.pictureSizes);
+      this._videoProfile =
+        this.pickVideoProfile(camera.capabilities.recorderProfiles);
 
       this.setPreviewSize(camera);
       this.enableCameraFeatures(camera.capabilities);
@@ -803,8 +865,8 @@ var Camera = {
         camera.getPreviewStream(this._previewConfig,
                                 gotPreviewScreen.bind(this));
       } else {
-        this._previewConfigVideo.rotation = this._phoneOrientation;
-        this._cameraObj.getPreviewStreamVideoMode(this._previewConfigVideo,
+        this._videoProfile.rotation = this._phoneOrientation;
+        this._cameraObj.getPreviewStreamVideoMode(this._videoProfile,
                                                   gotPreviewScreen.bind(this));
       }
     }
@@ -893,6 +955,7 @@ var Camera = {
       var alertText = this._pendingPick ? 'activity-size-limit-reached' :
         'size-limit-reached';
       alert(navigator.mozL10n.get(alertText));
+      this.sizeLimitAlertActive = false;
     }
   },
 
@@ -947,6 +1010,7 @@ var Camera = {
     if (this._recording) {
       this.stopRecording();
     }
+    this.hideFocusRing();
     this.disableButtons();
     this.viewfinder.pause();
     this._previewActive = false;
@@ -970,16 +1034,25 @@ var Camera = {
     this._manuallyFocused = false;
     this.hideFocusRing();
 
+
     if (this._pendingPick) {
-      this.showConfirmation(true);
+      // If we're doing a Pick, ask the user to confirm the image
+      ConfirmDialog.confirmImage(blob,
+                                 this.selectPressed.bind(this),
+                                 this.retakePressed.bind(this));
 
       // Just save the blob temporarily until the user presses "Retake" or
       // "Select".
-      this._savedMedia = blob;
-      return;
+      this._savedMedia = {
+        blob: blob
+      };
+    }
+    else {
+      // Otherwise (this is the normal case) start the viewfinder again
+      this.resumePreview();
     }
 
-    this.resumePreview();
+    // In either case, save the photo to device storage
     this._addPictureToStorage(blob, function(name, absolutePath) {
       Filmstrip.addImage(absolutePath, blob);
       Filmstrip.show(Camera.FILMSTRIP_DURATION);
@@ -989,8 +1062,6 @@ var Camera = {
 
   retakePressed: function camera_retakePressed() {
     this._savedMedia = null;
-    this.showConfirmation(false);
-    this.cancelPickButton.removeAttribute('disabled');
     if (this._captureMode === this.CAMERA) {
       this.resumePreview();
     } else {
@@ -1002,32 +1073,21 @@ var Camera = {
     var self = this;
     var media = this._savedMedia;
     this._savedMedia = null;
-    this.showConfirmation(false);
     if (this._captureMode === this.CAMERA) {
-      this._addPictureToStorage(media, function(name, absolutePath) {
-        this._resizeBlobIfNeeded(media, function(resized_blob) {
-          this._pendingPick.postResult({
-            type: 'image/jpeg',
-            blob: resized_blob,
-            name: name
-          });
-          this._pendingPick = null;
-        }.bind(this));
+      this._resizeBlobIfNeeded(media.blob, function(resized_blob) {
+        this._pendingPick.postResult({
+          type: 'image/jpeg',
+          blob: resized_blob
+        });
+        this._pendingPick = null;
       }.bind(this));
     } else {
-      var request = Camera._videoStorage.get(media);
-      request.onerror = function() {
-        console.warn('addVideo:', media, request.error.name);
-      };
-      request.onsuccess = function() {
-        var blob = request.result;
-        self._pendingPick.postResult({
-          type: 'video/3gpp',
-          blob: blob,
-          name: media
-        });
-        self._pendingPick = null;
-      };
+      this._pendingPick.postResult({
+        type: 'video/3gpp',
+        blob: media.video,
+        poster: media.poster
+      });
+      this._pendingPick = null;
     }
   },
 
@@ -1148,7 +1208,7 @@ var Camera = {
       // Preview may have previously been paused if storage
       // was not available
       // not trigger preview while in pick mode
-      if (!this._previewActive && !document.mozHidden && !this._pendingPick) {
+      if (!this._previewActive && !document.hidden && !this._pendingPick) {
         this.startPreview();
       }
       this.showOverlay(null);
@@ -1216,16 +1276,60 @@ var Camera = {
       return;
     }
 
+    if (this._pendingPick) {
+      this.overlayMenuGroup.classList.remove('hidden');
+    } else {
+      this.overlayMenuGroup.classList.add('hidden');
+    }
+
     this.overlayTitle.textContent = navigator.mozL10n.get(id + '-title');
     this.overlayText.textContent = navigator.mozL10n.get(id + '-text');
     this.overlay.classList.remove('hidden');
   },
 
   pickPictureSize: function camera_pickPictureSize(pictureSizes) {
+    var targetSize = null;
+    var targetFileSize = 0;
+    if (this._pendingPick && this._pendingPick.source.data.maxFileSizeBytes) {
+      // we use worse case of all compression method: gif, jpg, png
+      targetFileSize = this._pendingPick.source.data.maxFileSizeBytes;
+    }
+    if (this._pendingPick && this._pendingPick.source.data.width &&
+        this._pendingPick.source.data.height) {
+      // if we have pendingPick with width and height, set it as target size.
+      targetSize = {'width': this._pendingPick.source.data.width,
+                    'height': this._pendingPick.source.data.height};
+    }
     var maxRes = this.MAX_IMAGE_RES;
+    var estimatedJpgSize = this.ESTIMATED_JPEG_FILE_SIZE;
     var size = pictureSizes.reduce(function(acc, size) {
       var mp = size.width * size.height;
-      return (mp > acc.width * acc.height && mp <= maxRes) ? size : acc;
+      // we don't need the resolution larger than maxRes
+      if (mp > maxRes) {
+        return acc;
+      }
+      // We assume the relationship between MP to file size is linear.
+      // This may be inaccurate on all cases.
+      var estimatedFileSize = mp * estimatedJpgSize / maxRes;
+      if (targetFileSize > 0 && estimatedFileSize > targetFileSize) {
+        return acc;
+      }
+
+      if (targetSize) {
+        // find a resolution both width and height are large than pick size
+        if (size.width < targetSize.width || size.height < targetSize.height) {
+          return acc;
+        }
+        // it's first pictureSize.
+        if (!acc.width || acc.height) {
+          return size;
+        }
+        // find large enough but as small as possible.
+        return (mp < acc.width * acc.height) ? size : acc;
+      } else {
+        // no target size, find as large as possible.
+        return (mp > acc.width * acc.height && mp <= maxRes) ? size : acc;
+      }
     }, {width: 0, height: 0});
 
     if (size.width === 0 && size.height === 0) {
@@ -1235,8 +1339,30 @@ var Camera = {
     }
   },
 
+  pickVideoProfile: function camera_pickVideoProfile(profiles) {
+    var profileName;
+    // Attempt to find low resolution profile if accessed via pick activity
+    if (this._pendingPick && this._pendingPick.source.data.maxFileSizeBytes &&
+        'qcif' in profiles) {
+      profileName = 'qcif';
+    // Default to cif profile
+    } else if ('cif' in profiles) {
+      profileName = 'cif';
+    // Fallback to first valid profile if none found
+    } else {
+      profileName = Object.keys(profiles)[0];
+    }
+
+    return {
+      profile: profileName,
+      rotation: 0,
+      width: profiles[profileName].video.width,
+      height: profiles[profileName].video.height
+    };
+  },
+
   initPositionUpdate: function camera_initPositionUpdate() {
-    if (this._watchId || document.mozHidden) {
+    if (this._watchId || document.hidden) {
       return;
     }
     this._watchId = navigator.geolocation
@@ -1275,8 +1401,8 @@ var Camera = {
 
 Camera.init();
 
-document.addEventListener('mozvisibilitychange', function() {
-  if (document.mozHidden) {
+document.addEventListener('visibilitychange', function() {
+  if (document.hidden) {
     Camera.stopPreview();
     Camera.cancelPick();
     Camera.cancelPositionUpdate();

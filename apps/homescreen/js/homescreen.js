@@ -39,11 +39,14 @@ var Homescreen = (function() {
 
     GridManager.init(options, function gm_init() {
       window.addEventListener('hashchange', function() {
-        if (document.location.hash != '#root')
+        if (!window.location.hash.replace('#', '')) {
           return;
+        }
 
         // this happens when the user presses the 'home' button
-        if (Homescreen.isInEditMode()) {
+        if (Homescreen.didEvmePreventHomeButton()) {
+          // nothing to do here, just prevent any other actions
+        } else if (Homescreen.isInEditMode()) {
           exitFromEditMode();
         } else {
           GridManager.goToPage(landingPage);
@@ -68,12 +71,12 @@ var Homescreen = (function() {
     GridManager.exitFromEditMode();
   }
 
-  document.addEventListener('mozvisibilitychange', function mozVisChange() {
-    if (document.mozHidden && Homescreen.isInEditMode()) {
+  document.addEventListener('visibilitychange', function mozVisChange() {
+    if (document.hidden && Homescreen.isInEditMode()) {
       exitFromEditMode();
     }
 
-    if (document.mozHidden == false) {
+    if (document.hidden == false) {
       setTimeout(function forceRepaint() {
         var helper = document.getElementById('repaint-helper');
         helper.classList.toggle('displayed');
@@ -158,6 +161,11 @@ var Homescreen = (function() {
 
     isInEditMode: function() {
       return mode === 'edit';
+    },
+
+    didEvmePreventHomeButton: function() {
+      var evme = ('EvmeFacade' in window) && window.EvmeFacade;
+      return evme.onHomeButtonPress && evme.onHomeButtonPress();
     },
 
     init: initialize,

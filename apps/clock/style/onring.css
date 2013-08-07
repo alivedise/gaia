@@ -175,7 +175,7 @@ html, body {
   #ring-clock-display {
     position: absolute;
     bottom: 0.6rem;
-    left: 4rem;
+    left: 4.2rem;
     border-bottom: none;
   }
 
@@ -191,10 +191,10 @@ html, body {
 
   #ring-alarm-label {
     position: absolute;
-    top: 0.46rem;
-    left: 4rem;
+    top: 0.35rem;
+    left: 4.2rem;
     font-weight: bolder;
-    font-size: 1.38rem;
+    font-size: 1.31rem;
     line-height: 1.44rem;
     color: #00aac8;
     margin-top: 0;

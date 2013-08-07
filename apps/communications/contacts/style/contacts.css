@@ -147,6 +147,9 @@ section[role="region"] > header:first-child .icon.icon-edit-contact {
   margin-bottom: 1rem;
 }
 
+#contact-detail .duplicate-actions button {
+  margin-bottom: 1rem;
+}
 
 #contact-detail h2 {
   text-transform: uppercase;
@@ -158,6 +161,7 @@ section[role="region"] > header:first-child .icon.icon-edit-contact {
 }
 
 /* Edit contact section */
+
 .view-edit-contact .tail-actions {
   padding-top: 0.7rem;
   margin: 1rem 0 2rem;
@@ -531,12 +535,12 @@ section[role="region"] > header .icon.icon-settings
 }
 
 #no-contacts .create.icon {
-  background: url("/contacts/style/images/plus_small_ico.png") no-repeat left center;
+  background: url("/contacts/style/images/plus_small_ico.png") no-repeat left center / 1.4rem;
   margin-top: 3rem;
 }
 
 #no-contacts .import.icon {
-  background: url("/contacts/style/images/settings_small_ico.png") no-repeat left center;
+  background: url("/contacts/style/images/settings_small_ico.png") no-repeat left center / 1.6rem;
 }
 
 #statusMsg {
@@ -562,7 +566,7 @@ section[role="region"] > header .icon.icon-settings
   opacity: 0;
 }
 
-#no-sim, #no-sd {
+#no-sim, #no-memorycard {
   color: #5B5B5B;
   font-size: 1.5rem;
   line-height: 2rem;
@@ -585,4 +589,14 @@ section[role="region"] > header .icon.icon-settings
 
 #importSources > li.importService {
   height: auto;
+}
+
+#groups-container-box {
+  width: 100%;
+  overflow: hidden;
+}
+
+#groups-container {
+  height: 100%;
+  overflow: scroll;
 }

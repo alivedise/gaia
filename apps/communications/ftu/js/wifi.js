@@ -248,7 +248,7 @@ var WifiUI = {
     if (!networks) {
       var noResult = '<div id="no-result-container">' +
                      '  <div id="no-result-message">' +
-                     '    <p>' + _('noWifiFound2') + '</p>' +
+                     '    <p>' + _('noWifiFound3') + '</p>' +
                      '  </div>' +
                      '</div>';
       networksDOM.innerHTML = noResult;
@@ -282,7 +282,7 @@ var WifiUI = {
           ssidp.textContent = network.ssid;
           li.dataset.ssid = network.ssid;
           // Show authentication method
-          var keys = WifiHelper.getEncryptions(network);
+          var keys = WifiHelper.getSecurity(network);
 
           li.dataset.security = keys;
 

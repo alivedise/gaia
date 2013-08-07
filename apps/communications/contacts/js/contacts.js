@@ -334,14 +334,14 @@ var Contacts = (function() {
         data['tel'] = [{
           'value': phoneNumber,
           'carrier': null,
-          'type': TAG_OPTIONS['phone-type'][0].value
+          'type': TAG_OPTIONS['phone-type'][0].type
         }];
       }
       if (params.hasOwnProperty('email')) {
         var email = params['email'];
         data['email'] = [{
           'value': email,
-          'type': TAG_OPTIONS['email-type'][0].value
+          'type': TAG_OPTIONS['email-type'][0].type
         }];
       }
       var hash = '#view-contact-form?extras=' +
@@ -349,8 +349,6 @@ var Contacts = (function() {
       if (fromUpdateActivity)
         hash += '&fromUpdateActivity=1';
       window.location.hash = hash;
-      contactsList.clearClickHandlers();
-      contactsList.handleClick(contactListClickHandler);
     });
   };
 
@@ -730,7 +728,8 @@ var Contacts = (function() {
 
     LazyLoader.load(lazyLoadFiles, function() {
       var handling = ActivityHandler.currentlyHandling;
-      if (!handling || ActivityHandler.activityName === 'pick') {
+      if (!handling || ActivityHandler.activityName === 'pick' ||
+                       ActivityHandler.activityName === 'update') {
         initContactsList();
         checkUrl();
       } else {
@@ -834,13 +833,13 @@ var Contacts = (function() {
     window.addEventListener('online', Contacts.onLineChanged);
     window.addEventListener('offline', Contacts.onLineChanged);
 
-    document.addEventListener('mozvisibilitychange', function visibility(e) {
-      if (ActivityHandler.currentlyHandling && document.mozHidden) {
+    document.addEventListener('visibilitychange', function visibility(e) {
+      if (ActivityHandler.currentlyHandling && document.hidden) {
         ActivityHandler.postCancel();
         return;
       }
       Contacts.checkCancelableActivity();
-      if (document.mozHidden === false &&
+      if (document.hidden === false &&
                                 navigation.currentView() === 'view-settings') {
         contacts.Settings.updateTimestamps();
       }

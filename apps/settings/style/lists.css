@@ -22,6 +22,10 @@ ul li.sound-setting {
   min-height: 7.9rem;
 }
 
+ul li label:not([for]) {
+  background: none;
+}
+
 ul li > a,
 ul li > span {
   display: block;
@@ -93,8 +97,13 @@ ul li > small {
   pointer-events: none;
 }
 
-ul li > label:not([for]) + small {
-  right: 9rem;
+ul li > label.pack-checkbox + small,
+ul li > label.pack-radio + small {
+  right: 6.1rem;
+}
+
+ul li > label.pack-switch + small {
+   right: 9rem;
 }
 
 /* required for empty elements like Bluetooth */
@@ -121,7 +130,10 @@ ul li label {
   text-transform: none;
 }
 
-ul li > label:not([for]) {
+ul li > label:not([for]),
+ul li > label.pack-checkbox,
+ul li > label.pack-radio,
+ul li > label.pack-switch {
   position: absolute;
   top: 0;
   left: 0;
@@ -129,17 +141,25 @@ ul li > label:not([for]) {
   height: 100%;
 }
 
-ul li > label:not([for]) > span,
-ul li > label:not([for]) > input[data-type="switch"] + span {
+ul li > label.pack-checkbox > span,
+ul li > label.pack-radio > span,
+ul li > label.pack-switch > input + span {
   left: auto;
   right: 3rem;
 }
 
-ul li > label:not([for]) ~ a {
-  padding-right: 9rem;
+ul li > label.pack-checkbox ~ a,
+ul li > label.pack-radio ~ a {
+  padding-right: 6.1rem;
 }
 
-ul li > label:not([for]):active ~ a {
+ul li > label.pack-switch ~ a {
+   padding-right: 9rem;
+}
+
+ul li > label.pack-checkbox:active ~ a,
+ul li > label.pack-radio:active ~ a,
+ul li > label.pack-switch:active ~ a {
   background-color: #b2f2ff;
   color: #222;
 }
@@ -210,6 +230,7 @@ input[type=range]::-moz-range-thumb {
   transition: border 0.15s ease;
   -moz-box-sizing: border-box;
   background: url(images/range_thumb.png) no-repeat 50% 50%;
+  background-size: 2.8rem 2.8rem;
 }
 
 input[type=range]:active::-moz-range-thumb {
@@ -298,6 +319,7 @@ ul li > label.bug344618_polyfill div span:last-child {
   -moz-outline-radius: 3rem;
   transition: outline 0.15s ease;
   background: url(images/range_thumb.png) no-repeat 50% 50%;
+  background-size: 2.8rem 2.8rem;
 }
 
 ul li > label.bug344618_polyfill div span:last-child:active {
@@ -445,13 +467,20 @@ html[dir="rtl"] ul li a[role="button"] {
   right: 3rem;
 }
 
-html[dir="rtl"] ul li > label:not([for]) > span,
-html[dir="rtl"] ul li > label:not([for]) > input[data-type="switch"] + span {
+html[dir="rtl"] ul li > label.pack-checkbox > span,
+html[dir="rtl"] ul li > label.pack-radio > span,
+html[dir="rtl"] ul li > label.pack-switch > input + span {
   left: 9rem; /* XXX we use "right: 3rem" for LTR layouts... */
   right: inherit;
 }
 
-html[dir="rtl"] ul li > label:not([for]) ~ a {
+html[dir="rtl"] ul li > label.pack-checkbox ~ a,
+html[dir="rtl"] ul li > label.pack-radio ~ a {
+  padding-left: 6.1rem;
+  padding-right: 3rem;
+}
+
+html[dir="rtl"] ul li > label.pack-switch ~ a {
   padding-left: 9rem;
   padding-right: 3rem;
 }

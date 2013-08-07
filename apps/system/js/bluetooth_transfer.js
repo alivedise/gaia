@@ -402,8 +402,9 @@ var BluetoothTransfer = {
 
   openReceivedFile: function bt_openReceivedFile(evt) {
     // Launch the gallery with an open activity to view this specific photo
-    // XXX: The prefix file path should be refined when API is ready to provide
-    var filePath = 'downloads/bluetooth/' + evt.fileName;
+    // XXX: Bug 897434 - Save received/downloaded files in one specific folder
+    // with meaningful path and filename
+    var filePath = 'Download/Bluetooth/' + evt.fileName;
     var contentType = evt.contentType;
     var storageType = 'sdcard';
     var self = this;
@@ -444,7 +445,8 @@ var BluetoothTransfer = {
         // Cannot identify MIMETYPE
         // So, show cannot open file dialog with unknow media type
         UtilityTray.hide();
-        self.showUnknownMediaPrompt(fileName);
+        if (a.error.name === 'NO_PROVIDER')
+          self.showUnknownMediaPrompt(fileName);
       };
       a.onsuccess = function(e) {
         var msg = 'open activity onsuccess';

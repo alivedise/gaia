@@ -163,6 +163,7 @@ if (customize.swipe) {
 let content = {
   search_page: {
     provider: 'EverythingME',
+    separate_page: false,
     enabled: search_page_enabled
   },
 
@@ -197,30 +198,6 @@ let content = {
 let init = getFile(GAIA_DIR, GAIA_CORE_APP_SRCDIR,
                   'homescreen', 'js', 'init.json');
 writeContent(init, JSON.stringify(content));
-
-// Apps that should never appear in settings > app permissions
-// bug 830659: We want homescreen to appear in order to remove e.me geolocation
-// permission
-let hidden_apps = [
-  gaiaManifestURL('keyboard'),
-  gaiaManifestURL('wallpaper'),
-  gaiaManifestURL('bluetooth'),
-  gaiaManifestURL('pdfjs')
-];
-
-init = getFile(GAIA_DIR, GAIA_CORE_APP_SRCDIR, 'settings', 'js',
-               'hiddenapps.js');
-writeContent(init, 'var HIDDEN_APPS = ' + JSON.stringify(hidden_apps));
-
-// Apps that should never appear as icons in the homescreen grid or dock
-hidden_apps = hidden_apps.concat([
-  gaiaManifestURL('homescreen'),
-  gaiaManifestURL('system')
-]);
-
-init = getFile(GAIA_DIR, GAIA_CORE_APP_SRCDIR, 'homescreen', 'js',
-               'hiddenapps.js');
-writeContent(init, 'var HIDDEN_APPS = ' + JSON.stringify(hidden_apps));
 
 // SMS
 init = getFile(GAIA_DIR, 'apps', 'sms', 'js', 'blacklist.json');
@@ -267,6 +244,12 @@ content = {
 };
 
 writeContent(init, getDistributionFileContent('icc', content));
+
+// WAP UA profile url
+init = getFile(GAIA_DIR, 'apps', 'system', 'resources', 'wapuaprof.json');
+content = {};
+
+writeContent(init, getDistributionFileContent('wapuaprof.json', content));
 
 // Calendar Config
 init = getFile(GAIA_DIR, 'apps', 'calendar', 'js', 'presets.js');
@@ -348,6 +331,12 @@ init = getFile(GAIA_DIR, 'apps', 'communications', 'contacts', 'oauth2', 'js',
                'parameters.js');
 content = JSON.parse(getFileContent(getFile(GAIA_DIR, 'build',
                                        'communications_services.json')));
+
+// Bug 883344 Only use default facebook app id if is mozilla partner build
+if (OFFICIAL === '1') {
+  content.facebook.applicationId = '395559767228801';
+  content.live.applicationId = '00000000440F8B08';
+}
 
 writeContent(init, 'var oauthflow = this.oauthflow || {}; oauthflow.params = ' +
   getDistributionFileContent('communications_services', content) + ';');

@@ -3,6 +3,7 @@ requireApp('communications/contacts/test/unit/mock_contacts.js');
 requireApp('communications/contacts/test/unit/mock_asyncstorage.js');
 requireApp('communications/contacts/test/unit/mock_fb.js');
 requireApp('communications/contacts/test/unit/mock_sdcard.js');
+requireApp('communications/contacts/test/unit/mock_icc_helper.js');
 requireApp('communications/dialer/test/unit/mock_confirm_dialog.js');
 requireApp('communications/contacts/test/unit/mock_vcard_parser.js');
 requireApp('communications/contacts/js/import_utils.js');
@@ -18,12 +19,12 @@ if (!window.Rest) {
 window.self = null;
 
 var mocksHelperForContactSettings = new MocksHelper([
-  'Contacts', 'asyncStorage', 'fb', 'ConfirmDialog', 'VCFReader'
+  'Contacts', 'asyncStorage', 'fb', 'ConfirmDialog', 'VCFReader', 'IccHelper'
 ]);
 mocksHelperForContactSettings.init();
 
 suite('Contacts settings', function() {
-  var checkForCard, real_, realNavigatorConn;
+  var checkForCard, real_;
   var mocksHelper = mocksHelperForContactSettings;
 
   function stub(additionalCode, ret) {
@@ -56,6 +57,10 @@ suite('Contacts settings', function() {
         return date;
       }
     };
+    window.utils.overlay = {
+      show: function() {},
+      showMenu: function() {}
+    };
     window._ = stub('blah');
   });
 
@@ -79,8 +84,8 @@ suite('Contacts settings', function() {
     '<ul data-type="list">\n' +
     '<li id="settingsOrder">\n' +
     '<aside class="pack-end">\n' +
-    '<label>\n' +
-    '<input type="checkbox" data-type="switch" name="order.lastname" />\n' +
+    '<label class="pack-switch">\n' +
+    '<input type="checkbox" name="order.lastname" />\n' +
     '<span></span>\n' +
     '</label>\n' +
     '</aside>\n' +
@@ -98,10 +103,10 @@ suite('Contacts settings', function() {
     '<p id="no-sim" data-l10n-id="noSimMsg"></p>\n' +
     '</li>\n' +
     '<li id="settingsStorage" data-source="sd">\n' +
-    '<button class="icon icon-gmail" data-l10n-id="importSd">\n' +
+    '<button class="icon icon-gmail" data-l10n-id="importMemoryCard">\n' +
     'Memory card\n' + '<p><span></span><time></time></p>\n' +
     '</button>\n' +
-    '<p id="no-sd" data-l10n-id="noSdMsg"></p>\n' +
+    '<p id="no-memorycard" data-l10n-id="noMemoryCardMsg"></p>\n' +
     '</li>\n' +
     '<li class="importService" data-source="gmail">\n' +
     '<button class="icon icon-gmail" data-l10n-id="importGmail">\n' +
@@ -121,8 +126,8 @@ suite('Contacts settings', function() {
     '<ul id="settingsFb" data-type="list" data-state="logged-out">\n' +
     '<li class="fb-item">\n' +
     '<aside class="pack-end">\n' +
-    '<label>\n' +
-    '<input type="checkbox" data-type="switch" name="fb.imported">\n' +
+    '<label class="pack-switch">\n' +
+    '<input type="checkbox" name="fb.imported">\n' +
     '<span id="span-check-fb"></span>\n' +
     '</label>\n' +
     '</aside>\n' +
@@ -147,9 +152,6 @@ suite('Contacts settings', function() {
     setup(function() {
       document.body.innerHTML = dom;
 
-      realNavigatorConn = window.navigator.mozMobileConnection;
-      navigator.mozMobileConnection = { cardState: 'ready' };
-
       contacts.Settings.init();
       checkForCard = utils.sdcard.checkStorageCard;
       mocksHelper.setup();
@@ -162,7 +164,7 @@ suite('Contacts settings', function() {
       assert.equal(document.getElementById('settingsStorage')
         .firstElementChild.hasAttribute('disabled'), false);
 
-      assert.equal(document.querySelector('#no-sd')
+      assert.equal(document.querySelector('#no-memorycard')
         .classList.contains('hide'), true);
     });
 
@@ -175,7 +177,7 @@ suite('Contacts settings', function() {
       assert.equal(document.getElementById('settingsStorage')
         .firstElementChild.hasAttribute('disabled'), true);
 
-      assert.equal(document.querySelector('#no-sd')
+      assert.equal(document.querySelector('#no-memorycard')
         .classList.contains('hide'), false);
     });
 
@@ -184,7 +186,7 @@ suite('Contacts settings', function() {
       Contacts.hideOverlay = stub();
       Contacts.showStatus = stub();
 
-      document.querySelector('[data-l10n-id="importSd"]').click();
+      document.querySelector('[data-l10n-id="importMemoryCard"]').click();
 
       setTimeout(function() {
         assert.equal(Contacts.showOverlay.callCount, 1);
@@ -194,8 +196,7 @@ suite('Contacts settings', function() {
 
     teardown(function() {
       document.body.innerHTML = '';
-      window.navigator.mozMobileConnection = realNavigatorConn;
-        utils.sdcard.checkStorageCard = checkForCard;
+      utils.sdcard.checkStorageCard = checkForCard;
       mocksHelper.teardown();
       MockasyncStorage.clear();
     });

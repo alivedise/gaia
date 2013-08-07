@@ -18,36 +18,58 @@ function SimContactsImporter() {
   var numResponses = 0;
   var self = this;
   var _ = navigator.mozL10n.get;
+  var mustFinish = false;
+  var loadedMatch = false;
+
+  function notifyFinish() {
+    if (typeof self.onfinish === 'function') {
+      window.setTimeout(self.onfinish, 0);
+    }
+  }
+
+  function notifyImported() {
+    if (typeof self.onimported === 'function') {
+      window.setTimeout(self.onimported, 0);
+    }
+  }
 
   function continueCb() {
     numResponses++;
     pointer++;
-    if (typeof self.onimported === 'function') {
-      window.setTimeout(self.onimported, 0);
-    }
+    notifyImported();
     if (pointer < self.items.length && numResponses === CHUNK_SIZE) {
       numResponses = 0;
-      importSlice(pointer);
+      mustFinish ? notifyFinish() : importSlice(pointer);
     }
     else if (pointer >= self.items.length) {
-      if (typeof self.onfinish === 'function') {
-        self.onfinish();
-      }
+      notifyFinish();
     }
   }
 
   function startMigration() {
-    if (Array.isArray(self.items) && self.items.length > 0) {
+    if (!mustFinish && Array.isArray(self.items) && self.items.length > 0) {
       importSlice(0);
     }
     else {
-      if (typeof self.onfinish === 'function') {
-        self.onfinish();
-      }
+      notifyFinish();
     }
   }
 
   this.start = function() {
+    if (mustFinish) {
+      notifyFinish();
+      return;
+    }
+
+    LazyLoader.load([
+      '/contacts/js/contacts_matcher.js',
+      '/contacts/js/contacts_merger.js',
+      '/contacts/js/merger_adapter.js'
+    ], function loaded() {
+      loadedMatch = true;
+      document.dispatchEvent(new CustomEvent('matchLoaded'));
+    });
+
     // See bug 870237
     // To have the backward compatibility for bug 859220.
     // If we could not get iccManager from navigator,
@@ -74,12 +96,26 @@ function SimContactsImporter() {
     }
 
     request.onsuccess = function onsuccess() {
+      if (mustFinish) {
+        notifyFinish();
+        return;
+      }
+
       self.items = request.result; // array of mozContact elements
       if (typeof self.onread === 'function') {
         // This way the total number can be known by the caller
         self.onread(self.items.length);
       }
-      startMigration();
+
+      if (loadedMatch) {
+        startMigration();
+      }
+      else {
+        document.addEventListener('matchLoaded', function mloaded() {
+          document.removeEventListener('matchLoaded', mloaded);
+          startMigration();
+        });
+      }
     };
 
     request.onerror = function error() {
@@ -87,6 +123,10 @@ function SimContactsImporter() {
         self.onerror(request.error);
       }
     };
+  };
+
+  this.finish = function() {
+    mustFinish = true;
   };
 
   /**
@@ -101,9 +141,35 @@ function SimContactsImporter() {
       var item = self.items[i];
       item.givenName = item.name;
       for (var j = 0; j < item.tel.length; j++) {
-        item.tel[j].type = _('mobile');
+        item.tel[j].type = 'mobile';
       }
-      var req = window.navigator.mozContacts.save(item);
+
+      item.category = ['sim'];
+
+      var cbs = {
+        onmatch: function(results) {
+          var mergeCbs = {
+            success: continueCb,
+            error: function(e) {
+              window.console.error('Error while merging: ', e);
+              continueCb();
+            }
+          };
+
+          contacts.adaptAndMerge(this, results, mergeCbs);
+        }.bind(item),
+        onmismatch: function() {
+          saveContact(this);
+        }.bind(item)
+      };
+
+      contacts.Matcher.match(item, 'passive', cbs);
+    }
+  } // importSlice
+
+
+  function saveContact(item) {
+    var req = window.navigator.mozContacts.save(item);
       req.onsuccess = function saveSuccess() {
         continueCb();
       };
@@ -111,6 +177,5 @@ function SimContactsImporter() {
         console.error('SIM Import: Error importing ', item.id);
         continueCb();
       };
-    }
-  } // importSlice
+  }
 }

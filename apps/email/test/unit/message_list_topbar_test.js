@@ -1,14 +1,36 @@
-require('/shared/js/l10n.js');
+/*global requireApp, suite, setup, testConfig, test, assert,
+  MockL10n, document, sinon, teardown, suiteSetup, suiteTeardown */
 
-requireApp('email/js/message_list_topbar.js');
+requireApp('email/js/alameda.js');
+requireApp('email/test/config.js');
 requireApp('email/test/unit/mock_l10n.js');
 
 suite('MessageListTopbar', function() {
-  var subject, el, scrollContainer, newEmailCount, nativeMozL10n;
+  var subject, el, scrollContainer, newEmailCount,
+      MessageListTopbar, mozL10n;
+
+  suiteSetup(function(done) {
+    testConfig(
+      {
+        suiteTeardown: suiteTeardown,
+        done: done,
+        defines: {
+          'l10n!': function() {
+            return MockL10n;
+          }
+        }
+      },
+      ['message_list_topbar', 'l10n!'],
+      function(mlt, l) {
+        MessageListTopbar = mlt;
+        mozL10n = l;
+      }
+    );
+  });
 
   setup(function() {
-    nativeMozL10n = navigator.mozL10n;
-    navigator.mozL10n = MockL10n;
+    // Called before each of the suites below
+    //
     // Mock the HTML
     el = document.createElement('div');
     el.classList.add(MessageListTopbar.CLASS_NAME);
@@ -17,10 +39,6 @@ suite('MessageListTopbar', function() {
     scrollContainer = {};
     newEmailCount = 5;
     subject = new MessageListTopbar(scrollContainer, newEmailCount);
-  });
-
-  teardown(function() {
-    navigator.mozL10n = nativeMozL10n;
   });
 
   suite('#constructor', function() {
@@ -128,7 +146,7 @@ suite('MessageListTopbar', function() {
       subject.updateNewEmailCount();
       assert.equal(
           subject._el.textContent,
-          navigator.mozL10n.get('new-emails', { n: 5 })
+          mozL10n.get('new-emails', { n: 5 })
       );
     });
   });

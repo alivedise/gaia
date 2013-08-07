@@ -3,7 +3,7 @@
 (function(exports) {
   'use strict';
   var rdashes = /-(.)/g;
-  var rmatcher = /\$\{([^{]+)\}/g;
+  var rmatcher = /\$\{([^}]+)\}/g;
   var rescape = /[.?*+^$[\]\\(){}|-]/g;
   var rentity = /[&<>"']/g;
   var rentities = {
@@ -57,15 +57,21 @@
           }
         }
       }
+
+      FixedHeader.updateHeaderContent();
     },
     startTimeHeaderScheduler: function ut_startTimeHeaderScheduler() {
-      this.updateTimeHeaders();
-      if (this.updateTimer) {
-        clearInterval(this.updateTimer);
-      }
-      this.updateTimer = setInterval(function(self) {
-        self.updateTimeHeaders();
-      }, 50000, this);
+      var updateFunction = (function() {
+        this.updateTimeHeaders();
+        var now = Date.now(),
+            nextTimeout = new Date(now + 60000);
+        nextTimeout.setSeconds(0);
+        nextTimeout.setMilliseconds(0);
+        clearTimeout(this.updateTimer);
+        this.updateTimer = setTimeout(updateFunction,
+          nextTimeout.getTime() - now);
+      }).bind(this);
+      updateFunction();
     },
     escapeRegex: function ut_escapeRegex(str) {
       if (typeof str !== 'string') {
@@ -216,32 +222,37 @@
       return details;
     },
 
-    getContactCarrier: function(input, tels) {
+    getCarrierTag: function ut_getCarrierTag(input, tels, details) {
       /**
         1. If a phone number has carrier associated with it
             the output will be:
 
-          Firstname Lastname
           type | carrier
 
         2. If there is no carrier associated with the phone number
             the output will be:
 
-          Firstname Lastname
           type | phonenumber
 
         3. If for some reason a single contact has two phone numbers with
             the same type and the same carrier the output will be:
 
-          Firstname Lastname
           type | phonenumber
 
-      */
+        4. If for some reason a single contact has no name and no carrier,
+            the output will be:
 
+          type
+
+        5. If for some reason a single contact has no name, no type
+            and no carrier, the output will be nothing.
+      */
       var length = tels.length;
+      var hasDetails = typeof details !== 'undefined';
       var hasUniqueCarriers = true;
       var hasUniqueTypes = true;
-      var found, tel, type, carrier, value;
+      var name = hasDetails ? details.name : '';
+      var found, tel, type, carrier, value, ending;
 
       for (var i = 0; i < length; i++) {
         tel = tels[i];
@@ -259,18 +270,23 @@
         }
 
         carrier = tel.carrier;
-        type = tel.type[0];
+        type = (tel.type && tel.type[0]) || '';
       }
 
       if (!found) {
         return '';
       }
 
-      type = found.type[0];
-      carrier = hasUniqueCarriers || hasUniqueTypes ? found.carrier : '';
+      type = (found.type && found.type[0]) || '';
+      carrier = (hasUniqueCarriers || hasUniqueTypes) ? found.carrier : '';
       value = carrier || found.value;
+      ending = ' | ' + (carrier || value);
 
-      return type + ' | ' + (carrier || value);
+      if (hasDetails && !name && !carrier) {
+        ending = '';
+      }
+
+      return type + ending;
     },
 
     // Based on "non-dialables" in https://github.com/andreasgal/PhoneNumber.js
@@ -295,41 +311,98 @@
       return a === b;
     },
 
+    // Default image size limitation is set to 300KB for MMS user story.
+    // If limit is not given or bigger than default 300KB, default value need
+    // to be applied here for size checking. Parameters could be:
+    // (blob, callback) : Resizing image to default limit 300k.
+    // (blob, limit, callback) : Resizing image to given limitation.
     getResizedImgBlob: function ut_getResizedImgBlob(blob, limit, callback) {
-      // Default image size limitation is set to 300KB for MMS user story.
-      // If limit is not given or bigger than default 300KB, default value need
-      // to be appied here for size checking.
       var defaultLimit = 300 * 1024;
       if (typeof limit === 'function') {
         callback = limit;
         limit = defaultLimit;
       }
       limit = limit === 0 ? defaultLimit : Math.min(limit, defaultLimit);
+
       if (blob.size < limit) {
         setTimeout(function blobCb() {
           callback(blob);
         });
-      } else {
-        var img = document.createElement('img');
-        var url = URL.createObjectURL(blob);
-        img.src = url;
-        img.onload = function onBlobLoaded() {
-          var image_width = img.width;
-          var image_height = img.height;
-          var ratio = Math.sqrt(Math.ceil(blob.size / limit * 10) / 10);
-          var target_width = image_width / ratio;
-          var target_height = image_height / ratio;
-
-          var canvas = document.createElement('canvas');
-          canvas.width = target_width;
-          canvas.height = target_height;
-          var context = canvas.getContext('2d');
-
-          context.drawImage(img, 0, 0, target_width, target_height);
-          URL.revokeObjectURL(url);
-          canvas.toBlob(callback, blob.type);
-        };
+        return;
       }
+      var ratio = Math.sqrt(blob.size / limit);
+      Utils.resizeImageBlobWithRatio({
+        blob: blob,
+        limit: limit,
+        ratio: ratio,
+        callback: callback
+      });
+    },
+
+    //  resizeImageBlobWithRatio have additional ratio to force image
+    //  resize to smaller size to avoid edge case about quality adjustment
+    //  not working.
+    resizeImageBlobWithRatio: function ut_resizeImageBlobWithRatio(obj) {
+      var blob = obj.blob;
+      var callback = obj.callback;
+      var limit = obj.limit;
+      var ratio = obj.ratio;
+      var qualities = [0.75, 0.5, 0.25];
+
+      if (blob.size < limit) {
+        setTimeout(function blobCb() {
+          callback(blob);
+        });
+        return;
+      }
+
+      var img = document.createElement('img');
+      var url = URL.createObjectURL(blob);
+      img.src = url;
+      img.onload = function onBlobLoaded() {
+        URL.revokeObjectURL(url);
+        var imageWidth = img.width;
+        var imageHeight = img.height;
+        var targetWidth = imageWidth / ratio;
+        var targetHeight = imageHeight / ratio;
+
+        var canvas = document.createElement('canvas');
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        var context = canvas.getContext('2d');
+
+        context.drawImage(img, 0, 0, targetWidth, targetHeight);
+        // Bug 889765: Since we couldn't know the quality of the original jpg
+        // The 'resized' image might have a bigger size because it was saved
+        // with quality or dpi. Here we will adjust the jpg quality(or resize
+        // blob again if low quality blob size still exceed limit) to make
+        // sure the size won't exceed the limitation.
+        var level = 0;
+
+        function ensureSizeLimit(resizedBlob) {
+          if (resizedBlob.size < limit) {
+            callback(resizedBlob);
+          } else {
+            // Reduce image quality for match limitation. Here we set quality
+            // to 0.75, 0.5 and 0.25 for image blob resizing.
+            // (Default image quality is 0.92 for jpeg)
+            if (level < qualities.length) {
+              canvas.toBlob(ensureSizeLimit, 'image/jpeg',
+                qualities[level++]);
+            } else {
+              // We will resize the blob if image quality = 0.25 still exceed
+              // size limitation.
+              Utils.resizeImageBlobWithRatio({
+                blob: blob,
+                limit: limit,
+                ratio: ratio * 2,
+                callback: callback
+              });
+            }
+          }
+        }
+        canvas.toBlob(ensureSizeLimit, blob.type);
+      };
     },
     camelCase: function ut_camelCase(str) {
       return str.replace(rdashes, function replacer(str, p1) {
@@ -364,6 +437,83 @@
         parsed[$1] = $2;
       });
       return parsed;
+    },
+    /*
+      Using a contact resolver, a function that can looks for contacts,
+      get the format for the dissambiguation.
+
+      Used mainly in activities since they need to pick a contact from just
+      the number.
+
+      In order to workaround facebook contact issue(bug 895817), it should be
+      able to hanle the case about phone number without matched contact.
+    */
+    getContactDisplayInfo: function(resolver, phoneNumber, callback) {
+      resolver(phoneNumber, function onContacts(contacts) {
+        var contact;
+        if (Array.isArray(contacts)) {
+          if (contacts.length > 0) {
+            contact = contacts[0];
+          }
+        } else if (contacts !== null) {
+          contact = contacts;
+        }
+
+        // Only exit when no contact and no phone number case.
+        if (!contact && !phoneNumber) {
+          callback(null);
+          return;
+        }
+
+        var telLength = (contact && contact.tel) ? contact.tel.length : 0;
+        var tel = (telLength > 0) ? null :
+          {type: [''], value: phoneNumber, carrier: ''};
+
+        for (var i = 0; i < telLength && tel == null; i++) {
+          if (contact.tel[i].value === phoneNumber) {
+            tel = contact.tel[i];
+          }
+        }
+
+        // Get the title in the standar way
+        var details = Utils.getContactDetails(tel, contact);
+        var info = Utils.getDisplayObject(details.title || null, tel);
+        /*
+          XXX: We need to move this to use a single point for
+          formating:
+          ${type}${separator}${carrier}${numberHTML}
+        */
+        info.display = info.type +
+          info.separator +
+          info.carrier +
+          tel.value;
+
+        callback(info);
+      });
+    },
+    /*
+      Given a title for a contact, a the current information for
+      an specific phone, of that contact, creates an object with
+      all the information needed to display data.
+    */
+    getDisplayObject: function(theTitle, tel) {
+      var number = tel.value;
+      var title = theTitle || number;
+      var type = tel.type && tel.type.length ?
+        navigator.mozL10n.get(tel.type[0]) : '';
+      var carrier = tel.carrier ? (tel.carrier + ', ') : '';
+      var separator = type || carrier ? ' | ' : '';
+      var data = {
+        name: title,
+        number: number,
+        type: type,
+        carrier: carrier,
+        separator: separator,
+        nameHTML: '',
+        numberHTML: ''
+      };
+
+      return data;
     }
   };
 

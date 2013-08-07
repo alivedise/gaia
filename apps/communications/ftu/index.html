@@ -4,8 +4,6 @@
   <meta charset="utf-8">
   <meta http-equiv="pragma" content="no-cache">
 
-  <!-- multi-resolution support -->
-  <link rel="stylesheet" href="/shared/style/responsive.css">
   <!-- Common style -->
   <link rel="stylesheet" type="text/css" href="/shared/style/headers.css">
   <link rel="stylesheet" type="text/css" href="/shared/style/switches.css">
@@ -46,6 +44,8 @@
   <script type="text/javascript" src="/shared/js/tz_select.js"></script>
 
   <!-- Code for the FTU App -->
+  <script defer type="text/javascript" src="/shared/js/text_normalizer.js"></script>
+  <script defer type="text/javascript" src="/shared/js/lazy_loader.js"></script>
   <script defer type="text/javascript" src="/ftu/js/basket-client.js"></script>
   <script defer type="text/javascript" src="/contacts/js/utilities/sdcard.js"></script>
   <script defer type="text/javascript" src="/contacts/js/utilities/status.js"></script>
@@ -62,7 +62,7 @@
   <script defer type="text/javascript" src="/shared/js/wifi_helper.js"></script>
   <script defer type="text/javascript" src="/ftu/js/sim_manager.js"></script>
   <script defer type="text/javascript" src="/contacts/js/import_utils.js"></script>
-  <script defer type="text/javascript" src="/ftu/js/sd_manager.js"></script>
+  <script defer type="text/javascript" src="/ftu/js/memcard_manager.js"></script>
   <script defer type="text/javascript" src="/ftu/js/wifi.js"></script>
   <script defer type="text/javascript" src="/ftu/js/import_services.js"></script>
   <script defer type="text/javascript" src="/ftu/js/tutorial.js"></script>
@@ -163,8 +163,8 @@
           <ul>
             <li>
               <aside class="pack-end">
-                <label>
-                  <input type="checkbox" data-type="switch" id="data-connection-switch">
+                <label class="pack-switch">
+                  <input type="checkbox" id="data-connection-switch">
                   <span></span>
                 </label>
               </aside>
@@ -194,7 +194,7 @@
             <input type="text" id="wifi_user" data-l10n-id="identityInput" placeholder="User" x-inputmode="verbatim"></input>
             <label for="wifi_password" data-l10n-id="password">Password</label>
             <input type="password" id="wifi_password" data-l10n-id="passwordInput" placeholder="Password" value="" x-inputmode="verbatim"></input>
-            <label id="label_show_password">
+            <label class="pack-checkbox" id="label_show_password">
               <input type="checkbox" data-ignore name="show_password" />
               <span></span>
               <p id="wifi_show_password" data-l10n-id="showPassword">Show Password</p>
@@ -231,7 +231,7 @@
               Password
             </label>
             <input type="password" name="wifi_hidden_password" id="hidden-wifi-password" value=""/>
-            <label id="label_show_password">
+            <label class="pack-checkbox" id="label_show_password">
               <input type="checkbox" id="hidden-wifi-show-password">
               <span></span>
               <p data-l10n-id="showPassword">Show Password</p>
@@ -291,8 +291,8 @@
           <ul>
             <li>
               <aside class="pack-end">
-                <label>
-                  <input type="checkbox" data-type="switch" id="geolocation-switch" name="geolocation.enabled" checked>
+                <label class="pack-switch">
+                  <input type="checkbox" id="geolocation-switch" name="geolocation.enabled" checked>
                   <span></span>
                 </label>
               </aside>
@@ -317,10 +317,10 @@
               <p id="no-sim" data-l10n-id="noSimMsg">To import insert a SIM card</p>
             </li>
             <li id="sd_import" class="importOption">
-              <button id="sd-import-button" class="icon icon-sd" data-l10n-id="importSd">
+              <button id="sd-import-button" class="icon icon-sd" data-l10n-id="importMemoryCard">
                   SD card
               </button>
-              <p id="no-sd" data-l10n-id="noSdMsg">To import insert a SD card</p>
+              <p id="no-memorycard" data-l10n-id="noMemoryCardMsg">To import insert a SD card</p>
             </li>
             <li id="gmail_import" class="importOption">
               <button id="gmail-import-button" class="icon icon-gmail" data-l10n-id="importGmail">
@@ -492,7 +492,7 @@
           <a href="#about-your-privacy" data-l10n-id="aboutYourPrivacy2">Your Privacy</a>
         </section>
         <section id="form_share_statistics">
-          <label>
+          <label class="pack-checkbox">
             <input type="checkbox" id="share-performance" name="debug.performance_data.shared"/>
             <span></span>
             <p data-l10n-id="collaborate">
@@ -679,6 +679,9 @@
         <span id="progress-msg"></span>
         <progress id="progress-element" class="pack-activity" value="0" max="100"></progress>
       </p>
+      <menu>
+        <button data-l10n-id="cancel" id="cancel-overlay">Cancel</button>
+      </menu>
     </section>
   </form>
 

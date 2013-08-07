@@ -7,6 +7,7 @@ requireApp('communications/contacts/js/contacts_details.js');
 requireApp('communications/contacts/js/utilities/templates.js');
 requireApp('communications/contacts/js/utilities/dom.js');
 requireApp('communications/contacts/test/unit/mock_contacts.js');
+requireApp('communications/contacts/test/unit/mock_contacts_list_obj.js');
 requireApp('communications/contacts/test/unit/mock_contact_all_fields.js');
 requireApp('communications/contacts/test/unit/mock_fb.js');
 requireApp('communications/contacts/test/unit/mock_extfb.js');
@@ -41,7 +42,9 @@ var subject,
     mozL10n,
     mockContact,
     fbButtons,
-    linkButtons;
+    linkButtons,
+    realContactsList;
+
 var SCALE_RATIO = 1;
 
 suite('Render contact', function() {
@@ -75,6 +78,8 @@ suite('Render contact', function() {
       set: setNavigatorOnLine
     });
 
+    realContactsList = contacts.List;
+    contacts.List = MockContactsListObj;
     realContacts = window.Contacts;
     window.Contacts = MockContacts;
     realFb = window.fb;
@@ -114,6 +119,7 @@ suite('Render contact', function() {
 
   suiteTeardown(function() {
     window.Contacts = realContacts;
+    contacts.List = realContactsList;
     window.fb = realFb;
     window.mozL10n = realL10n;
     if (realOnLine) {
@@ -541,6 +547,39 @@ suite('Render contact', function() {
       assert.equal(contactDetails.style.transform, '');
       assert.isTrue(contactDetails.classList.contains('no-photo'));
       assert.isFalse(contactDetails.classList.contains('up'));
+    });
+  });
+
+  suite('Render duplicate section', function() {
+    test('Total contacts = 1 -> Find merge button disabled ', function() {
+      MockContactsListObj.total = 1;
+      subject.render(null, TAG_OPTIONS);
+      assert.isTrue(container.querySelector('#find-merge-button').disabled);
+    });
+
+    test('Total contacts > 1 -> Find merge button enabled ', function() {
+      MockContactsListObj.total = 2;
+      subject.render(null, TAG_OPTIONS);
+      assert.isFalse(container.querySelector('#find-merge-button').disabled);
+    });
+
+    test('FB Imported Contact -> Find Duplicates does not appear', function() {
+      window.fb.setIsFbContact(true);
+      window.fb.setIsFbLinked(false);
+
+      subject.render(null, TAG_OPTIONS);
+      assert.isNull(container.querySelector('#find-merge-button'));
+    });
+
+    test('FB Linked Contact -> Find Duplicates appears', function() {
+      window.fb.setIsFbContact(true);
+      window.fb.setIsFbLinked(true);
+
+      subject.render(null, TAG_OPTIONS);
+      assert.isNotNull(container.querySelector('#find-merge-button'));
+
+      window.fb.setIsFbContact(false);
+      window.fb.setIsFbLinked(false);
     });
   });
 

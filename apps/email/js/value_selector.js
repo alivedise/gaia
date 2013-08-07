@@ -17,6 +17,12 @@ How to:
   prompt1.addToList('Another button', function(){alert('Another action');});
   prompt1.show();
 */
+/*jshint browser: true */
+/*global alert, define */
+define(function(require) {
+
+var FOLDER_DEPTH_CLASSES = require('folder_depth_classes'),
+    mozL10n = require('l10n!');
 
 function ValueSelector(title, list) {
   var init, show, hide, render, setTitle, emptyList, addToList,
@@ -51,7 +57,7 @@ function ValueSelector(title, list) {
     strPopup += '    <h3>No Title</h3>';
     strPopup += '    <ul>';
     strPopup += '      <li>';
-    strPopup += '        <label>';
+    strPopup += '        <label class="pack-radio">';
     strPopup += '          <input type="radio" name="option">';
     strPopup += '          <span>Dummy element</span>';
     strPopup += '        </label>';
@@ -110,6 +116,7 @@ function ValueSelector(title, list) {
 
       input.setAttribute('type', 'radio');
       input.setAttribute('name', 'option');
+      label.classList.add('pack-radio');
       label.appendChild(input);
       label.appendChild(span);
       label.appendChild(text);
@@ -150,3 +157,7 @@ function ValueSelector(title, list) {
     List: list
   };
 }
+
+return ValueSelector;
+
+});

@@ -4,13 +4,12 @@
     <meta charset="utf-8">
     <meta http-equiv="pragma" content="no-cache">
     <title>Camera</title>
-    <link rel="resource" type="application/l10n" href="/locales/locales.ini">
+    <link rel="resource" type="application/l10n" href="locales/locales.ini">
     <link rel="resource" type="application/l10n" href="/shared/locales/date.ini">
 
-    <!-- multi-resolution support -->
-    <link rel="stylesheet" type="text/css" href="/shared/style/responsive.css">
     <link rel="stylesheet" type="text/css" href="style/camera.css">
     <link rel="stylesheet" type="text/css" href="/shared/style/buttons.css">
+    <link rel="stylesheet" type="text/css" href="/shared/style/confirm.css">
 
     <!-- for perf-measurement related utilities -->
     <script defer src="/shared/js/performance_testing_helper.js"></script>
@@ -49,17 +48,16 @@
       </div>
     </div>
 
-    <div id="confirmation" class="hidden">
-      <button id="retake-button" data-l10n-id="retake-button"></button>
-      <button id="select-button" class="recommend"
-              data-l10n-id="select-button"></button>
-    </div>
-
     <div id="overlay" class="hidden">
-      <div id="overlay-content">
-        <h1 id="overlay-title"></h1>
-        <p id="overlay-text"><p>
-      </div>
+      <form role="dialog" data-type="confirm">
+         <section>
+          <h1 id="overlay-title"></h1>
+          <p id="overlay-text"><p>
+        </section>
+        <menu id="overlay-menu-group" class="hidden">
+          <button id="overlay-close-button" data-l10n-id="close-button" class="full">Close</button>
+        </menu>
+      </form>
     </div>
 
     <!-- see filmstrip.js and filmstrip.css for these elements -->
@@ -73,6 +71,16 @@
         <a id="camera-button" class="button"></a>
         <a id="delete-button" class="button"></a>
         <a id="share-button" class="button"></a>
+      </footer>
+    </div>
+
+    <!-- see confirm.js and confirm.css for these elements -->
+    <div id="confirm" hidden>
+      <div id="confirm-media-frame"></div> <!-- image or video here -->
+      <footer id="confirm-controls">
+        <button id="retake-button" data-l10n-id="retake-button"></button>
+        <button id="select-button" class="recommend"
+                data-l10n-id="select-button"></button>
       </footer>
     </div>
 

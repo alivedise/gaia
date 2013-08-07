@@ -25,7 +25,7 @@ var BatteryManager = {
     if (!battery)
       return;
 
-    if (battery.level <= this.AUTO_SHUTDOWN_LEVEL)
+    if (battery.level <= this.AUTO_SHUTDOWN_LEVEL && !battery.charging)
       SleepMenu.startPowerOff(false);
   },
 
@@ -287,7 +287,7 @@ var PowerSaveHandler = (function PowerSaveHandler() {
           return;
         }
 
-        if (value != -1 && battery.level > value && _powerSaveEnabled) {
+        if (battery.level > value && _powerSaveEnabled) {
           setMozSettings({'powersave.enabled' : false});
           return;
         }

@@ -7,6 +7,7 @@ var CallHandler = (function callHandler() {
   var callScreenWindowReady = false;
   var btCommandsToForward = [];
   var currentActivity = null;
+  var FB_SYNC_ERROR_PARAM = 'isSyncError';
 
   /* === Settings === */
   var screenState = null;
@@ -15,15 +16,15 @@ var CallHandler = (function callHandler() {
   window.addEventListener('load', function getSettingsListener() {
     window.removeEventListener('load', getSettingsListener);
 
-    loader.load('/shared/js/settings_listener.js', function() {
-      SettingsListener.observe('lockscreen.locked', null, function(value) {
-        if (value) {
-          screenState = 'locked';
-        } else {
-          screenState = 'unlocked';
-        }
+      loader.load('/shared/js/settings_listener.js', function() {
+        SettingsListener.observe('lockscreen.locked', null, function(value) {
+          if (value) {
+            screenState = 'locked';
+          } else {
+            screenState = 'unlocked';
+          }
+        });
       });
-    });
   });
 
   /* === WebActivity === */
@@ -64,10 +65,16 @@ var CallHandler = (function callHandler() {
       return;
     }
 
-    navigator.mozApps.getSelf().onsuccess = function gotSelf(evt) {
-      var app = evt.target.result;
+    navigator.mozApps.getSelf().onsuccess = function gotSelf(selfEvt) {
+      var app = selfEvt.target.result;
       app.launch('dialer');
-      window.location.hash = '#recents-view';
+      var location = document.createElement('a');
+      location.href = evt.imageURL;
+      if (location.search.indexOf(FB_SYNC_ERROR_PARAM) !== -1) {
+        window.location.hash = '#contacts-view';
+      } else {
+        window.location.hash = '#call-log-view';
+      }
     };
   }
 
@@ -116,7 +123,7 @@ var CallHandler = (function callHandler() {
   /* === Recents support === */
   function handleRecentAddRequest(entry) {
     CallLogDBManager.add(entry, function(logGroup) {
-      CallLog.appendGroup(logGroup, entry.contactInfo);
+      CallLog.appendGroup(logGroup);
     });
   }
 
@@ -292,16 +299,19 @@ var CallHandler = (function callHandler() {
   // where we want to open a new call screen while the previous one is
   // animating out of the screen.
   var callScreenId = 0;
+  var openingWindow = false;
   function openCallScreen(openCallback) {
-    if (callScreenWindow)
+    if (callScreenWindow || openingWindow)
       return;
 
+    openingWindow = true;
     var host = document.location.host;
     var protocol = document.location.protocol;
     var urlBase = protocol + '//' + host + '/dialer/oncall.html';
 
     var highPriorityWakeLock = navigator.requestWakeLock('high-priority');
     var openWindow = function dialer_openCallScreen(state) {
+      openingWindow = false;
       callScreenWindow = window.open(urlBase + '#' + state,
                   ('call_screen' + callScreenId++), 'attention');
 
@@ -495,10 +505,10 @@ window.addEventListener('load', function startup(evt) {
                       'confirmation-message',
                       'edit-mode'];
 
-    loader.load(lazyPanels.map(function toElement(id) {
-        return document.getElementById(id);
-      })
-    );
+    var lazyPanelsElements = lazyPanels.map(function toElement(id) {
+      return document.getElementById(id);
+    });
+    loader.load(lazyPanelsElements);
 
     CallHandler.init();
     LazyL10n.get(function loadLazyFilesSet() {
@@ -509,6 +519,7 @@ window.addEventListener('load', function startup(evt) {
                    '/dialer/js/newsletter_manager.js',
                    '/shared/style/edit_mode.css',
                    '/shared/style/headers.css']);
+      lazyPanelsElements.forEach(navigator.mozL10n.translate);
     });
   });
 });
@@ -527,9 +538,8 @@ window.onresize = function(e) {
 // issue in Gecko where the Audio Data API causes gfx performance problems,
 // in particular when scrolling the homescreen.
 // See: https://bugzilla.mozilla.org/show_bug.cgi?id=779914
-document.addEventListener('mozvisibilitychange', function visibilitychanged() {
-  console.log('[alive] hidden?', document.mozHidden);
-  if (!document.mozHidden) {
+document.addEventListener('visibilitychange', function visibilitychanged() {
+  if (!document.hidden) {
     TonePlayer.ensureAudio();
   } else {
     // Reset the audio stream. This ensures that the stream is shutdown

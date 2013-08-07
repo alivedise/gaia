@@ -24,6 +24,7 @@ var CallScreen = {
 
   answerButton: document.getElementById('callbar-answer'),
   rejectButton: document.getElementById('callbar-hang-up'),
+  holdButton: document.getElementById('callbar-hold'),
 
   incomingContainer: document.getElementById('incoming-container'),
   incomingNumber: document.getElementById('incoming-number'),
@@ -33,20 +34,21 @@ var CallScreen = {
   lockedContactPhoto: document.getElementById('locked-contact-photo'),
 
   init: function cs_init() {
-    this.muteButton.addEventListener('mouseup', this.toggleMute.bind(this));
-    this.keypadButton.addEventListener('mouseup', this.showKeypad.bind(this));
-    this.speakerButton.addEventListener('mouseup',
+    this.muteButton.addEventListener('click', this.toggleMute.bind(this));
+    this.keypadButton.addEventListener('click', this.showKeypad.bind(this));
+    this.speakerButton.addEventListener('click',
                                     this.toggleSpeaker.bind(this));
-    this.answerButton.addEventListener('mouseup',
+    this.answerButton.addEventListener('click',
                                     OnCallHandler.answer.bind(OnCallHandler));
-    this.rejectButton.addEventListener('mouseup',
+    this.rejectButton.addEventListener('click',
                                     OnCallHandler.end);
+    this.holdButton.addEventListener('mouseup', OnCallHandler.toggleCalls);
 
-    this.incomingAnswer.addEventListener('mouseup',
+    this.incomingAnswer.addEventListener('click',
                               OnCallHandler.holdAndAnswer);
-    this.incomingEnd.addEventListener('mouseup',
+    this.incomingEnd.addEventListener('click',
                               OnCallHandler.endAndAnswer);
-    this.incomingIgnore.addEventListener('mouseup',
+    this.incomingIgnore.addEventListener('click',
                                     OnCallHandler.ignore);
 
     this.calls.addEventListener('click',
@@ -171,6 +173,10 @@ var CallScreen = {
 
   enableKeypad: function cs_enableKeypad() {
     this.keypadButton.removeAttribute('disabled');
+  },
+
+  disableKeypad: function cs_disableKeypad() {
+    this.keypadButton.setAttribute('disabled', 'disabled');
   }
 };
 
@@ -426,7 +432,13 @@ var OnCallHandler = (function onCallHandler() {
 
   function handleCallWaiting(call) {
     LazyL10n.get(function localized(_) {
-      var number = call.number || _('withheld-number');
+      var number = call.number;
+
+      if (!number) {
+        CallScreen.incomingNumber.textContent = _('withheld-number');
+        return;
+      }
+
       Contacts.findByNumber(number, function lookupContact(contact) {
         if (contact && contact.name) {
           CallScreen.incomingNumber.textContent = contact.name;
@@ -473,6 +485,14 @@ var OnCallHandler = (function onCallHandler() {
         closeWindow();
       }
     });
+  }
+
+  function updateKeypadEnabled() {
+    if (telephony.active) {
+      CallScreen.enableKeypad();
+    } else {
+      CallScreen.disableKeypad();
+    }
   }
 
   function exitCallScreen(animate) {
@@ -536,10 +556,10 @@ var OnCallHandler = (function onCallHandler() {
       case 'ATA':
         answer();
         break;
-      case 'CHUP+ATA':
+      case 'CHLD=1':
         endAndAnswer();
         break;
-      case 'CHLD+ATA':
+      case 'CHLD=2':
         if (telephony.calls.length === 1) {
           holdOrResumeSingleCall();
         } else {
@@ -646,7 +666,15 @@ var OnCallHandler = (function onCallHandler() {
     }
 
     if (handledCalls.length < 2) {
-      holdOrResumeSingleCall();
+
+      // Putting a call on Hold when there are no other
+      // calls in progress has been disabled until a less
+      // accidental user-interface is implemented.
+      // See bug 894232 and bug 882056 for more background.
+      // We can now hold a call only from BT devices.
+      if (!telephony.active) {
+        holdOrResumeSingleCall();
+      }
       return;
     }
 
@@ -660,8 +688,10 @@ var OnCallHandler = (function onCallHandler() {
 
     if (telephony.active) {
       telephony.active.hold();
+      CallScreen.render('connected-hold');
     } else {
       telephony.calls[0].resume();
+      CallScreen.render('connected');
     }
   }
 
@@ -783,7 +813,7 @@ var OnCallHandler = (function onCallHandler() {
     toggleCalls: toggleCalls,
     ignore: ignore,
     end: end,
-
+    updateKeypadEnabled: updateKeypadEnabled,
     toggleMute: toggleMute,
     toggleSpeaker: toggleSpeaker,
     unmute: unmute,

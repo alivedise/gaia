@@ -80,7 +80,7 @@ var AlarmManager = {
       nextAlarmFireTime.setMinutes(nextAlarmFireTime.getMinutes() +
                                    alarm.snooze);
     } else {
-      nextAlarmFireTime = getNextAlarmFireTime(alarm);
+      nextAlarmFireTime = Utils.getNextAlarmFireTime(alarm);
     }
 
     if (!navigator.mozAlarms)
@@ -114,7 +114,13 @@ var AlarmManager = {
           callback(alarm);
       });
       self.updateAlarmStatusBar();
-      BannerView.setStatus(nextAlarmFireTime);
+      LazyLoader.load(
+      [
+        'js/banner.js'
+      ],
+      function() {
+        BannerView.setStatus(nextAlarmFireTime);
+      });
     };
     request.onerror = function(e) {
       console.log('onerror!!!!');

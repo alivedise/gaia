@@ -105,7 +105,6 @@ section[role="region"] > div {
   padding: 0 0 1rem;
   font-size: 1.7rem;
   line-height: 2.3rem;
-  text-overflow: none;
   white-space: normal;
 }
 
@@ -312,6 +311,11 @@ section li.password > p {
   height: 2.7rem;
 }
 
+#call li.disabled .fake-select {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
 
 /******************************************************************************
  * Cellular and Data
@@ -342,6 +346,16 @@ section li.password > p {
   padding-bottom: 1em;
 }
 
+/******************************************************************************
+ * Internet sharing (Wi-Fi HotSpot)
+ */
+
+#hotspot ul li > a span {
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /******************************************************************************
  * Wallpaper snapshot
@@ -400,6 +414,7 @@ ul li > label .range-icons {
   margin: 0 auto;
   width: calc(100% - 5.4rem);
   height: 3rem;
+  pointer-events: none;
 }
 
 ul li > label .range-icons.brightness {
@@ -434,26 +449,6 @@ ul li > label .range-icons.brightness {
 #icc .hidden {
   display: none;
 }
-
-#icc #icc-stk-alert {
-  position: fixed;
-}
-
-#icc #icc-stk-alert menu button:first-child {
-  margin: 0;
-}
-
-#icc #icc-stk-alert menu button {
-  width: calc((100% - 2rem) / 3);
-  margin-left: 1rem;
-}
-
-.multiline_title {
-  text-overflow: clip;
-  white-space: normal;
-  word-wrap: break-word;
-}
-
 
 /******************************************************************************
  * Date & Time

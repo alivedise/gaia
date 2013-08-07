@@ -75,6 +75,9 @@ if (DESKTOP) {
   prefs.push(["dom.navigator-property.disable.mozContacts", false]);
   prefs.push(["dom.global-constructor.disable.mozContact", false]);
 
+  prefs.push(["dom.experimental_forms", true]);
+  prefs.push(["dom.webapps.useCurrentProfile", true]);
+
   // Partial implementation of gonk fonts
   // See: http://mxr.mozilla.org/mozilla-central/source/modules/libpref/src/init/all.js#3202
   prefs.push(["font.default.x-western", "sans-serif"]);
@@ -114,7 +117,7 @@ if (DEBUG) {
   prefs.push(["extensions.gaia.dir", GAIA_DIR]);
   prefs.push(["extensions.gaia.domain", GAIA_DOMAIN]);
   prefs.push(["extensions.gaia.port", parseInt(GAIA_PORT.replace(/:/g, ""))]);
-  prefs.push(["extensions.gaia.app_src_dirs", GAIA_APP_SRCDIRS]);
+  prefs.push(["extensions.gaia.appdirs", GAIA_APPDIRS]);
   prefs.push(["extensions.gaia.locales_debug_path", GAIA_LOCALES_PATH]);
   prefs.push(["extensions.gaia.official", Boolean(OFFICIAL)]);
 
@@ -134,6 +137,14 @@ if (DEBUG) {
 // in both debug and browser compatibility modes
 if (DEBUG || DESKTOP) {
   prefs.push(["extensions.autoDisableScopes", 0]);
+}
+
+if (DEVICE_DEBUG) {
+  // Bug 832000: Until unix domain socket are implemented, force enable content
+  // actor
+  prefs.push(["devtools.debugger.enable-content-actors", true]);
+  prefs.push(["devtools.debugger.prompt-connection", false]);
+  prefs.push(["devtools.debugger.remote-enabled", true]);
 }
 
 function writePrefs() {

@@ -34,6 +34,9 @@ var leastPlayedTitleL10nId = 'playlists-least-played';
 var musicdb;
 // Pick activity
 var pendingPick;
+// Key for store the player options of repeat and shuffle
+var SETTINGS_OPTION_KEY = 'settings_option_key';
+var playerSettings;
 
 // We get a localized event when the application is launched and when
 // the user switches languages.
@@ -87,6 +90,12 @@ window.addEventListener('localized', function onlocalized() {
       TabBar.option = 'mix';
       ModeManager.start(MODE_TILES);
 
+      // The player options will be used later,
+      // so let's get them first before the player is loaded.
+      asyncStorage.getItem(SETTINGS_OPTION_KEY, function(settings) {
+        playerSettings = settings;
+      });
+
       // The done button must be removed when we are not in picker mode
       // because the rules of the header building blocks
       var doneButton = document.getElementById('title-done');
@@ -120,6 +129,11 @@ function init() {
       parseAudioMetadata(file, onsuccess, onerror);
     });
   }
+
+  // show dialog in upgradestart, when it finished, it will turned to ready.
+  musicdb.onupgrading = function() {
+    showOverlay('upgrade');
+  };
 
   // This is called when DeviceStorage becomes unavailable because the
   // sd card is removed or because it is mounted for USB mass storage
@@ -164,7 +178,8 @@ function init() {
 
   musicdb.onready = function() {
     // Hide the nocard or pluggedin overlay if it is displayed
-    if (currentOverlay === 'nocard' || currentOverlay === 'pluggedin')
+    if (currentOverlay === 'nocard' || currentOverlay === 'pluggedin' ||
+        currentOverlay === 'upgrade')
       showOverlay(null);
 
     // Display music that we already know about
@@ -536,28 +551,30 @@ var ModeManager = {
       // load Player.js then we can use the PlayerView object
       document.getElementById('views-player').classList.remove('hidden');
       LazyLoader.load('js/Player.js', function() {
-        if (!playerLoaded)
-          PlayerView.init(true);
+        if (!playerLoaded) {
+          PlayerView.init();
+          PlayerView.setOptions(playerSettings);
+        }
 
         if (callback)
           callback();
       });
     } else {
-      if (mode === MODE_LIST || mode === MODE_PICKER) {
+      if (mode === MODE_LIST || mode === MODE_PICKER)
         document.getElementById('views-list').classList.remove('hidden');
-
-        // XXX Please see Bug 857674 and Bug 886254 for detail.
-        // There is some unwanted logic that will automatically adjust
-        // the input element(search box) while users input characters.
-        // So we need to hide sublist and player when we are in list mode.
-        document.getElementById('views-sublist').classList.add('hidden');
-        document.getElementById('views-player').classList.add('hidden');
-      }
       else if (mode === MODE_SUBLIST)
         document.getElementById('views-sublist').classList.remove('hidden');
       else if (mode === MODE_SEARCH_FROM_TILES ||
-               mode === MODE_SEARCH_FROM_LIST)
+               mode === MODE_SEARCH_FROM_LIST) {
         document.getElementById('search').classList.remove('hidden');
+        // XXX Please see Bug 857674 and Bug 886254 for detail.
+        // There is some unwanted logic that will automatically adjust
+        // the input element(search box) while users input characters
+        // This only happens on sublist and player views show up,
+        // so we just hide sublist and player when we are in search mode.
+        document.getElementById('views-sublist').classList.add('hidden');
+        document.getElementById('views-player').classList.add('hidden');
+      }
 
       if (callback)
         callback();
@@ -1174,9 +1191,13 @@ var ListView = {
             ModeManager.push(MODE_PLAYER, function() {
               var targetIndex = parseInt(target.dataset.index);
 
-              PlayerView.setSourceType(TYPE_MIX);
-              PlayerView.dataSource = this.dataSource;
-              PlayerView.play(targetIndex);
+              if (pendingPick)
+                PlayerView.setSourceType(TYPE_SINGLE);
+              else
+                PlayerView.setSourceType(TYPE_MIX);
+
+                PlayerView.dataSource = this.dataSource;
+                PlayerView.play(targetIndex);
             }.bind(this));
           } else if (option) {
             var index = target.dataset.index;
@@ -1544,10 +1565,16 @@ var SearchView = {
     function sv_openResult(option, data, index, keyRange) {
       if (option === 'title') {
         ModeManager.push(MODE_PLAYER, function() {
-          PlayerView.setSourceType(TYPE_LIST);
-          PlayerView.dataSource = [data];
-          PlayerView.play(0, index % 10);
-        });
+          if (pendingPick) {
+            PlayerView.setSourceType(TYPE_SINGLE);
+            PlayerView.dataSource = this.dataSource;
+            PlayerView.play(index);
+          } else {
+            PlayerView.setSourceType(TYPE_LIST);
+            PlayerView.dataSource = [data];
+            PlayerView.play(0, index);
+          }
+        }.bind(this));
       } else {
         SubListView.activate(option, data, index, keyRange, 'next', function() {
           ModeManager.push(MODE_SUBLIST);
