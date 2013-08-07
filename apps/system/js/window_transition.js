@@ -154,6 +154,8 @@
        * @todo set this._unloaded
        */
       
+      this.element.classList.add('active');
+      
       this.resize(null, null, true);
       if (this._unloaded) {
         //this.element.style.backgroundImage = 'url(' + this._splash + ')';
@@ -185,6 +187,7 @@
 
     _enterClosing: function aw__enterClosing(from, to, evt) {
       // Make sure the transition is terminated.
+      this.element.classList.remove('active');
       this._closingTransitionTimer = window.setTimeout(function() {
         if (this._previousTransitionState &&
             this._previousTransitionState == from &&
@@ -271,7 +274,6 @@
         window.clearTimeout(this._openingTransitionTimer);
         this._openingTransitionTimer = null;
       }
-      this.element.classList.add('active');
       /**
        * @event AppWindow#appopen
        * @memberOf AppWindow
@@ -289,7 +291,6 @@
         window.clearTimeout(this._closingTransitionTimer);
         this._closingTransitionTimer = null;
       }
-      this.element.classList.remove('active');
       this.setVisible(false);
 
       /**
