@@ -739,7 +739,7 @@
    * @param  {Object} detail Parameters in JSON format.
    */
   AppWindow.prototype.publish = function(event, detail) {
-    System.debug('[appWindow][' + this.config.origin + '] publish: ', this.eventPrefix + event);
+    System.debug('[appWindow][' + this.config.origin + '] publish: ' + this.eventPrefix + event);
     var evt = document.createEvent('CustomEvent');
     evt.initCustomEvent(this.eventPrefix + event,
                         true, false, detail || this.config);
@@ -757,7 +757,7 @@
    * @param  {Object} detail Parameters in JSON format.
    */
   AppWindow.prototype._dispatchInnerEvent = function(event, detail) {
-    System.debug('[appWindow][' + this.config.origin + '] inner event: _', this.eventPrefix + event);
+    System.debug('[appWindow][' + this.config.origin + '] inner event: _' + this.eventPrefix + event);
     var evt = document.createEvent('CustomEvent');
     var evtName = '_' + this.eventPrefix + event;
     evt.initCustomEvent(evtName, true, false, detail);
