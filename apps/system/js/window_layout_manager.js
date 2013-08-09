@@ -17,6 +17,7 @@
         case 'requestopen':
           object.open();
           break;
+
         case 'requestclose':
           object.close();
           break;

@@ -31,65 +31,7 @@
 
     var evt = document.createEvent('CustomEvent');
     evt.initCustomEvent('activitywillopen', true, true, { origin: config.origin });
-
-    // Create the <iframe mozbrowser mozapp> that hosts the app
-    var frame = createFrame(null, origin, url, name, manifest, manifestURL);
-    var iframe = frame.firstChild;
-    frame.classList.add('inlineActivity');
-    iframe.dataset.frameType = 'inline-activity';
-
-    iframe.setAttribute('expecting-system-message',
-                        'expecting-system-message');
-    maybeSetFrameIsCritical(iframe, origin);
-
-    // Give a name to the frame for differentiating between main frame and
-    // inline frame. With the name we can get frames of the same app using the
-    // window.open method.
-    iframe.name = 'inline';
-    iframe.dataset.start = Date.now();
-
-    this.resize();
-
-    frame.addEventListener('mozbrowserloadend', function activityloaded(e) {
-      e.target.removeEventListener(e.type, activityloaded, true);
-
-      var evt = document.createEvent('CustomEvent');
-      evt.initCustomEvent('activityloadtime', true, false, {
-        time: parseInt(Date.now() - iframe.dataset.start),
-        type: 'c', // Activity is always cold booted now.
-        src: iframe.src
-      });
-      iframe.dispatchEvent(evt);
-    }, true);
-
-    // Add the iframe to the document
-    windows.appendChild(frame);
-
-    // Open the frame, first, store the reference
-    openFrame = frame;
-
-    setVisibilityForInlineActivity(true);
-
-    setVisibilityForCurrentApp(false);
-
-    if ('orientation' in manifest) {
-      frame.dataset.orientation = manifest.orientation;
-      setOrientationForInlineActivity(frame);
-    }
-
-    setFrameBackground(openFrame, function gotBackground() {
-      // Start the transition when this async/sync callback is called.
-      openFrame.classList.add('active');
-      if (inlineActivityFrames.length == 1)
-        activityCallerOrigin = displayedApp;
-      if ('wrapper' in runningApps[displayedApp].frame.dataset) {
-        wrapperFooter.classList.remove('visible');
-        wrapperHeader.classList.remove('visible');
-      }
-    });
-
-    this.config.iframe = this.iframe = iframe;
-    this.config.frame = this.frame = frame;
+    this.render();
   };
 
   /**

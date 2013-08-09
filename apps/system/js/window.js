@@ -39,9 +39,10 @@
    */
 
 
-  window.AppWindow = function AppWindow(url, manifestURL) {
+  window.AppWindow = function AppWindow() {
     this._id = nextID++;
-    this.config = new BrowserConfig(url, manifestURL);
+    this.generateConfig.apply(this, arguments);
+    // Fetch and cache the icon image as soon as possible.
     this._splash = this.getIconForSplash();
 
     this.render();
@@ -51,14 +52,20 @@
     if (window.AppError) {
       this.appError = new AppError(this);
     }
+  };
 
-    /** 
-     * AppWindow is created.
-     * 
-     * @event AppWindow#appcreated
-     * @type {object}
-     */
-    this.publish('created', this);
+  AppWindow.prototype.generateConfig = function aw_generateConfig() {
+    if (arguments[0] && typeof(arguments[0]) === 'string') {
+      if (arguments[1]) {
+        this.config = new BrowserConfig(arguments[0], arguments[1]);
+      } else {
+        this.config = new BrowserConfig(arguments[0]);
+      }
+    } else if (arguments[0] && typeof(arguments[0]) === 'object') {
+      this.config = arguments[0];
+    }
+
+    console.log(this.config);
   };
 
   /**
@@ -391,6 +398,8 @@
   };
 
   AppWindow.prototype.render = function aw_render() {
+    this.publish('willcreate', this);
+
     try{
     var element = document.createElement('div');
     element.id = this.className.replace(' ', '-') + this._id;
@@ -421,6 +430,8 @@
     } catch (e) {
       console.log(e.stack);
     }
+
+    this.publish('created', this);
   };
 
   /**
@@ -745,7 +756,7 @@
     var evt = document.createEvent('CustomEvent');
     evt.initCustomEvent(this.eventPrefix + event,
                         true, false, this);
-    this.element.dispatchEvent(evt);
+    (this.element ? this.element : window).dispatchEvent(evt);
   };
 
   AppWindow._stoppedInnerEvent = {};
