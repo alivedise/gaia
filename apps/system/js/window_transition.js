@@ -229,6 +229,7 @@
         throw new Error('t');
       } catch (e) {
         console.log(e.stack);
+        console.log(this.element.classList);
       }
       System.debug('From: ' + from + ' To: ' + to + ' By: ' + _EVTARRAY[evt]);
     },

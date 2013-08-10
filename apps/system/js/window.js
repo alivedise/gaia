@@ -65,7 +65,7 @@
       this.config = arguments[0];
     }
 
-    console.log(this.config);
+    return this.config;
   };
 
   /**
@@ -190,9 +190,12 @@
     } else {
       this._removeSplash();
     }
-    this._setTransition('open', transition || this.constructor.defaultTransition['open']);
+    this._setTransition('open', transition ||
+                                this.constructor.defaultTransition['open'] ||
+                                this.constructor.superClass.defaultTransition['open']);
     this._processTransitionEvent(this.TRANSITION_EVENT.OPEN);
-    this._setTransition('open', this.constructor.defaultTransition['open']);
+    this._setTransition('open', this.constructor.defaultTransition['open'] ||
+                                this.constructor.superClass.defaultTransition['open']);
   };
 
   /**
@@ -841,6 +844,11 @@
     }
 
     var manifest = this.config.manifest;
+    if (!manifest) {
+      this._fullscreen = false;
+      return this._fullscreen;
+    }
+
     this._fullscreen = 'fullscreen' in manifest ? manifest.fullscreen : false;
 
     return this._fullscreen;
@@ -871,9 +879,6 @@
       this.element.style.height = height + 'px';
       return;
     }
-
-    // If width and height is not provided, calculate it on our own.
-    var manifest = this.config.manifest;
 
     var cssWidth = window.innerWidth + 'px';
     var cssHeight = window.innerHeight - StatusBar.height - (ignoreKeyboard ? 0 : KeyboardManager.getHeight()) + 'px';

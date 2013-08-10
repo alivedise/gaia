@@ -52,6 +52,9 @@ var BrowserFrame = (function invocation() {
     if (config.manifestURL)
       browser.setAttribute('mozapp', config.manifestURL);
 
+    if (config.useAsyncPanZoom)
+      browser.setAttribute('mozasyncpanzoom', 'true');
+
     setMozAppType(browser, config);
 
     browser.src = config.url;

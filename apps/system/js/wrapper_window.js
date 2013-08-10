@@ -1,17 +1,22 @@
 (function(window) {
-  var WrapperWindow = function WrapperWindow(config) {
-    this.config = config;
-    this.windowName = config.name;
-    this.manifest.name = config.title;
+  var WrapperWindow = function WrapperWindow() {
+    this.generateConfig.apply(this, arguments);
+    console.log(this.config);
+    this.windowName = this.config.name;
     this.config.chrome = {  
       navigation: true
     };
     this.render();
   };
 
-  PopupWindow.prototype.__proto__ = WrapperWindow.prototype;
+  WrapperWindow.prototype.__proto__ = AppWindow.prototype;
+  WrapperWindow.superClass = AppWindow;
+  WrapperWindow.defaultTransition = {
+    'open': AppWindow.transition.ENLARGING,
+    'close': AppWindow.transition.REDUCING
+  };
 
-  PopupWindow.prototype._onRenderEnd = function pw__onRenderEnd() {
+  WrapperWindow.prototype._onRenderEnd = function pw__onRenderEnd() {
     var iframe = this.browser.element;
 
     // XXX: What to do here?
