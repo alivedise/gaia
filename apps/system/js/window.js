@@ -46,12 +46,6 @@
     this._splash = this.getIconForSplash();
 
     this.render();
-    // We keep the appError object here for the purpose that
-    // we may need to export the error state of AppWindow instance
-    // to the other module in the future.
-    if (window.AppError) {
-      this.appError = new AppError(this);
-    }
   };
 
   AppWindow.prototype.generateConfig = function aw_generateConfig() {
@@ -79,7 +73,9 @@
         // if the name of the propery is '_on'.
         if (this.prototype.hasOwnProperty(prop) &&
             typeof(mixin[prop]) == 'function' &&
-            prop.indexOf('_on') == 0) {
+            (prop.indexOf('_on') == 0 ||
+              prop.indexOf('_enter') == 0 ||
+              prop.indexOf('_leave') == 0)) {
           this.prototype[prop] = [this.prototype[prop]];
           this.prototype[prop].push(mixin[prop]);
         } else {
@@ -91,14 +87,10 @@
 
   AppWindow.prototype._invoke = function(funcName) {
     if (typeof(this[funcName]) == 'function') {
-      setTimeout(function() {
-        this[funcName](from, to, evt);
-      }.bind(this), 0);
+      this[funcName](from, to, evt);
     } else if (this[funcName] && Array.isArray(this[funcName])) {
       this[funcName].forEach(function(func) {
-        setTimeout(function() {
-          func(from, to, evt);
-        }.bind(this), 0);
+        func(from, to, evt);
       }, this);
     }
   };
@@ -435,6 +427,12 @@
     }
 
     this.publish('created', this);
+
+    if (window.Chrome && this.config.chrome)
+      this.chrome = new Chrome(this.config.chrome);
+
+    if (window.AppError)
+      this.error = new AppError();
   };
 
   /**

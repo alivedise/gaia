@@ -46,6 +46,7 @@
     <!-- applications.js must not be deferred
          in order to catch webapps-registry-ready mozChromeEvent -->
     <script src="js/system.js"></script>
+    <script src="js/ui.js"></script>
     <script src="js/applications.js"></script>
     <!-- Not deferring the following to show startup logo/animation as soon as possible. -->
     <script src="js/logo_loader.js"></script>
@@ -238,6 +239,7 @@
     <script defer src="js/orientation_observer.js"></script>
     <script defer src="js/browser_config.js"></script>
     <script defer src="js/app_error.js"></script>
+    <script defer src="js/chrome.js"></script>
     <script defer src="js/window_monitor.js"></script>
     <script defer src="js/window.js"></script>
     <script defer src="js/window_transition.js"></script>
@@ -435,17 +437,6 @@
 
       <div id="windows" data-z-index-level="app">
         <!-- application windows are added here -->
-        <header id="wrapper-activity-indicator"></header>
-        <footer id="wrapper-footer" class="closed">
-          <div id="handler"></div>
-          <menu type="buttonbar">
-            <button type="button" id="back-button" alt="Back" data-disabled="disabled"></button>
-            <button type="button" id="forward-button" alt="Forward" data-disabled="disabled"></button>
-            <button type="button" id="reload-button" alt="Reload"></button>
-            <button type="button" id="bookmark-button" alt="Bookmark" data-disabled="disabled"></button>
-            <button type="button" id="close-button" alt="Close"></button>
-          </menu>
-        </footer>
       </div>
 
       <div id="dialog-overlay" data-z-index-level="dialog-overlay">

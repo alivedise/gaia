@@ -32,4 +32,12 @@
   };
 
   window.WrapperWindow = WrapperWindow;
+
+  var o = {
+    _enterOpened: function wrapper__enterOpened() {
+      
+    }
+  };
+
+  WrapperWindow.addMixin(o);
 }(this));

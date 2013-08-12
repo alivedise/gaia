@@ -229,7 +229,7 @@
         throw new Error('t');
       } catch (e) {
         console.log(e.stack);
-        console.log(this.element.classList);
+        console.log(this.element.classList);  
       }
       System.debug('From: ' + from + ' To: ' + to + ' By: ' + _EVTARRAY[evt]);
     },
@@ -252,14 +252,14 @@
     leaveState: function aw_leaveState(from, to, evt) {
       var funcName = '_leave' + capitalize(from.toLowerCase());
       if (typeof(this[funcName]) == 'function') {
-        setTimeout(function(){
+        //setTimeout(function(){
           this[funcName](from, to, evt);
-        }.bind(this), 0);
+        //}.bind(this), 0);
       } else if (this[funcName] && Array.isArray(this[funcName])) {
         this[funcName].forEach(function(func) {
-          setTimeout(function(){
+        //  setTimeout(function(){
             func(from, to, evt);
-          }.bind(this), 0);
+        //  }.bind(this), 0);
         }, this);
       }
     },
