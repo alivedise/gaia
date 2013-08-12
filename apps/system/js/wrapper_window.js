@@ -35,9 +35,11 @@
 
   var o = {
     _enterOpened: function wrapper__enterOpened() {
-      
+
     }
   };
+
+  WrapperWindow.addMixin = AppWindow.addMixin;
 
   WrapperWindow.addMixin(o);
 }(this));

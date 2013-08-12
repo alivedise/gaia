@@ -21,8 +21,8 @@
   Chrome.prototype.buttonBarTimeout = null;
 
   Chrome.prototype.view = function chrome_view() {
-    return '<header class="progress"></header>' +
-    '<footer class="navigation closed">' +
+    return '<header class="chrome progress"></header>' +
+    '<footer class="chrome navigation closed visible">' +
       '<div class="puller"></div>' +
       '<menu type="buttonbar">' +
         '<button type="button" class="back-button" data-disabled="disabled"></button>' +
@@ -35,19 +35,107 @@
   };
 
   Chrome.prototype.getAllElements = function chrome_getAllElements() {
-    this.element = this.container.querySelector(Chrome.className);
-    this.progress = this.element.querySelector('.progress');
-    this.navigation = this.element.querySelector('.navigation');
-    this.backButton = this.element.querySelector('.back-button');
-    this.forwardButton = this.element.querySelector('.forward-button');
-    this.reloadButton = this.element.querySelector('.reload-button');
-    this.bookmarkButton = this.element.querySelector('.bookmark-button');
-    this.closeButton = this.element.querySelector('.close-button');
+    this.progress = this.container.querySelector('.progress');
+    this.navigation = this.container.querySelector('.navigation');
+    this.backButton = this.container.querySelector('.back-button');
+    this.forwardButton = this.container.querySelector('.forward-button');
+    this.reloadButton = this.container.querySelector('.reload-button');
+    this.bookmarkButton = this.container.querySelector('.bookmark-button');
+    this.closeButton = this.container.querySelector('.close-button');
+    this.puller = this.container.querySelector('.puller');
+
+    this.puller.addEventListener('mousedown',
+      this.toggleButtonBar.bind(this));
+
+    this.closeButton.addEventListener('mousedown',
+      this.toggleButtonBar.bind(this));
+
+    this.reloadButton.addEventListener('mousedown',
+      this.reload.bind(this));
+
+    this.backButton.addEventListener('mousedown',
+      this.goBack.bind(this));
+
+    this.forwardButton.addEventListener('mousedown',
+      this.goForward.bind(this));
+
+    this.bookmarkButton.addEventListener('mousedown',
+      this.addBookmark.bind(this));
+  };
+
+  Chrome.prototype.addBookmark = function chrome_addBookmark() {
+    // TODO: refactor this whole function.
+    if (this.bookmarkButton.dataset.disabled)
+      return;
+
+    this.clearButtonBarTimeout();
+    var appConfig = this.app.config;
+    var self = this;
+
+    function selected(value) {
+      if (!value)
+        return;
+
+      var name, url;
+      if (value === 'origin') {
+        name = config.originName;
+        url = config.originURL;
+      }
+
+      if (value === 'search') {
+        name = config.searchName;
+        url = config.searchURL;
+      }
+
+      var activity = new MozActivity({
+        name: 'save-bookmark',
+        data: {
+          type: 'url',
+          url: url,
+          name: name,
+          icon: config.icon,
+          useAsyncPanZoom: config.useAsyncPanZoom,
+          iconable: false
+        }
+      });
+
+      activity.onsuccess = function onsuccess() {
+        // XXX: ???
+        if (value === 'origin') {
+          delete config.originURL;
+        }
+
+        // XXX: ???
+        if (value === 'search') {
+          delete config.searchURL;
+        }
+
+        if (!config.originURL &&
+          !config.searchURL) {
+          self.bookmarkButton.dataset.disabled = true;
+        }
+      };
+    }
+
+    var data = {
+      title: _('add-to-home-screen'),
+      options: []
+    };
+
+    if (config.originURL) {
+      data.options.push({ id: 'origin', text: config.originName });
+    }
+
+    if (config.searchURL) {
+      data.options.push({ id: 'search', text: config.searchName });
+    }
+
+    ModalDialog.selectOne(data, selected);
   };
 
   Chrome.prototype.registerApp = function chrome_registerApp() {
     // Make a observer pattern if possible.
-    var browser = this.app.browser.element;
+    var browser = this.app._browser.element;
     browser.addEventListener('mozbrowserloadstart',
       function() {
         this.show(this.progress);
@@ -60,7 +148,7 @@
 
     browser.addEventListener('mozbrowserlocationchange',
       function() {
-
+        this.onLocationChanged();
       }.bind(this));
   };
 
@@ -73,28 +161,28 @@
 
   Chrome.prototype.goForward = function chrome_goForward() {
     this.clearButtonBarTimeout();
-    this.app.browser.element.goForward();
+    this.app._browser.element.goForward();
   };
 
   Chrome.prototype.goBack = function chrome_goBack() {
     this.clearButtonBarTimeout();
-    this.app.browser.element.goBack();
+    this.app._browser.element.goBack();
   };
 
   Chrome.prototype.reload = function chrome_reload() {
     this.clearButtonBarTimeout();
-    this.app.browser.element.reload(true);
+    this.app._browser.element.reload(true);
   };
 
   Chrome.prototype.toggleButtonBar = 
-    function chrome_toggleButtonBar(time) {
+    function chrome_toggleButtonBar() {
       window.clearTimeout(this.buttonBarTimeout);
       this.navigation.classList.toggle('closed');
       this.isButtonBarDisplayed = !this.isButtonBarDisplayed;
-      if (isButtonBarDisplayed) {
+      if (this.isButtonBarDisplayed) {
         this.buttonBarTimeout = 
           window.setTimeout(this.toggleButtonBar.bind(this),
-                            time || BUTTONBAR_TIMEOUT);
+                            BUTTONBAR_TIMEOUT);
       }
     };
 
@@ -113,7 +201,7 @@
 
   Chrome.prototype.onLocationChanged =
     function chrome_onLocationChanged() {
-      var browser = this.app.browser.element;
+      var browser = this.app._browser.element;
       var self = this;
       browser.getCanGoForward().onsuccess =
         function forwardSuccess(evt) {

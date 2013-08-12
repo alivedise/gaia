@@ -429,10 +429,10 @@
     this.publish('created', this);
 
     if (window.Chrome && this.config.chrome)
-      this.chrome = new Chrome(this.config.chrome);
+      this.chrome = new Chrome(this, this.config.chrome);
 
     if (window.AppError)
-      this.error = new AppError();
+      this.error = new AppError(this);
   };
 
   /**

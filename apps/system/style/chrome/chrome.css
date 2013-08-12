@@ -1,4 +1,8 @@
-.chrome .progress {
+.appWindow .chrome {
+  z-index: 2;
+}
+
+.chrome.progress {
   position: fixed;
   top: 2rem; /* This is the status bar height */
   left: 0;
@@ -10,12 +14,12 @@
   visibility: hidden;
 }
 
-.chrome .progress.visible {
+.chrome.progress.visible {
   visibility: visible;
   background-image: url('../shared/progress.gif');
 }
 
-.chrome .navigation {
+.chrome.navigation {
   position: fixed;
   bottom: -4rem;
   left: 0;
@@ -28,12 +32,12 @@
   visibility: hidden;
 }
 
-.chrome .navigation.visible {
+.chrome.navigation.visible {
   pointer-events: auto;
   visibility: visible;
 }
 
-.chrome .puller {
+.chrome.navigation .puller {
   width: 100%;
   height: 1rem;
   background-color: #000;
@@ -41,11 +45,11 @@
   background-position: right;
 }
 
-.chrome .navigation.closed .puller {
+.chrome.navigation.closed .puller {
   background-image: url("images/open.png");
 }
 
-.chrome .navigation menu[type="buttonbar"] {
+.chrome.navigation menu[type="buttonbar"] {
   width: 100%;
   height: 4rem;
   margin: 0;
@@ -55,11 +59,11 @@
   -moz-transition: -moz-transform .4s ease;
 }
 
-.chrome .navigation.closed menu {
+.chrome.navigation.closed menu {
   -moz-transform: translateY(0);
 }
 
-.chrome .navigation menu button {
+.chrome.navigation menu button {
   background-color: transparent;
   -moz-appearance: none;
   border: none;
@@ -74,42 +78,42 @@
   opacity: 1;
 }
 
-.chrome .navigation .back-button {
+.chrome.navigation .back-button {
   background-image: url("images/back.png");
   background-size: 2rem;
 }
 
-.chrome .navigation .forward-button {
+.chrome.navigation .forward-button {
   background-image: url("images/forward.png");
   background-size: 3rem;
 }
 
-.chrome .navigation .reload-button {
+.chrome.navigation .reload-button {
   background-image: url("images/reload.png");
   background-size: 2.6rem;
 }
 
-.chrome .navigation .bookmark-button {
+.chrome.navigation .bookmark-button {
   background-image: url("images/bookmark.png");
   background-size: 3rem;
 }
 
-.chrome .navigation .bookmark-button[data-disabled] {
+.chrome.navigation .bookmark-button[data-disabled] {
   background-image: none;
 }
 
-.chrome .navigation .close-button {
+.chrome.navigation .close-button {
   background-image: url("images/close.png");
   background-size: 2.1rem;
 }
 
-.chrome .navigation menu button[data-disabled] {
+.chrome.navigation menu button[data-disabled] {
   opacity: .2;
   pointer-events: none;
 }
 
-.chrome .navigation input::-moz-focus-inner,
-.chrome .navigation input:active {
+.chrome.navigation input::-moz-focus-inner,
+.chrome.navigation input:active {
   border: 0;
   background: transparent !important;
 }

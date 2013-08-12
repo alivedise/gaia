@@ -102,7 +102,11 @@
           url: url,
           name: name,
           asyncPanZoom: useAsyncPanZoom,
-          expectingSystemMessage: false
+          expectingSystemMessage: false,
+          searchURL: searchURL,
+          searchName: searchName,
+          originURL: originURL,
+          originName: originName
         });
       }
 
