@@ -98,7 +98,7 @@
     // (to be dealt in setDisplayedApp(), not here)
 
     // If we're displayed, restart immediately.
-    if (WindowManager.getDisplayedApp() === this.browser_config.origin) {
+    if (WindowManager.getDisplayedApp() === HomescreenLauncher.origin) {
       this.kill();
 
       // XXX workaround bug 810431.
