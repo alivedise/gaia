@@ -1,6 +1,7 @@
 (function(window) {
   var currentManifestURL = '';
   var instance = undefined;
+  var _inited = false;
 
   var HomescreenLauncher = {
     ready: false,
@@ -9,10 +10,18 @@
       // We don't really care the origin of homescreen,
       // and it may change when we swap the homescreen app.
       // So we use a fixed string here.
+      // XXX: We shall change WindowManager to use manifestURL
+      // to identify an app.
+      // See http://bugzil.la/913323
       return 'homescreen';
     },
 
     init: function hl_init() {
+      if (_inited)
+        return;
+
+      _inited = true;
+
       var self = this;
       if (Applications.ready) {
         this.fetchSettings();
@@ -34,10 +43,8 @@
             if (previousManifestURL !== '' &&
                 previousManifestURL !== currentManifestURL) {
               // Kill and re-render homescreen if manifestURL is changed.
-              instance.kill();
-              instance.setBrowserConfig(value);
-              instance.render();
-              // Update origin;
+              instance.reconstruct(value);
+              // Dispatch 'homescreen is changed' event.
               window.dispatchEvent(new CustomEvent('homescreen-changed'));
             } else {
               instance.ensure();

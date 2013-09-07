@@ -440,17 +440,6 @@ var WindowManager = (function() {
     }
   });
 
-  windows.addEventListener('mozbrowservisibilitychange',
-    function visibilitychange(e) {
-      var target = e.target;
-
-      var type = e.detail.visible ? 'foreground' : 'background';
-      var detail = { manifestURL: target.getAttribute('mozapp') };
-      var evt = new CustomEvent(type, { detail: detail, bubbles: true });
-      target.dispatchEvent(evt);
-    }
-  );
-
   // setFrameBackground() will attach the manifest icon as a background
   function setFrameBackground(frame, callback) {
     var splash = frame.firstChild.splash;
@@ -503,35 +492,32 @@ var WindowManager = (function() {
 
       // Make sure we're not called twice.
       transitionOpenCallback = null;
-
-      HomescreenLauncher.getHomescreen().close();
       preCallback();
       openFrame.classList.add('opening');
+      HomescreenLauncher.getHomescreen().close();
     };
 
     if ('unloaded' in openFrame.firstChild.dataset) {
       setFrameBackground(openFrame, transitionOpenCallback);
     } else {
-      waitForNextPaint(openFrame, transitionOpenCallback);
+      app._waitForNextPaint(transitionOpenCallback);
     }
 
     // Set the frame to be visible.
-    if ('setVisible' in openFrame.firstChild) {
-      if (!AttentionScreen.isFullyVisible()) {
-        openFrame.firstChild.setVisible(true);
-      } else {
-        // If attention screen is fully visible now,
-        // don't give the open frame visible.
-        // This is the case that homescreen is restarted behind attention screen
+    if (!AttentionScreen.isFullyVisible()) {
+      app.setVisible(true);
+    } else {
+      // If attention screen is fully visible now,
+      // don't give the open frame visible.
+      // This is the case that homescreen is restarted behind attention screen
 
-        // XXX: After bug 822325 is fixed in gecko,
-        // we don't need to check trusted ui state here anymore.
-        // We do this because we don't want the trustedUI opener
-        // is killed in background due to OOM.
-        if (!TrustedUIManager.hasTrustedUI(
-            openFrame.firstChild.dataset.frameOrigin))
-          openFrame.firstChild.setVisible(false);
-      }
+      // XXX: After bug 822325 is fixed in gecko,
+      // we don't need to check trusted ui state here anymore.
+      // We do this because we don't want the trustedUI opener
+      // is killed in background due to OOM.
+      if (!TrustedUIManager.hasTrustedUI(
+          openFrame.firstChild.dataset.frameOrigin))
+        app.setVisible(false);
     }
   }
 

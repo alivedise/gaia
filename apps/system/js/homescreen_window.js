@@ -1,6 +1,5 @@
 (function(window) {
   var HomescreenWindow = function HomescreenWindow(manifestURL) {
-    // XXX: refine this.
     this.setBrowserConfig(manifestURL);
     this.render();
     this.publish('created');
@@ -25,6 +24,12 @@
       this.browser_config.isHomescreen = true;
       this.isHomescreen = true;
     };
+
+  HomescreenWindow.prototype.reconstruct = function hw_reconstruct(value) {
+    this.kill();
+    this.setBrowserConfig(value);
+    this.render();
+  };
 
   HomescreenWindow.prototype.render = function hw_render() {
     this.publish('willrender');
@@ -68,7 +73,9 @@
 
     this.browser.element.addEventListener('mozbrowservisibilitychange',
       function(evt) {
-        self.publish(evt.detail.visible ? 'foreground' : 'background');
+        self._visibilityState = evt.detail.visible ?
+          'foreground' : 'background';
+        self.publish(self._visibilityState);
       });
   };
 
@@ -86,8 +93,11 @@
   HomescreenWindow.prototype._transitionState = 'closed';
 
   HomescreenWindow.prototype._transitionHandler =
-    function hw__transitionHandler() {
+    function hw__transitionHandler(evt) {
+      if (evt.target !== this.element)
+        return;
 
+      this._processTransitionEvent('complete');
     };
 
   HomescreenWindow.prototype.restart = function hw_restart() {
@@ -98,7 +108,9 @@
     // (to be dealt in setDisplayedApp(), not here)
 
     // If we're displayed, restart immediately.
-    if (WindowManager.getDisplayedApp() === this.browser_config.origin) {
+    this.debug(this._visibilityState);
+    if (this._visibilityState == 'foreground' ||
+        this.element.classList.contains('active')) {
       this.kill();
 
       // XXX workaround bug 810431.
@@ -262,6 +274,8 @@
       this.one('transition', s, callback);
     }
     this._changeTransitionState(state);
+    this.debug('transition state changed from ' +
+      currentState, ' to ', state, ' by ', evt);
     this._callbackTransitonStateChange(currentState, state, evt);
   };
 
@@ -273,7 +287,7 @@
 
   HomescreenWindow.prototype.
     _callbackTransitonStateChange =
-    function hw____callbackTransitonStateChange(previous, current, evt) {
+    function hw__callbackTransitonStateChange(previous, current, evt) {
       // The design of three type of callbacks here is for flexibility.
       // If we want to do something one by one we could use that.
       // The order is: leave state -> on event occur -> enter state.

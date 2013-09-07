@@ -32,14 +32,24 @@
 
 
   /**
-   * Represent the current visibility state,
+   * Represent the current screenshoting state,
    * i.e. what is currently visible. Possible value:
    * 'frame': the actual app iframe
    * 'screenshot': the screenshot overlay,
    *               serve as a placeholder for visible but not active apps.
    * 'none': nothing is currently visible.
    */
-  AppWindow.prototype._visibilityState = 'frame',
+  AppWindow.prototype._screenshotOverlayState = 'frame',
+
+  /**
+   * Represent the current pagee visibility state,
+   * i.e. what is currently visible. Possible value:
+   * 'foreground': setVisible(true)
+   * 'background': setVisible(false)
+   *
+   * Default value is foreground.
+   */
+  AppWindow.prototype._visibilityState = 'foreground',
 
   /**
    * The current orientation of this app window corresponding to screen
@@ -80,28 +90,31 @@
 
   AppWindow.prototype.setVisible =
     function aw_setVisible(visible, screenshotIfInvisible) {
+      this.debug('set visibility -> ', visible);
       if (visible) {
-        this._visibilityState = 'frame';
+        this._screenshotOverlayState = 'frame';
         this._showFrame();
       } else {
         if (screenshotIfInvisible) {
-          this._visibilityState = 'screenshot';
+          this._screenshotOverlayState = 'screenshot';
           this._showScreenshotOverlay();
         } else {
-          this._visibilityState = 'none';
+          this._screenshotOverlayState = 'none';
           this._hideFrame();
           this._hideScreenshotOverlay();
         }
       }
+
+      this.debug('screenshot state -> ', this._screenshotOverlayState);
     };
 
   /**
-   * _showFrame will check |this._visibilityState|
+   * _showFrame will check |this._screenshotOverlayState|
    * and then turn on the frame visibility.
    * So this shouldn't be invoked by others directly.
    */
   AppWindow.prototype._showFrame = function aw__showFrame() {
-    if (this._visibilityState != 'frame')
+    if (this._screenshotOverlayState != 'frame')
       return;
 
     // Require a next paint event
@@ -111,17 +124,19 @@
     }
 
     this.iframe.classList.remove('hidden');
-    this.iframe.setVisible(true);
+    if ('setVisible' in this.iframe)
+      this.iframe.setVisible(true);
   };
 
   /**
-   * _hideFrame will check |this._visibilityState|
+   * _hideFrame will check |this._screenshotOverlayState|
    * and then turn off the frame visibility.
    * So this shouldn't be invoked by others directly.
    */
   AppWindow.prototype._hideFrame = function aw__hideFrame() {
-    if (this._visibilityState !== 'frame') {
-      this.iframe.setVisible(false);
+    if (this._screenshotOverlayState !== 'frame') {
+      if ('setVisible' in this.iframe)
+        this.iframe.setVisible(false);
       this.iframe.classList.add('hidden');
     }
   };
@@ -147,6 +162,11 @@
     screenshotOverlay.classList.add('screenshot-overlay');
     this.frame.appendChild(screenshotOverlay);
     this.screenshotOverlay = screenshotOverlay;
+    this.iframe.addEventListener('mozbrowservisibilitychange',
+      function visibilitychange(e) {
+        var type = e.detail.visible ? 'foreground' : 'background';
+        this.publish(type);
+      }.bind(this));
   };
 
   /**
@@ -164,7 +184,8 @@
   AppWindow.prototype.debug = function aw_debug(msg) {
     if (DEBUG)
       console.log('[appWindow][' + this.origin + ']' +
-                '[' + new Date().getTime() / 1000 + ']' + msg);
+        '[' + new Date().getTime() / 1000 + ']' +
+        Array.slice(arguments).concat());
   };
 
   /**
@@ -181,9 +202,12 @@
       if (!callback)
         return;
 
+      var self = this;
+
       var nextPaintTimer;
       var iframe = this.iframe;
       var onNextPaint = function aw_onNextPaint() {
+        self.debug(' nextpainted.');
         iframe.removeNextPaintListener(onNextPaint);
         clearTimeout(nextPaintTimer);
 
@@ -191,12 +215,17 @@
       };
 
       nextPaintTimer = setTimeout(function ifNextPaintIsTooLate() {
+        self.debug(' nextpaint is timeouted.');
         iframe.removeNextPaintListener(onNextPaint);
 
         callback();
       }, this.NEXTPAINT_TIMEOUT);
 
       iframe.addNextPaintListener(onNextPaint);
+      // XXX: Open window quickly.
+      // We have a ~1sec delay here, still don't know why.
+      if (!this.isHomescreen)
+        onNextPaint();
     };
 
   /**
@@ -214,7 +243,7 @@
       this.getScreenshot(function onGettingScreenshot(screenshot) {
         // If the callback is too late,
         // and we're brought to foreground by somebody.
-        if (this._visibilityState == 'frame')
+        if (this._screenshotOverlayState == 'frame')
           return;
 
         if (!screenshot) {
@@ -248,7 +277,7 @@
    */
   AppWindow.prototype._hideScreenshotOverlay =
     function aw__hideScreenshotOverlay() {
-      if (this._visibilityState != 'screenshot' &&
+      if (this._screenshotOverlayState != 'screenshot' &&
           this.screenshotOverlay.classList.contains('visible'))
         this.screenshotOverlay.classList.remove('visible');
     };
