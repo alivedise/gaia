@@ -3,11 +3,14 @@
 
 (function(window) {
   'use strict';
-  var DEBUG = false;
+  var DEBUG = true;
   window.AppWindow = function AppWindow(configuration) {
     for (var key in configuration) {
       this[key] = configuration[key];
     }
+
+    // XXX: Make reference to |this.element|f just works.
+    this.element = this.frame;
 
     this.config = configuration;
 
@@ -142,28 +145,104 @@
     this.iframe.reload(true);
   };
 
-  AppWindow.prototype.kill = function aw_kill() {
-    if (this._screenshotURL) {
-      URL.revokeObjectURL(this._screenshotURL);
-    }
-    // XXX: A workaround because a AppWindow instance shouldn't
-    // reference Window Manager directly here.
-    // In the future we should make every app maintain and execute the events
-    // in itself like resize, setVisibility...
-    // And Window Manager is in charge of cross app management.
-    WindowManager.kill(this.origin);
-  };
-
   AppWindow.prototype.render = function aw_render() {
     var screenshotOverlay = document.createElement('div');
     screenshotOverlay.classList.add('screenshot-overlay');
     this.frame.appendChild(screenshotOverlay);
     this.screenshotOverlay = screenshotOverlay;
+    this._registerEvents();
+    if (this.isFullScreen()) {
+      this.frame.classList.add('fullscreen-app');
+    }
+  };
+
+  AppWindow.prototype._loadState = 'unloaded';
+
+  AppWindow.prototype._registerEvents = function aw__registerEvents() {
     this.iframe.addEventListener('mozbrowservisibilitychange',
       function visibilitychange(e) {
         var type = e.detail.visible ? 'foreground' : 'background';
         this.publish(type);
       }.bind(this));
+
+    this.element.addEventListener('mozbrowserloadend', function loadend(evt) {
+      var iframe = evt.target;
+      delete iframe.dataset.unloaded;
+      this._loadState = 'loaded';
+      var backgroundColor = evt.detail.backgroundColor;
+      /* When rotating the screen, the child may take some time to reflow.
+       * If the child takes longer than layers.orientation.sync.timeout
+       * to respond, gecko will go ahead and draw anyways. This code
+       * uses a simple heuristic to guess the least distracting color
+       * we should draw in the blank space. */
+
+      /* Only allow opaque colors */
+      if (backgroundColor.indexOf('rgb(') != -1) {
+        iframe.style.backgroundColor = backgroundColor;
+      }
+    }.bind(this));
+
+    this.element.addEventListener('mozbrowserclose', function onClose() {
+      if (this._visibilityState == 'foreground') {
+        this.close(this.defaultTransition.close, this.kill.bind(this));
+      } else {
+        this.kill();
+      }
+    }.bind(this));
+
+    // Deal with locationchange
+    this.element.addEventListener('mozbrowserlocationchange', function(evt) {
+      // XXX: Why we need this?
+      evt.target.dataset.url = evt.detail;
+    });
+
+    this.element.addEventListener('mozbrowsererror', function(evt) {
+      if (evt.detail.type == 'fatal') {
+        this.handleCrash();
+        this.kill();
+      }
+    }.bind(this));
+
+    this.one('opened', this.loadedHandler.bind(this));
+    this.element.addEventListener('mozbrowserloadend',
+      this.loadedHandler.bind(this));
+
+    this.element.addEventListener('animationend',
+      this._transitionHandler.bind(this));
+  };
+
+  // XXX: Clean this!!!
+  // This is an event listener which listens to an iframe's 'mozbrowserloadend'
+  // and 'appopen' events.  We don't declare it inside another function so as
+  // to ensure that it doesn't accidentally keep anything alive.
+  AppWindow.prototype.loadedHandler = function aw_LoadedHandler(evt) {
+    if (evt.type != 'appopen' && evt.type != 'mozbrowserloadend') {
+      return;
+    }
+
+    var iframe = evt.target;
+    if (iframe.dataset.enableAppLoaded != evt.type) {
+      return;
+    }
+
+    iframe.dataset.enableAppLoaded = undefined;
+
+    // * type == 'w' indicates a warm start (the app was already running; we
+    //   just transitioned to it)
+    // * type == 'c' indicates a cold start (the app process wasn't already
+    //   running)
+
+    // XXX: OwnerDocument
+
+    this.publish('loadtime', {
+      time: parseInt(Date.now() - iframe.dataset.start),
+      type: (evt.type == 'appopen') ? 'w' : 'c'
+    });
+  };
+
+  AppWindow.prototype.handleCrash = function aw_handleCrash() {
+    if (this._visibilityState == 'foreground')
+      CrashReporter.setAppName(app.name);
   };
 
   /**
@@ -183,6 +262,8 @@
       console.log('[appWindow][' + this.origin + ']' +
         '[' + new Date().getTime() / 1000 + ']' +
         Array.slice(arguments).concat());
+      if (this.element)
+        console.log('   ', this.element.className);
     }
   };
 
@@ -269,6 +350,10 @@
       }.bind(this));
     };
 
+  AppWindow.prototype.setScreenshot = function aw_setScreenshot(screenshotURL) {
+    this._screenshotURL = screenshotURL;
+  };
+
   /**
    * Check if current visibility state is screenshot or not,
    * to hide the screenshot overlay.
@@ -299,7 +384,8 @@
     // XXX: Determine |this.isHomescreen| or not on our own in
     // appWindow.
     if (this.isHomescreen) {
-      callback();
+      if (callback)
+        callback();
       return;
     }
 
@@ -308,11 +394,13 @@
 
     req.onsuccess = function gotScreenshotFromFrame(evt) {
       var result = evt.target.result;
-      callback(result);
+      if (callback)
+        callback(result);
     };
 
     req.onerror = function gotScreenshotFromFrameError(evt) {
-      callback();
+      if (callback)
+        callback();
     };
   };
 
@@ -339,9 +427,9 @@
     this.debug('publish: ' + event);
 
     if (this.frame) {
-      this.frame.dispatchEvent(evt);
+      return this.frame.dispatchEvent(evt);
     } else {
-      window.dispatchEvent(evt);
+      return window.dispatchEvent(evt);
     }
   };
 
@@ -440,23 +528,66 @@
       var onClearRotate = function aw_onClearRotate(evt) {
         window.screen.removeEventListener('mozorientationchange',
                                           onClearRotate);
-        window.removeEventListener('appopen', onClearRotate);
-        window.removeEventListener('appclose', onClearRotate);
 
         self.frame.style.left = '';
         self.frame.style.top = '';
         self.frame.classList.remove(self.currentOrientation);
 
-        if (self.currentOrientation != screen.mozOrientation &&
-            evt.type != 'appclose') {
+        if (self.currentOrientation != screen.mozOrientation) {
           self.resize();
         }
       };
 
       window.screen.addEventListener('mozorientationchange', onClearRotate);
-      window.addEventListener('appopen', onClearRotate);
-      window.addEventListener('appclose', onClearRotate);
     };
+
+  /**
+   * Acquire one-time callback of certain type of state
+   */
+  AppWindow.prototype.one = function aw_one(type, state, callback) {
+    var self = this;
+    var observer = new MutationObserver(function mutationObserver() {
+      if (self.element.getAttribute('data-' + type + 'State') === state) {
+        observer.disconnect();
+        if (typeof(callback) == 'function')
+          callback();
+      }
+    });
+
+    // configuration of the observer:
+    // we only care dataset change here.
+    var config = { characterData: true, attributes: true };
+
+    // pass in the target node, as well as the observer options
+    observer.observe(this.element, config);
+  };
+
+  AppWindow.prototype.containerElement = document.getElementById('windows');
+
+  AppWindow.prototype.kill = function aw_kill() {
+    if (this._killed)
+      return;
+    this._killed = true;
+    if (this._screenshotURL) {
+      URL.revokeObjectURL(this._screenshotURL);
+    }
+    // Remove callee <-> caller reference before we remove the window.
+    if ('activityCaller' in this &&
+        this.activityCaller) {
+      delete this.activityCaller.activityCallee;
+      delete this.activityCaller;
+    }
+
+    if ('activityCallee' in this &&
+        this.activityCallee) {
+      delete this.activityCallee.activityCaller;
+      delete this.activityCallee;
+    }
+    this.containerElement.removeChild(this.element);
+    this.element = this.frame = this.iframe = null;
+    this.browser = null;
+    this.publish('terminated');
+  };
 
   // Set the size of the app's iframe to match the size of the screen.
   // We have to call this on resize events (which happen when the
@@ -466,27 +597,39 @@
   // @param {changeActivityFrame} to denote if needed to change inline
   //                              activity size
   AppWindow.prototype.resize = function aw_resize(changeActivityFrame) {
-    var keyboardHeight = KeyboardManager.getHeight();
-    var cssWidth = window.innerWidth + 'px';
-    var cssHeight = window.innerHeight -
-                    StatusBar.height -
-                    SoftwareButtonManager.height -
-                    keyboardHeight;
-    if (!keyboardHeight && 'wrapper' in this.frame.dataset) {
+    var cssWidth = LayoutManager.windowWidth + 'px';
+    var cssHeight;
+
+    if (this.isFullScreen()) {
+      cssHeight = LayoutManager.fullscreenHeight;
+    } else {
+      cssHeight = LayoutManager.windowHeight;
+    }
+
+    if (!KeyboardManager.getHeight() && 'wrapper' in this.frame.dataset) {
       cssHeight -= 10;
     }
-    cssHeight += 'px';
 
-    if (!AttentionScreen.isFullyVisible() && !AttentionScreen.isVisible() &&
-        this.isFullScreen()) {
-      cssHeight = window.innerHeight - keyboardHeight -
-                  SoftwareButtonManager.height + 'px';
-    }
+    cssHeight = cssHeight + 'px';
 
     this.frame.style.width = cssWidth;
     this.frame.style.height = cssHeight;
 
     this.publish('resize', {changeActivityFrame: changeActivityFrame});
+  };
+
+  AppWindow.prototype.open = function aw_open(transition, callback) {
+    if (this.element) {
+      this.openAnimation = transition || this.defaultTransition.open;
+      this._processTransitionEvent('open', callback);
+    }
+  };
+
+  AppWindow.prototype.close = function aw_close(transition, callback) {
+    if (this.element) {
+      this.closeAnimation = transition || this.defaultTransition.close;
+      this._processTransitionEvent('close', callback);
+    }
   };
 
   AppWindow.prototype.setOrientation =
@@ -521,5 +664,20 @@
         }
       }
     };
+
+  // setFrameBackground() will attach the manifest icon as a background
+  AppWindow.prototype.setFrameBackground =
+    function setFrameBackground() {
+      var splash = this.iframe.splash;
+      this.element.style.backgroundImage = 'url("' + splash + '")';
+    };
+
+  AppWindow.addMixin = function AW_addMixin(subModule) {
+    for (var prop in subModule) {
+      this.prototype[prop] = subModule[prop];
+    }
+  };
+
+  AppWindow.addMixin(TransitionStateMixin);
 
 }(this));

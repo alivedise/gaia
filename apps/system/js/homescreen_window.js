@@ -73,27 +73,6 @@
       });
   };
 
-  var TransitionEvents = ['open', 'close', 'complete', 'timeout'];
-
-  // XXX: Move all transition related functions into a mixin.
-  var TransitionStateTable = {
-    'closed': ['opening', null, null, null],
-    'opened': [null, 'closing', null, null],
-    'opening': [null, null, 'opened', 'opened'],
-    'closing': ['opened', null, 'closed', 'closed']
-  };
-
-  /* Initial transition state is closed */
-  HomescreenWindow.prototype._transitionState = 'closed';
-
-  HomescreenWindow.prototype._transitionHandler =
-    function hw__transitionHandler(evt) {
-      if (evt.target !== this.element)
-        return;
-
-      this._processTransitionEvent('complete');
-    };
-
   HomescreenWindow.prototype.restart = function hw_restart() {
     // If the crashing app is the home screen app and it is the displaying app
     // we will need to relaunch it right away.
@@ -169,9 +148,6 @@
     this.setOrientation();
   };
 
-  // Should be the same as defined in system.css animation time.
-  HomescreenWindow.prototype._transitionTimeout = 300;
-
   HomescreenWindow.prototype._enter_opening = function(prev, evt) {
     // Establish a timer to force finish the opening state.
     this._transitionStateTimeout = setTimeout(function() {
@@ -206,25 +182,13 @@
   HomescreenWindow.prototype._enter_opened = function(prev, evt) {
     this.resetTransition();
     this.element.classList.add('active');
-    this.publish('opened');
+    this.publish('open');
   };
 
   HomescreenWindow.prototype._enter_closed = function(prev, evt) {
     this.setVisible(false);
     this.resetTransition();
-    this.publish('closed');
-  };
-
-  HomescreenWindow.prototype.open = function(callback) {
-    if (this.element) {
-      this._processTransitionEvent('open', callback);
-    }
-  };
-
-  HomescreenWindow.prototype.close = function(callback) {
-    if (this.element) {
-      this._processTransitionEvent('close', callback);
-    }
+    this.publish('close');
   };
 
   HomescreenWindow.prototype.resetTransition = function() {
@@ -234,44 +198,6 @@
     }
     this.element.classList.remove('zoom-in');
     this.element.classList.remove('zoom-out');
-  };
-
-  /**
-   * Acquire one-time callback of certain type of state
-   */
-  HomescreenWindow.prototype.one = function(type, state, callback) {
-    var self = this;
-    var observer = new MutationObserver(function() {
-      if (self.element.getAttribute('data-' + type + 'State') === state) {
-        observer.disconnect();
-        callback();
-      }
-    });
-
-    // configuration of the observer:
-    // we only care dataset change here.
-    var config = { characterData: true, attributes: true };
-
-    // pass in the target node, as well as the observer options
-    observer.observe(this.element, config);
-  };
-
-  HomescreenWindow.prototype._processTransitionEvent = function(evt, callback) {
-    var currentState = this._transitionState;
-    var evtIndex = TransitionEvents.indexOf(evt);
-    var state = TransitionStateTable[currentState][evtIndex];
-    if (!state) {
-      return;
-    }
-
-    if (callback) {
-      var s = evt == 'open' ? 'opened' : 'closed';
-      this.one('transition', s, callback);
-    }
-    this._changeTransitionState(state);
-    this.debug('transition state changed from ' +
-      currentState, ' to ', state, ' by ', evt);
-    this._callbackTransitonStateChange(currentState, state, evt);
   };
 
   HomescreenWindow.prototype._changeTransitionState =
