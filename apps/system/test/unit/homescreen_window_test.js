@@ -7,6 +7,7 @@ mocha.globals(['SettingsListener', 'removeEventListener', 'addEventListener',
 
 requireApp('system/js/browser_config_helper.js');
 requireApp('system/js/browser_frame.js');
+requireApp('system/shared/js/screen_layout.js');
 requireApp('system/js/window.js');
 requireApp('system/test/unit/mock_statusbar.js');
 requireApp('system/test/unit/mock_software_button_manager.js');
