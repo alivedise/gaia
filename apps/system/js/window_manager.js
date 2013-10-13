@@ -1184,6 +1184,7 @@ var WindowManager = (function() {
       }
     } else {
       if (config.isActivity && config.inline) {
+        // ActivityWindowFactory is dealing with this.
         return;
       }
 

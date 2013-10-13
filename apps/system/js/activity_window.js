@@ -11,20 +11,36 @@
 
     this.render();
     this.publish('created');
+    this.open();
   };
 
   ActivityWindow.prototype.__proto__ = AppWindow.prototype;
+
+  ActivityWindow.prototype.eventPrefix = 'activity';
 
   ActivityWindow.prototype.view = function acw_view() {
     this.instanceID = _id;
     var className = this.browser_config.inline ?
       'inline-activity' : 'window-activity';
-    return '<div class="activityWindow ' + className +
+    return '<div class="appWindow activityWindow active' +
             '" id="activity-window-' + _id++ + '">' +
             '<div class="screenshot-overlay></div>' +
             '<div class="fade-overlay"></div>' +
             '</div>';
   };
+
+  ActivityWindow.prototype._registerEvents = function acw__registerEvents() {
+    this.element.
+      addEventListener('transitionend', this._transitionHandler.bind(this));
+  };
+
+  ActivityWindow.prototype._transitionHandler =
+    function acw__transitionHandler(evt) {
+      //evt.stopImmeidiatePropagation();
+      if (this.element.classList.contains('inline-activity')) {
+        this.publish('open');
+      }
+    };
 
   ActivityWindow.prototype.render = function acw_render() {
     this.publish('willrender');
@@ -56,10 +72,13 @@
     document.getElementById('windows');
 
   ActivityWindow.prototype.open = function acw_open() {
-    console.log('opened');
+    this.element.classList.add('inline-activity');
   };
 
   ActivityWindow.prototype.close = function acw_close() {
+    this.element.classList.remove('inline-activity');
   };
+
+  window.ActivityWindow = ActivityWindow;
 
 }(this));

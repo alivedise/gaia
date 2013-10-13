@@ -262,7 +262,7 @@ body {
   background-color: transparent;
 }
 
-#windows > .appWindow:not(.homescreen):not(.active):not(.opening):not(.closing):not(.inlineActivity) {
+#windows > .appWindow:not(.homescreen):not(.active):not(.opening):not(.closing):not(.inline-activity) {
   opacity: 0;
 }
 
@@ -487,10 +487,6 @@ body {
 #windows > .appWindow.restored {
   transform: none;
   transition: transform 0.25s ease;
-}
-
-#windows > .appWindow.inlineActivity.active {
-  transform: none;
 }
 
 #screen > #windows > .appWindow.fullscreen-app {
