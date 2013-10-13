@@ -215,7 +215,8 @@ body {
   overflow: hidden;
 }
 
-#windows > .appWindow {
+#windows > .appWindow,
+#windows > .activityWindow {
   position: fixed;
   border: 0;
   margin: 0;
@@ -476,17 +477,6 @@ body {
 @keyframes closeAppTowardsCardView {
   0%   { transform: scale(1.0); }
   100% { transform: scale(0.8); }
-}
-
-#windows > .appWindow.inlineActivity,
-#windows > .appWindow.hideBottom {
-  transform: translateY(100%);
-  transition: transform 0.25s ease, visibility 0.25s ease;
-}
-
-#windows.slow-transition > .appWindow.inlineActivity,
-#windows.slow-transition > .appWindow.hideBottom {
-  transition: transform 5s ease, visibility 5s ease;
 }
 
 #windows > .appWindow.back {

@@ -1117,24 +1117,7 @@ var WindowManager = (function() {
     }
   }
 
-  // Watch activity completion here instead of activity.js
-  // Because we know when and who to re-launch when activity ends.
-  window.addEventListener('mozChromeEvent', function(e) {
-    if (e.detail.type == 'activity-done') {
-      stopInlineActivity();
-      if (runningApps[displayedApp].activityCaller) {
-        // Display activity callee if there's one bind to current activity.
-        var caller = runningApps[displayedApp].activityCaller;
-        delete caller.activityCallee;
-        delete runningApps[displayedApp].activityCaller;
-        setDisplayedApp(caller.origin);
-      } else if (!inlineActivityFrames.length && !activityCallerOrigin) {
-        // Remove the top most frame every time we get an 'activity-done' event.
-        setDisplayedApp(activityCallerOrigin);
-        activityCallerOrigin = '';
-      }
-    }
-  });
+
 
   // Watch chrome event that order to close an app
   window.addEventListener('killapp', function(e) {
@@ -1201,11 +1184,6 @@ var WindowManager = (function() {
       }
     } else {
       if (config.isActivity && config.inline) {
-        // Inline activities behaves more like a dialog,
-        // let's deal them here.
-        startInlineActivity(config.origin, config.url,
-                            config.name, config.manifest, config.manifestURL);
-
         return;
       }
 
