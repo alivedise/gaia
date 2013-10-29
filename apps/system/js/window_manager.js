@@ -1219,12 +1219,9 @@ var WindowManager = (function() {
       // Because we will be asked by a 'activity-done' event from gecko
       // to relaunch to activity caller, and this is the only way to
       // determine if we are going to homescreen or the original app.
-      activityCallerOrigin = '';
-
       setDisplayedApp(HomescreenLauncher.origin);
     } else {
       // dispatch event to close activity.
-
       HomescreenLauncher.getHomescreen().ensure(true);
     }
   });
