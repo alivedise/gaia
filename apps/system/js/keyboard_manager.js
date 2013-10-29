@@ -131,8 +131,6 @@ var KeyboardManager = {
     // since it would take a longer round-trip to receive focuschange
     // Also in Bug 856692 we realise that we need to close the keyboard
     // when an inline activity goes away.
-    window.addEventListener('appwillclose', this);
-    window.addEventListener('activitywillclose', this);
     window.addEventListener('attentionscreenshow', this);
     window.addEventListener('mozbrowsererror', this);
     window.addEventListener('applicationsetupdialogshow', this);
@@ -414,12 +412,13 @@ var KeyboardManager = {
         break;
       case 'applicationsetupdialogshow':
       case 'activitywillclose':
-      case 'appwillclose':
         this.hideKeyboardImmediately();
         break;
       case 'mozbrowsererror': // OOM
         var origin = evt.target.dataset.frameOrigin;
         this.removeKeyboard(origin);
+      case 'activitywillclose':
+        this.hideKeyboardImmediately();
         break;
     }
   },
@@ -583,6 +582,9 @@ var KeyboardManager = {
 
       self._debug('hideKeyboard display transitionend');
 
+      // TODO: Transfer to keyboardclosed
+      window.dispatchEvent(new CustomEvent('keyboardhidden'));
+
       // prevent destroying the keyboard when we're not hidden anymore
       if (!self.keyboardFrameContainer.classList.contains('hide') ||
               self.keyboardFrameContainer.dataset.transitionOut !== 'true') {
@@ -596,6 +598,7 @@ var KeyboardManager = {
       onTransitionEnd);
 
     this.keyboardHeight = 0;
+    // TODO: Transfer to keyboardclosing
     window.dispatchEvent(new CustomEvent('keyboardhide'));
     this.keyboardFrameContainer.classList.add('hide');
     this.keyboardFrameContainer.dataset.transitionOut = 'true';
@@ -603,7 +606,11 @@ var KeyboardManager = {
 
   hideKeyboardImmediately: function km_hideImmediately() {
     this.keyboardHeight = 0;
+    // TODO: Transfer to keyboardclosing
     window.dispatchEvent(new CustomEvent('keyboardhide'));
+
+    // TODO: Transfer to keyboardclosed
+    window.dispatchEvent(new CustomEvent('keyboardhidden'));
 
     var keyboard = this.keyboardFrameContainer;
     keyboard.classList.add('notransition');
