@@ -1304,6 +1304,8 @@ var WindowManager = (function() {
       launchTime: 0,
       isHomescreen: (manifestURL === homescreenManifestURL)
     });
+
+    debug('Launched ' + app.origin);
     runningApps[origin] = app;
 
     if (app.isFullScreen()) {
@@ -1666,6 +1668,7 @@ var WindowManager = (function() {
   }
 
   function overlayEventHandler(evt) {
+    debug('Event type is ' + evt.type + '; Locked state is ' + LockScreen.locked + '; DisplayedApp is ' + displayedApp + '; Inline length is ' + inlineActivityFrames.length);
     if (attentionScreenTimer && 'mozChromeEvent' != evt.type)
       clearTimeout(attentionScreenTimer);
     switch (evt.type) {
