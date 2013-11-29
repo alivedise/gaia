@@ -4,7 +4,6 @@ var StackManager = {
   init: function sm_init() {
     window.addEventListener('appcreated', this);
     window.addEventListener('launchapp', this);
-    window.addEventListener('launchwrapper', this);
     window.addEventListener('appterminated', this);
     window.addEventListener('home', this);
   },
@@ -61,7 +60,6 @@ var StackManager = {
         }
         break;
       case 'launchapp':
-      case 'launchwrapper':
         var config = e.detail;
         if (!config.stayBackground) {
           var idx = this._indexOfURL(config.url);

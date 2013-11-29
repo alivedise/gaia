@@ -64,7 +64,7 @@ suite('system/StackManager >', function() {
     }
 
     var evt = document.createEvent('CustomEvent');
-    evt.initCustomEvent('launchwrapper', true, false, app.config);
+    evt.initCustomEvent('launchapp', true, false, app.config);
     window.dispatchEvent(evt);
   }
 

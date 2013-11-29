@@ -74,17 +74,18 @@
                       !appNext.isHomescreen;
 
       if (appCurrent && LayoutManager.keyboardEnabled) {
-        // Ask keyboard to hide before we
+        // Ask keyboard to hide before we switch the app.
         var self = this;
         window.addEventListener('keyboardhidden', function onhiddenkeyboard() {
           window.removeEventListener('keyboardhidden', onhiddenkeyboard);
           self.switchApp(appCurrent, appNext, switching);
         });
 
-        console.log(this.continuousTransition);
         if (this.continuousTransition) {
+          // Do keyboard transition.
           KeyboardManager.hideKeyboard();
         } else {
+          // Hide keyboard immediately.
           KeyboardManager.hideKeyboardImmediately();
         }
       } else {
@@ -171,7 +172,7 @@
       SettingsListener.observe('language.current', null,
         function(value) {
           if (!value)
-              return;
+            return;
           this.broadcastMessage('localized');
         }.bind(this));
 
@@ -179,9 +180,8 @@
       SettingsListener.observe('continuous-transition.enabled', null,
         function(value) {
           if (!value)
-              return;
+            return;
           this.continuousTransition = !!value;
-          console.log(this.continuousTransition);
         }.bind(this));
     },
 

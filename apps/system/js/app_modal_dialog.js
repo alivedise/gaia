@@ -12,6 +12,7 @@
     this.elements = {};
     // One to one mapping.
     this.instanceID = _id++;
+    this._injected = false;
     element.addEventListener('mozbrowsershowmodalprompt', this);
     return this;
   };

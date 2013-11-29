@@ -8,6 +8,7 @@
     this.elements = {};
     this.containerElement = app.element;
     this.instanceID = _id++;
+    this._injected = false;
     this.app.element.addEventListener('mozbrowserusernameandpasswordrequired',
       this);
   };
