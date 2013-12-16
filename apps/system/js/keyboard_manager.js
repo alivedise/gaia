@@ -349,6 +349,12 @@ var KeyboardManager = {
     keyboard.setAttribute('mozbrowser', 'true');
     keyboard.setAttribute('mozpasspointerevents', 'true');
     keyboard.setAttribute('mozapp', layout.manifestURL);
+    var _start = Date.now();
+    var self = this;
+    var k = new AppWindow({ url: keyboard.src });
+    k.element.addEventListener('_loadtime', function(evt) {
+      console.log(JSON.stringify(evt.detail));
+    });
 
     if (this.isOutOfProcessEnabled) {
       console.log('=== Enable keyboard: ' + layout.origin + ' run as OOP ===');
