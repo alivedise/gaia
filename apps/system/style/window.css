@@ -1,5 +1,4 @@
-#windows > .appWindow,
-#windows > .activityWindow {
+#windows .appWindow {
   position: fixed;
   border: 0;
   margin: 0;
@@ -29,11 +28,11 @@
   bottom: 5rem;
 }
 
-#windows > .appWindow:not(.homescreen) {
+#windows .appWindow:not(.homescreen) {
   background-color: black;
 }
 
-#windows > .appWindow:not(.homescreen).render {
+#windows .appWindow:not(.homescreen).render {
   background-image: none !important;
   background-color: transparent;
 }
@@ -75,7 +74,7 @@
 }
 
 
-#windows > .appWindow:not(.homescreen).render > iframe {
+#windows .appWindow:not(.homescreen).render > iframe {
   background-color: #fff;
 }
 
@@ -90,11 +89,11 @@
   animation: openApp 0.3s forwards cubic-bezier(0.7, 0.0, 1.0, 1.0);
 }
 
-#windows > .appWindow.transition-closing.perpendicular {
+#windows .appWindow.transition-closing.perpendicular {
   animation-duration: 0.1s;
 }
 
-#windows > .appWindow.from-cardview {
+#windows .appWindow.from-cardview {
   animation: openAppFromCardView 0.15s forwards cubic-bezier(0.7, 0.0, 1.0, 1.0);
 }
 
@@ -104,7 +103,7 @@
   100% { transform: scale(1.0);}
 }
 
-#windows > .appWindow.zoom-in {
+#windows .appWindow.zoom-in {
   transform: scale(1);
   animation: zoom-in 0.3s forwards cubic-bezier(0.7, 0.0, 1.0, 1.0);
 }
@@ -139,27 +138,27 @@
   50%  { transform: translateX(0); }
 }
 
-#windows.slow-transition > .appWindow.transition-closing,
-#windows.slow-transition > .appWindow.transition-opening {
+#windows.slow-transition .appWindow.transition-closing,
+#windows.slow-transition .appWindow.transition-opening {
   animation-duration: 3s;
 }
 
-#windows > .appWindow.transition-closing,
-#windows > .appWindow.transition-opening {
+#windows .appWindow.transition-closing,
+#windows .appWindow.transition-opening {
   /* The animation takes .3 seconds so users cannot touch the app while the
    * closing animation is performing */
   pointer-events: none;
 }
 
-#windows > .appWindow.reduce {
+#windows .appWindow.reduce {
   animation: closeApp 0.3s forwards cubic-bezier(0.7, 0.0, 1.0, 1.0);
 }
 
-#windows > .appWindow.transition-closing.perpendicular {
+#windows .appWindow.transition-closing.perpendicular {
   animation-duration: 0.1s;
 }
 
-#windows > .appWindow.zoom-out {
+#windows .appWindow.zoom-out {
   transform: scale(5);
   animation: zoom-out 0.3s forwards cubic-bezier(0.7, 0.0, 1.0, 1.0);
 }
@@ -169,7 +168,7 @@
   100% { transform: scale(1);}
 }
 
-#windows > .appWindow.to-cardview {
+#windows .appWindow.to-cardview {
   animation: closeAppTowardsCardView 0.15s forwards cubic-bezier(0.7, 0.0, 1.0, 1.0);
 }
 
@@ -258,6 +257,10 @@
   z-index: 1024;
 }
 
+.appWindow > .appWindow {
+  z-index: 65537;
+}
+
 .appWindow.fadeout > .fade-overlay {
   display: block;
 }
@@ -329,11 +332,11 @@
 
 /* animation */
 
-#windows > .activityWindow.slideleft {
+#windows .appWindow.slideleft {
   animation: slideLeft 0.3s forwards cubic-bezier(0.7, 0.0, 1.0, 1.0);
 }
 
-#windows > .activityWindow.slideright {
+#windows .appWindow.slideright {
   animation: slideRight 0.3s forwards cubic-bezier(0.7, 0.0, 1.0, 1.0);
 }
 
@@ -348,17 +351,46 @@
 }
 
 /* Edges */
-#windows > .appWindow.inside-edges {
+#windows .appWindow.inside-edges {
   opacity: 1;
   transform: translateX(0);
 }
 
-#windows > .appWindow.outside-edges-left {
+#windows .appWindow.outside-edges-left {
   opacity: 1;
   transform: translateX(-20%);
 }
 
-#windows > .appWindow.outside-edges-right {
+#windows .appWindow.outside-edges-right {
   opacity: 1;
   transform: translateX(100%);
+}
+
+/**
+ * AppWindow inside AppWindow
+ */
+#windows > .appWindow .appWindow.popupWindow {
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background-color: white;
+}
+
+#windows .appWindow.popupWindow > .title-container {
+  height: 5rem;
+  width: 100%;
+  top: 0;
+  left: 0;
+  position: absolute;
+}
+
+#windows .appWindow.popupWindow > iframe {
+  position: absolute;
+  top: 5rem;
+  left: 0;
+  width: 100%;
+  height: calc(100% - 5rem);
+
+  background-color: #fff;
 }

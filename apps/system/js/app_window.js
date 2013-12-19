@@ -141,7 +141,7 @@
     try {
       throw new Error('e');
     } catch (e) {
-      this.debug(e.stack);
+      this.forceDebug(e.stack);
     }
     dump('======================');
   };
@@ -287,14 +287,9 @@
     this._killed = true;
 
     if (DEBUG) {
-      AppWindow[this.instanceID] = null;
-    }
-
-    // Clear observers
-    if (this._observers && this._observers.length > 0) {
-      this._observers.forEach(function iterator(observer) {
-        observer.disconnect();
-      }, this);
+      if (this instanceof AppWindow) {
+        AppWindow[this.instanceID] = null;
+      }
     }
 
     // Remove callee <-> caller reference before we remove the window.
@@ -450,7 +445,7 @@
   AppWindow.REGISTERED_EVENTS =
     ['mozbrowserclose', 'mozbrowsererror', 'mozbrowservisibilitychange',
       'mozbrowserloadend', 'mozbrowseractivitydone', 'mozbrowserloadstart',
-      '_localized', '_swipein', '_swipeout'];
+      '_localized', '_swipein', '_swipeout', 'mozbrowseropenwindow'];
 
   AppWindow.SUB_COMPONENTS = {
     'transitionController': window.AppTransitionController,
@@ -1240,6 +1235,7 @@
    */
   AppWindow.prototype.close = function aw_close(animation) {
     // Request "close" to our internal transition controller.
+    this._dump();
     if (this.transitionController) {
       this.debug('close with ' + animation || this.closeAnimation);
       this.transitionController.requireClose(animation);
@@ -1261,4 +1257,18 @@
       this.publish('closed');
     }
   };
+
+  AppWindow.prototype._handle_mozbrowseropenwindow =
+    function aw__handle_mozbrowseropenwindow(evt) {
+      if (this.isHomescreen) {
+        return;
+      }
+      if (this.nextWindow) {
+        this.nextWindow.kill();
+      }
+      this.nextWindow = new PopupWindow(evt.detail, this);
+      if (this.isActive()) {
+        this.nextWindow.open();
+      }
+    };
 }(this));

@@ -71,8 +71,6 @@ var PopupManager = {
       this.screen.classList.add('popup');
     }
 
-    this.container.appendChild(popup);
-
     popup.addEventListener('mozbrowsererror', this);
     popup.addEventListener('mozbrowserloadend', this);
     popup.addEventListener('mozbrowserloadstart', this);
@@ -163,30 +161,11 @@ var PopupManager = {
         break;
 
       case 'mozbrowseropenwindow':
-        var detail = evt.detail;
-        var openerType = evt.target.dataset.frameType;
-        var openerOrigin = evt.target.dataset.frameOrigin;
-
-        // Only app frame is allowed to launch popup
-        if (openerType !== 'window')
-          return;
-
-        // <a href="" target="_blank"> links should opened outside the app
-        // itself and fire an activity to be opened into a new browser window.
-        if (detail.name === '_blank') {
-          new MozActivity({ name: 'view',
-                          data: { type: 'url', url: detail.url }});
-          return;
+        if (evt.detail.name === '_blank') {
+          new PopupWindow(evt.detail);
+        } else {
+          new BrowserWindow(evt.detail);
         }
-
-        this.throbber.classList.remove('loading');
-
-        var frame = detail.frameElement;
-        frame.dataset.url = detail.url;
-
-        this.container.classList.remove('error');
-        this.open(frame, openerOrigin);
-
         break;
 
       case 'mozbrowserclose':
@@ -226,30 +205,6 @@ var PopupManager = {
         this.setHeight(window.innerHeight - StatusBar.height);
         break;
     }
-  },
-
-  showError: function pm_showError() {
-    if (!('error' in this._currentPopup[this._currentOrigin].dataset)) {
-      this.container.classList.remove('error');
-      return;
-    }
-
-    var contentOrigin =
-      this.getTitleFromUrl(this._currentPopup[this._currentOrigin].dataset.url);
-    var _ = navigator.mozL10n.get;
-
-    if (AirplaneMode.enabled) {
-      this.errorTitle.textContent = _('airplane-is-on');
-      this.errorMessage.textContent = _('airplane-is-turned-on',
-          {name: contentOrigin});
-    } else if (!navigator.onLine) {
-      this.errorTitle.textContent = _('network-connection-unavailable');
-      this.errorMessage.textContent = _('network-error', {name: contentOrigin});
-    } else {
-      this.errorTitle.textContent = _('error-title', {name: contentOrigin});
-      this.errorMessage.textContent = _('error-message', {name: contentOrigin});
-    }
-    this.container.classList.add('error');
   },
 
   // This is for card view to request
