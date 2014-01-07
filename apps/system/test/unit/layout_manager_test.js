@@ -5,9 +5,11 @@ requireApp('system/js/layout_manager.js');
 requireApp('system/test/unit/mock_keyboard_manager.js');
 requireApp('system/test/unit/mock_software_button_manager.js');
 requireApp('system/test/unit/mock_statusbar.js');
+requireApp('system/test/unit/mock_attention_window_manager.js');
 
 var mocksForLayoutManager = new MocksHelper([
-  'KeyboardManager', 'SoftwareButtonManager', 'StatusBar'
+  'KeyboardManager', 'SoftwareButtonManager', 'StatusBar',
+  'AttentionWindowManager'
 ]).init();
 
 suite('system/LayoutManager >', function() {

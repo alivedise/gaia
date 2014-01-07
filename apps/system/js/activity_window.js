@@ -23,6 +23,7 @@
    * @class ActivityWindow
    * @param {Object} config The configuration object of this activity.
    * @param {AppWindow|ActivityWindow} caller The caller of this activity.
+   * @extends AppWindow
    */
   /**
    * Fired when the activity window is created.
@@ -289,17 +290,7 @@
 
     // Do not bubble the orientation lock this time.
     app.setOrientation(true);
-    if (app instanceof AppWindow) {
-      // XXX: Refine this in AttentionWindow
-      if (!AttentionScreen.isFullyVisible()) {
-        app.setVisible(true);
-      }
-    } else if (app instanceof ActivityWindow) {
-      // XXX: Refine this in AttentionWindow
-      if (!AttentionScreen.isFullyVisible()) {
-        app.setVisible(true);
-      }
-    }
+    app.requestForeground();
   };
 
   ActivityWindow.prototype._handle__opened =

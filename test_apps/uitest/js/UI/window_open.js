@@ -20,6 +20,7 @@ window.addEventListener('load', function() {
             param1 = hash[1];
             param2 = hash[1];
           }
+          console.log(param1, param2);
           actualWindow.open(target.dataset.url, param1, param2);
         break;
         case 'close':

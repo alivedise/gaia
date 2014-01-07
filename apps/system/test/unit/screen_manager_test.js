@@ -1,7 +1,7 @@
 'use strict';
 
 mocha.globals(['SettingsListener', 'LockScreen', 'Bluetooth', 'StatusBar',
-      'AttentionScreen', 'removeEventListener', 'addEventListener',
+      'removeEventListener', 'addEventListener',
       'ScreenManager', 'clearIdleTimeout', 'setIdleTimeout', 'dispatchEvent',
       'AppWindowManager']);
 
@@ -266,27 +266,24 @@ suite('system/ScreenManager', function() {
     });
 
     suite('Testing callschanged event', function() {
-      var stubTelephony, stubCpuWakeLock, stubAttentionScreen,
+      var stubTelephony, stubCpuWakeLock, stubPublish,
         stubTurnOn, stubRemoveListener;
 
       setup(function() {
         stubTelephony = {};
         stubCpuWakeLock = {};
-        stubAttentionScreen = {};
         stubTurnOn = this.sinon.stub(ScreenManager, 'turnScreenOn');
         stubRemoveListener = this.sinon.stub(window, 'removeEventListener');
+        stubPublish = this.sinon.stub(System, 'publish');
 
         stubCpuWakeLock.unlock = this.sinon.stub();
-        stubAttentionScreen.show = this.sinon.stub();
         ScreenManager._cpuWakeLock = stubCpuWakeLock;
 
         switchProperty(navigator, 'mozTelephony', stubTelephony, reals);
-        switchProperty(window, 'AttentionScreen', stubAttentionScreen, reals);
       });
 
       teardown(function() {
         restoreProperty(navigator, 'mozTelephony', reals);
-        restoreProperty(window, 'AttentionScreen', reals);
       });
 
       test('screen off by proximity', function() {
@@ -298,7 +295,7 @@ suite('system/ScreenManager', function() {
         assert.isTrue(stubTurnOn.called);
         assert.isNull(ScreenManager._cpuWakeLock);
         assert.isTrue(stubCpuWakeLock.unlock.called);
-        assert.isFalse(stubAttentionScreen.show.called);
+        assert.isFalse(stubPublish.calledWith('show-callscreen'));
       });
 
       test('screen off', function() {
@@ -314,7 +311,7 @@ suite('system/ScreenManager', function() {
         stubTelephony.calls = [{'addEventListener': stubAddListener}];
         stubTelephony.conferenceGroup = {calls: []};
         ScreenManager.handleEvent({'type': 'callschanged'});
-        assert.isTrue(stubAttentionScreen.show.called);
+        assert.isTrue(stubPublish.calledWith('show-callscreen'));
         assert.isFalse(stubAddListener.called);
       });
 
@@ -326,7 +323,7 @@ suite('system/ScreenManager', function() {
                   {'addEventListener': stubAddListener}]
         };
         ScreenManager.handleEvent({'type': 'callschanged'});
-        assert.isTrue(stubAttentionScreen.show.called);
+        assert.isTrue(stubPublish.calledWith('show-callscreen'));
         assert.isFalse(stubAddListener.called);
       });
 
@@ -336,7 +333,7 @@ suite('system/ScreenManager', function() {
         stubTelephony.conferenceGroup = {calls: []};
         ScreenManager._cpuWakeLock = null;
         ScreenManager.handleEvent({'type': 'callschanged'});
-        assert.isFalse(stubAttentionScreen.show.called);
+        assert.isFalse(stubPublish.calledWith('show-callscreen'));
         assert.isTrue(stubAddListener.called);
       });
     });

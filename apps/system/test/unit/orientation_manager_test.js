@@ -17,10 +17,10 @@ suite('system/OrientationManager >', function() {
   });
 
   suite('handle events', function() {
-    test('attentionscreenhide', function() {
+    test('attentionclosed', function() {
       var stubPublish = this.sinon.stub(OrientationManager, 'publish');
       OrientationManager.handleEvent({
-        type: 'attentionscreenhide'
+        type: 'attentionclosed'
       });
       assert.isTrue(stubPublish.calledWith('reset-orientation'));
     });

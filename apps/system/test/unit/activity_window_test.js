@@ -9,14 +9,10 @@ requireApp('system/test/unit/mock_layout_manager.js');
 requireApp('system/shared/test/unit/mocks/mock_manifest_helper.js');
 requireApp('system/shared/test/unit/mocks/mock_settings_listener.js');
 requireApp('system/test/unit/mock_applications.js');
-requireApp('system/test/unit/mock_attention_screen.js');
-
-requireApp('system/shared/test/unit/mocks/mock_screen_layout.js');
 
 var mocksForActivityWindow = new MocksHelper([
   'OrientationManager', 'Applications', 'SettingsListener',
-  'ManifestHelper', 'LayoutManager', 'AttentionScreen',
-  'ScreenLayout'
+  'ManifestHelper', 'LayoutManager'
 ]).init();
 
 suite('system/ActivityWindow', function() {
@@ -125,18 +121,22 @@ suite('system/ActivityWindow', function() {
       assert.isTrue(stubSetOrientationForApp.calledWith(true));
     });
 
-    test('restore caller when AttentionScreen is there', function() {
-      MockAttentionScreen.mFullyVisible = true;
+    test('request to go to foreground when restoring caller', function() {
       var activity1 = new ActivityWindow(fakeConfig, app);
       var activity2 = new ActivityWindow(fakeConfig, activity1);
 
-      var stubSetVisibleForApp = this.sinon.stub(app, 'setVisible');
-      var stubSetVisible1 = this.sinon.stub(activity1, 'setVisible');
+      var stubRequestForegroundForApp =
+        this.sinon.stub(app, 'requestForeground');
+      var stubRequestForegroundForActivity1 =
+        this.sinon.stub(activity1, 'requestForeground');
+      var stubIsActiveForActivity1 = this.sinon.stub(activity1, 'isActive');
+      var stubIsActiveForApp = this.sinon.stub(app, 'isActive');
+      stubIsActiveForActivity1.returns(true);
+      stubIsActiveForApp.returns(true);
       activity2.restoreCaller();
-      assert.isFalse(stubSetVisible1.called);
+      assert.isTrue(stubRequestForegroundForActivity1.called);
       activity1.restoreCaller();
-      assert.isFalse(stubSetVisibleForApp.called);
-      MockAttentionScreen.mFullyVisible = false;
+      assert.isTrue(stubRequestForegroundForApp.called);
     });
 
     test('killed when activity is active', function() {

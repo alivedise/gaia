@@ -2,7 +2,7 @@
 
 (function(window) {
   'use strict';
-  var DEBUG = false;
+  var DEBUG = true;
   var _id = 0;
   var _start = new Date().getTime() / 1000;
 
@@ -453,7 +453,8 @@
   AppWindow.SUB_COMPONENTS = {
     'transitionController': window.AppTransitionController,
     'modalDialog': window.AppModalDialog,
-    'authDialog': window.AppAuthenticationDialog
+    'authDialog': window.AppAuthenticationDialog,
+    'attentionWindowFactory': window.AttentionWindowFactory
   };
 
   AppWindow.prototype.openAnimation = 'enlarge';
@@ -492,7 +493,7 @@
   AppWindow.prototype.uninstallSubComponents =
     function aw_uninstallSubComponents() {
       for (var componentName in this.constructor.prototype.SUB_COMPONENTS) {
-        if (this[componentName]) {
+        if (this[componentName] && this[componentName].destroy) {
           this[componentName].destroy();
           this[componentName] = null;
         }
@@ -614,9 +615,17 @@
    */
   AppWindow.prototype.handleEvent = function aw_handleEvent(evt) {
     this.debug(' Handling ' + evt.type + ' event...');
-    if (this['_handle_' + evt.type]) {
-      this.debug(' Handling ' + evt.type + ' event...');
-      this['_handle_' + evt.type](evt);
+    var handler = this['_handle_' + evt.type];
+    if (handler) {
+      if (Array.isArray(handler)) {
+        handler.forEach(function(handle) {
+          handle.call(this, evt);
+        }, this);
+      } else if (typeof(handler) == 'function') {
+        handler.call(this, evt);
+      } else {
+        console.warn('Not a regular handler function or array of functions.');
+      }
     }
   };
 
@@ -702,9 +711,17 @@
    * Show screenshot overlay and hide the iframe.
    */
   AppWindow.prototype._showScreenshotOverlay =
-    function aw__showScreenshotOverlay() {
+    function aw__showScreenshotOverlay(useExistedScreenshot) {
       if (!this.screenshotOverlay) {
         this._hideFrame();
+        return;
+      }
+
+      if (useExistedScreenshot && this._screenshotBlob) {
+        var screenshotURL = this.requestScreenshotURL();
+        this.screenshotOverlay.style.backgroundImage =
+          'url(' + screenshotURL + ')';
+        this.screenshotOverlay.classList.add('visible');
         return;
       }
       this.getScreenshot(function onGettingScreenshot(screenshotBlob) {
@@ -1058,6 +1075,10 @@
         // if the name of the propery is '_on'.
         if (!this.prototype.hasOwnProperty(prop)) {
           this.prototype[prop] = mixin[prop];
+        } else if (typeof(this.prototype[prop]) == 'function') {
+          // if this is a handler.
+        } else if (Array.isArray(this.prototype[prop])) {
+          this.prototype[prop].push(mixin[prop]);
         }
       }
     }
@@ -1264,4 +1285,40 @@
       this.publish('closed');
     }
   };
+
+  AppWindow.prototype.requestForeground =
+    function aw_requestForeground() {
+      this.publish('requestforeground');
+    };
+
+  /**
+   * If the app has an opened attention window,
+   * we should not kill it.
+   * @return {Boolean} The app is killable or not.
+   */
+  AppWindow.prototype.killable = function() {
+    // This property is updated whenever an attentionWindow
+    // is created or destroyed.
+    if (this.attentionWindow) {
+      return false;
+    } else {
+      return true;
+    }
+  };
+
+  AppWindow.prototype.hasAttentionPermission =
+    function aw_hasAttentionPermission() {
+      if (typeof(this._hasAttentionPermission) !== 'undefined') {
+        return this._hasAttentionPermission;
+      }
+      var mozPerms = navigator.mozPermissionSettings;
+      if (!mozPerms || !this.manifestURL)
+        return false;
+
+      var value =
+        mozPerms.get('attention', this.manifestURL, this.origin, false);
+
+      this._hasAttentionPermission = (value === 'allow');
+      return this._hasAttentionPermission;
+    };
 }(this));

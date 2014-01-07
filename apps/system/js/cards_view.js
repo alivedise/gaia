@@ -22,8 +22,6 @@ var CardsView = (function() {
   var cardsList = cardsView.firstElementChild;
   var displayedApp;
   var runningApps;
-  // Unkillable apps which have attention screen now
-  var attentionScreenApps = [];
   // Card which we are re-ordering now
   var reorderedCard = null;
   var currentDisplayed = 0;
@@ -260,7 +258,7 @@ var CardsView = (function() {
         header.innerHTML += '</h1></header>';
         card.appendChild(header);
         card.classList.add('trustedui');
-      } else if (attentionScreenApps.indexOf(origin) == -1) {
+      } else if (app.killable()) {
         var closeButton = document.createElement('div');
         closeButton.setAttribute('role', 'button');
         closeButton.classList.add('close-card');
@@ -747,9 +745,10 @@ var CardsView = (function() {
       reorderedCard === null
     ) {
       draggingCardUp = false;
+      var app = AppWindowManager.getApp(element.dataset.origin);
       // Prevent user from closing the app with a attention screen
       if (-dy > removeCardThreshold &&
-        attentionScreenApps.indexOf(element.dataset.origin) == -1
+        app.killable()
       ) {
 
         // remove the app also from the ordering list
@@ -873,13 +872,8 @@ var CardsView = (function() {
         break;
 
       case 'lock':
-      case 'attentionscreenshow':
-        attentionScreenApps = AttentionScreen.getAttentionScreenOrigins();
+      case 'attentionopening':
         hideCardSwitcher();
-        break;
-
-      case 'attentionscreenhide':
-        attentionScreenApps = AttentionScreen.getAttentionScreenOrigins();
         break;
 
       case 'holdhome':
@@ -915,8 +909,7 @@ var CardsView = (function() {
   };
 })();
 
-window.addEventListener('attentionscreenshow', CardsView);
-window.addEventListener('attentionscreenhide', CardsView);
+window.addEventListener('attentionopening', CardsView);
 window.addEventListener('holdhome', CardsView);
 window.addEventListener('home', CardsView);
 window.addEventListener('appopen', CardsView);

@@ -5,8 +5,6 @@
   // And reset to true when the layer is gone.
   // We may need to handle windowclosing, windowopened in the future.
   window.VisibilityManager = {
-    _attentionScreenTimer: null,
-
     _normalAudioChannelActive: false,
 
     _deviceLockedTimer: 0,
@@ -14,11 +12,12 @@
     overlayEvents: [
       'lock',
       'will-unlock',
-      'attentionscreenshow',
-      'attentionscreenhide',
-      'status-active',
-      'status-inactive',
-      'mozChromeEvent'
+      'attentionopened',
+      'attentionclosing',
+      'mozChromeEvent',
+      'apprequestforeground',
+      'activityrequestforeground',
+      'popuprequestforeground'
     ],
 
     init: function vm_init() {
@@ -28,18 +27,25 @@
     },
 
     handleEvent: function vm_handleEvent(evt) {
-      if (this._attentionScreenTimer && 'mozChromeEvent' != evt.type)
-        clearTimeout(this._attentionScreenTimer);
+      this.debug(' handling ' + evt.type);
       switch (evt.type) {
-        case 'status-active':
-        case 'attentionscreenhide':
+        case 'apprequestforeground':
+        case 'activityrequestforeground':
+        case 'popuprequestforeground':
+          if (LockScreen.locked || AttentionWindowManager.hasActiveWindow()) {
+            return;
+          }
+          var app = evt.detail;
+          app.setVisible(true);
+          break;
+
+        case 'attentionclosing':
         case 'will-unlock':
           if (LockScreen.locked)
             return;
 
           this.publish('showwindows');
-          if (!AttentionScreen.isFullyVisible())
-            this.publish('showwindow', { type: evt.type });
+          this.publish('showwindow', { type: evt.type });
           this._resetDeviceLockedTimer();
           break;
         case 'lock':
@@ -56,20 +62,13 @@
           this._resetDeviceLockedTimer();
           break;
 
-        /*
-        * Because in-transition is needed in attention screen,
-        * We set a timer here to deal with visibility change
-        */
         case 'status-inactive':
-          if (!AttentionScreen.isVisible())
+          if (!AttentionWindowManager.hasAliveWindow())
             return;
-        case 'attentionscreenshow':
+        case 'attentionopened':
           var detail = evt.detail;
-          this._attentionScreenTimer = setTimeout(function setVisibility() {
-            this.publish('hidewindow',
-              { screenshoting: true, type: evt.type, origin: detail.origin });
-          }.bind(this), 3000);
-          this.publish('overlaystart');
+          this.publish('hidewindow',
+            { screenshoting: true, type: evt.type, origin: detail.origin });
           break;
         case 'mozChromeEvent':
           if (evt.detail.type == 'visible-audio-channel-changed') {

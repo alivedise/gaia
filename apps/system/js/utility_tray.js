@@ -27,7 +27,7 @@ var UtilityTray = {
     window.addEventListener('screenchange', this);
     window.addEventListener('emergencyalert', this);
     window.addEventListener('home', this);
-    window.addEventListener('attentionscreenshow', this);
+    window.addEventListener('attentionopening', this);
     window.addEventListener('displayapp', this);
     window.addEventListener('appopening', this);
 
@@ -55,7 +55,7 @@ var UtilityTray = {
 
   handleEvent: function ut_handleEvent(evt) {
     switch (evt.type) {
-      case 'attentionscreenshow':
+      case 'attentionopening':
       case 'home':
       case 'emergencyalert':
       case 'displayapp':

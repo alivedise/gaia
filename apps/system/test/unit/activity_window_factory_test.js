@@ -3,7 +3,7 @@
 mocha.globals(['SettingsListener', 'removeEventListener', 'addEventListener',
       'dispatchEvent', 'AppWindowManager', 'Applications', 'ManifestHelper',
       'ActivityWindow', 'KeyboardManager', 'StatusBar',
-      'SoftwareButtonManager', 'AttentionScreen', 'AppWindow',
+      'SoftwareButtonManager', 'AppWindow',
       'ActivityWindowFactory', 'OrientationManager',
       'BrowserConfigHelper', 'System']);
 
@@ -13,7 +13,6 @@ requireApp('system/test/unit/mock_keyboard_manager.js');
 requireApp('system/shared/test/unit/mocks/mock_manifest_helper.js');
 requireApp('system/test/unit/mock_app_window_manager.js');
 requireApp('system/test/unit/mock_applications.js');
-requireApp('system/test/unit/mock_attention_screen.js');
 requireApp('system/test/unit/mock_homescreen_launcher.js');
 requireApp('system/shared/test/unit/mocks/mock_settings_listener.js');
 requireApp('system/test/unit/mock_app_window.js');
@@ -21,10 +20,10 @@ requireApp('system/test/unit/mock_activity_window.js');
 requireApp('system/test/unit/mock_homescreen_window.js');
 
 var mocksForActivityWindowFactory = new MocksHelper([
-  'OrientationManager', 'AttentionScreen',
-  'Applications', 'SettingsListener', 'HomescreenLauncher',
-  'ManifestHelper', 'KeyboardManager', 'SoftwareButtonManager',
-  'HomescreenWindow', 'ActivityWindow', 'AppWindow', 'AppWindowManager'
+  'OrientationManager', 'Applications', 'SettingsListener',
+  'HomescreenLauncher', 'ManifestHelper', 'KeyboardManager',
+  'SoftwareButtonManager', 'HomescreenWindow', 'ActivityWindow',
+  'AppWindow', 'AppWindowManager'
 ]).init();
 
 suite('system/ActivityWindowFactory', function() {

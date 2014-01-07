@@ -4,11 +4,11 @@ mocha.globals(['VisibilityManager', 'System', 'LockScreen']);
 
 requireApp('system/test/unit/mock_orientation_manager.js');
 requireApp('system/shared/test/unit/mocks/mock_manifest_helper.js');
-requireApp('system/test/unit/mock_attention_screen.js');
+requireApp('system/test/unit/mock_attention_window_manager.js');
 requireApp('system/test/unit/mock_lock_screen.js');
 
 var mocksForVisibilityManager = new MocksHelper([
-  'LockScreen', 'AttentionScreen'
+  'LockScreen', 'AttentionWindowManager'
 ]).init();
 
 suite('system/VisibilityManager', function() {
@@ -51,7 +51,7 @@ suite('system/VisibilityManager', function() {
     });
 
     test('will-unlock', function() {
-      MockAttentionScreen.mFullyVisible = false;
+      MockLockScreen.locked = false;
       var stubPublish = this.sinon.stub(VisibilityManager, 'publish');
 
       VisibilityManager.handleEvent({
@@ -61,40 +61,31 @@ suite('system/VisibilityManager', function() {
       assert.isTrue(stubPublish.calledTwice);
       assert.isTrue(stubPublish.getCall(0).args[0] === 'showwindows');
       assert.isTrue(stubPublish.getCall(1).args[0] === 'showwindow');
-
-      MockAttentionScreen.mFullyVisible = true;
-      VisibilityManager.handleEvent({
-        type: 'will-unlock'
-      });
-
-      assert.isTrue(stubPublish.calledThrice);
-      assert.isTrue(stubPublish.getCall(2).args[0] === 'showwindows');
     });
 
-    test('attentionscreenshow', function() {
+    test('attentionopened', function() {
       var stubPublish = this.sinon.stub(VisibilityManager, 'publish');
       VisibilityManager.handleEvent({
-        type: 'attentionscreenshow',
+        type: 'attentionopened',
         detail: {
           origin: 'fake-dialer'
         }
       });
 
       assert.isTrue(stubPublish.called);
-      assert.isTrue(stubPublish.getCall(0).args[0] === 'overlaystart');
-      this.sinon.clock.tick(3000);
-      assert.isTrue(stubPublish.getCall(1).args[0] === 'hidewindow');
-      assert.isTrue(stubPublish.getCall(1).args[1].origin === 'fake-dialer');
+      assert.isTrue(stubPublish.getCall(0).args[0] === 'hidewindow');
+      assert.isTrue(stubPublish.getCall(0).args[1].origin === 'fake-dialer');
     });
 
-    test('attentionscreenhide', function() {
+    test('attentionclosing', function() {
       var stubPublish = this.sinon.stub(VisibilityManager, 'publish');
       VisibilityManager.handleEvent({
-        type: 'attentionscreenhide'
+        type: 'attentionclosing'
       });
 
       assert.isTrue(stubPublish.called);
       assert.isTrue(stubPublish.getCall(0).args[0] === 'showwindows');
+      assert.isTrue(stubPublish.getCall(1).args[0] === 'showwindow');
     });
 
     test('Normal audio channel is on.', function() {
@@ -119,6 +110,30 @@ suite('system/VisibilityManager', function() {
       });
 
       assert.isFalse(VisibilityManager._normalAudioChannelActive);
+    });
+
+    test('Foreground request', function() {
+      MockAttentionWindowManager.mFullyVisible = false;
+      var setVisible1 = this.sinon.spy();
+      VisibilityManager.handleEvent({
+        type: 'apprequestforeground',
+        detail: {
+          setVisible: setVisible1
+        }
+      });
+
+      assert.isTrue(setVisible1.calledWith(true));
+
+      MockAttentionWindowManager.mFullyVisible = true;
+      var setVisible2 = this.sinon.spy();
+      VisibilityManager.handleEvent({
+        type: 'activityrequestforeground',
+        detail: {
+          setVisible: setVisible2
+        }
+      });
+
+      assert.isFalse(setVisible2.called);
     });
   });
 });

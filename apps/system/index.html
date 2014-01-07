@@ -113,7 +113,6 @@
 
     <!-- Attention Screen -->
     <link rel="stylesheet" type="text/css" href="style/attention_screen.css">
-    <script defer src="js/attention_screen.js"></script>
 
     <!-- Action Menu -->
     <link rel="stylesheet" type="text/css" href="shared/style/action_menu.css">
@@ -290,6 +289,8 @@
     <script defer src="js/app_chrome.js"></script>
     <script defer src="js/app_transition_controller.js"></script>
     <script defer src="js/app_authentication_dialog.js"></script>
+    <script defer src="js/app_window_factory.js"></script>
+    <script defer src="js/attention_window_factory.js"></script>
     <script defer src="js/app_window.js"></script>
     <script defer src="js/shrinking_ui.js"></script>
     <link rel="stylesheet" type="text/css" href="style/shrinking_ui/shrinking_ui.css">
@@ -299,7 +300,8 @@
     <script defer src="js/homescreen_launcher.js"></script>
     <script defer src="js/activity_window.js"></script>
     <script defer src="js/activity_window_factory.js"></script>
-    <script defer src="js/app_window_factory.js"></script>
+    <script defer src="js/attention_window.js"></script>
+    <script defer src="js/attention_window_manager.js"></script>
     <script defer src="js/app_window_manager.js"></script>
     <script defer src="js/visibility_manager.js"></script>
     <script defer src="js/layout_manager.js"></script>
@@ -1096,10 +1098,6 @@
 
           <div id="lockscreen-panel-emergency-call" class="lockscreen-panel"></div>
         </div>
-      </div>
-
-      <div id="attention-screen" data-z-index-level="attention-screen">
-        <div id="attention-bar"></div>
       </div>
 
       <div id="update-manager-toaster" data-z-index-level="notification-toaster">

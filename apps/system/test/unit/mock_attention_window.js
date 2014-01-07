@@ -1,9 +1,9 @@
-var MockAppWindowHelper = {
+var MockAttentionWindowHelper = {
   mInstances: [],
   mLatest: null
 };
 
-var MockAppWindow = function AppWindow(config) {
+var MockAttentionWindow = function AttentionWindow(config) {
   this.open = function() {};
   this.close = function() {};
   this.kill = function() {};
@@ -44,18 +44,20 @@ var MockAppWindow = function AppWindow(config) {
   this.browser = {
     element: document.createElement('iframe')
   };
-  MockAppWindowHelper.mInstances.push(this);
-  MockAppWindowHelper.mLatest = this;
   this.determineClosingRotationDegree = function() { return 0; };
   this.isTransitioning = function() { return false; };
   this.calibratedHeight = function() { return false; };
   this.isOOP = function() { return true; };
   this.isDead = function() { return false};
   this.hasAttentionPermission = function() { return false; };
+  this.hasTelephonyPermission = function() { return false; };
   this.requestOpen = function() {};
+
+  MockAttentionWindowHelper.mInstances.push(this);
+  MockAttentionWindowHelper.mLatest = this;
 };
 
-MockAppWindow.mTeardown = function() {
-  MockAppWindowHelper.mInstances = [];
-  MockAppWindowHelper.mLatest = null;
+MockAttentionWindow.mTeardown = function() {
+  MockAttentionWindowHelper.mInstances = [];
+  MockAttentionWindowHelper.mLatest = null;
 };

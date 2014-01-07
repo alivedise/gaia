@@ -23,6 +23,11 @@
    * @module LayoutManager
    */
   window.LayoutManager = {
+    get barHeight() {
+      return (AttentionWindowManager.isAtBarMode()) ?
+        AttentionWindowManager.barHeight() : StatusBar.height;
+    },
+
     get clientWidth() {
       if (this._clientWidth)
         return this._clientWidth;
@@ -49,7 +54,7 @@
     get usualHeight() {
       return window.innerHeight -
         (this.keyboardEnabled ? KeyboardManager.getHeight() : 0) -
-        SoftwareButtonManager.height - StatusBar.height;
+        SoftwareButtonManager.height - this.barHeight;
     },
 
     get width() {
@@ -86,7 +91,7 @@
       window.addEventListener('status-inactive', this);
       window.addEventListener('keyboardchange', this);
       window.addEventListener('keyboardhide', this);
-      window.addEventListener('attentionscreenhide', this);
+      window.addEventListener('attentionclosed', this);
       window.addEventListener('mozfullscreenchange', this);
       window.addEventListener('software-button-enabled', this);
       window.addEventListener('software-button-disabled', this);

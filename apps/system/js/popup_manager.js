@@ -30,7 +30,7 @@ var PopupManager = {
 
   init: function pm_init() {
     this.title = document.getElementById('popup-title');
-    window.addEventListener('mozbrowseropenwindow', this);
+    //window.addEventListener('mozbrowseropenwindow', this);
     window.addEventListener('mozbrowserclose', this);
     window.addEventListener('appwillclose', this);
     window.addEventListener('appopen', this);
@@ -164,6 +164,9 @@ var PopupManager = {
 
       case 'mozbrowseropenwindow':
         var detail = evt.detail;
+        if (detail.features === 'attention') {
+          return;
+        }
         var openerType = evt.target.dataset.frameType;
         var openerOrigin = evt.target.dataset.frameOrigin;
 

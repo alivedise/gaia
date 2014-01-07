@@ -7,8 +7,8 @@
    *
    * There're some cases we need to reset the orientation of the top window:
    * * LockScreen is unlocked.
-   * * AttentionScreen is hidden.
-   * * AttentionScreen is closed.
+   * * An attention window is opened.
+   * * All attention window is closed.
    * * TrustedUI is closed.
    * * SleepMenu is hidden.
    *
@@ -33,16 +33,14 @@
       }
 
       window.addEventListener('will-unlock', this);
-      window.addEventListener('attentionscreenhide', this);
-      window.addEventListener('status-active', this);
+      window.addEventListener('attentionclosed', this);
       window.addEventListener('sleepmenuhide', this);
       window.addEventListener('trusteduiclose', this);
     },
 
     handleEvent: function om_handleEvent(evt) {
       switch (evt.type) {
-        case 'attentionscreenhide':
-        case 'status-active':
+        case 'attentionclosed':
         case 'sleepmenuhide':
         case 'trusteduiclose':
         case 'will-unlock':

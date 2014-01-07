@@ -7,6 +7,7 @@
    *
    * @class HomescreenWindow
    * @param {String} manifestURL The manifestURL of the homescreen app.
+   * @extends AppWindow
    */
   var HomescreenWindow = function HomescreenWindow(manifestURL) {
     this.instanceID = 'homescreen';

@@ -3,7 +3,7 @@
 mocha.globals(['SettingsListener', 'removeEventListener', 'addEventListener',
       'dispatchEvent', 'AppWindowManager', 'Applications', 'ManifestHelper',
       'KeyboardManager', 'StatusBar', 'HomescreenWindow',
-      'SoftwareButtonManager', 'AttentionScreen', 'AppWindow',
+      'SoftwareButtonManager', 'AppWindow',
       'LockScreen', 'OrientationManager', 'BrowserFrame',
       'BrowserConfigHelper', 'System', 'BrowserMixin', 'TransitionMixin',
       'HomescreenLauncher', 'LayoutManager']);
@@ -14,7 +14,6 @@ requireApp('system/test/unit/mock_orientation_manager.js');
 requireApp('system/test/unit/mock_applications.js');
 requireApp('system/test/unit/mock_keyboard_manager.js');
 requireApp('system/test/unit/mock_software_button_manager.js');
-requireApp('system/test/unit/mock_attention_screen.js');
 requireApp('system/test/unit/mock_statusbar.js');
 requireApp('system/test/unit/mock_app_window.js');
 requireApp('system/test/unit/mock_layout_manager.js');
@@ -24,7 +23,7 @@ requireApp('system/js/system.js');
 requireApp('system/shared/test/unit/mocks/mock_settings_listener.js');
 
 var mocksForAppWindowManager = new MocksHelper([
-  'LockScreen', 'OrientationManager', 'AttentionScreen',
+  'LockScreen', 'OrientationManager',
   'Applications', 'SettingsListener', 'HomescreenLauncher',
   'ManifestHelper', 'KeyboardManager', 'StatusBar', 'SoftwareButtonManager',
   'HomescreenWindow', 'AppWindow', 'LayoutManager'
@@ -292,7 +291,6 @@ suite('system/AppWindowManager', function() {
       AppWindowManager.runningApps = {};
       AppWindowManager.runningApps[app1.origin] = app1;
       AppWindowManager._activeApp = app1;
-      MockAttentionScreen.mFullyVisible = false;
       var stubSetVisible = this.sinon.stub(app1, 'setVisible');
 
       AppWindowManager.handleEvent({
@@ -324,7 +322,7 @@ suite('system/AppWindowManager', function() {
       stubIsOOP.returns(false);
       var stubSetVisible = this.sinon.stub(app6, 'setVisible');
 
-      AppWindowManager.handleEvent({ type: 'overlaystart' });
+      AppWindowManager.handleEvent({ type: 'attentionopening' });
       assert.isTrue(stubSetVisible.calledWith(false));
     });
 
@@ -335,7 +333,7 @@ suite('system/AppWindowManager', function() {
       AppWindowManager.displayedApp = app1.origin;
       var stubBlur = this.sinon.stub(app1, 'blur');
 
-      AppWindowManager.handleEvent({ type: 'overlaystart' });
+      AppWindowManager.handleEvent({ type: 'attentionopening' });
       assert.isTrue(stubBlur.called);
     });
   });

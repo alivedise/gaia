@@ -133,7 +133,7 @@ var KeyboardManager = {
     // when an inline activity goes away.
     window.addEventListener('activityopening', this);
     window.addEventListener('activityclosing', this);
-    window.addEventListener('attentionscreenshow', this);
+    window.addEventListener('attentionopening', this);
     window.addEventListener('mozbrowsererror', this);
     window.addEventListener('applicationsetupdialogshow', this);
 
@@ -412,7 +412,7 @@ var KeyboardManager = {
       case 'mozbrowserresize':
         this.resizeKeyboard(evt);
         break;
-      case 'attentionscreenshow':
+      case 'attentionopening':
         // If we call hideKeyboardImmediately synchronously,
         // attention screen will not show up.
         setTimeout(function hideKeyboardAsync() {

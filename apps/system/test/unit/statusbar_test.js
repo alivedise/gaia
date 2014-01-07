@@ -158,14 +158,14 @@ suite('system/Statusbar', function() {
       assert.notEqual(StatusBar.clock.timeoutID, null);
       assert.equal(StatusBar.icons.time.hidden, false);
     });
-    test('attentionscreen show', function() {
-      var evt = new CustomEvent('attentionscreenshow');
+    test('attention opening', function() {
+      var evt = new CustomEvent('attentionopening');
       StatusBar.handleEvent(evt);
       assert.notEqual(StatusBar.clock.timeoutID, null);
       assert.equal(StatusBar.icons.time.hidden, false);
     });
-    test('attentionsceen hide', function() {
-      var evt = new CustomEvent('attentionscreenhide');
+    test('attention closed', function() {
+      var evt = new CustomEvent('attentionclosed');
       StatusBar.handleEvent(evt);
       assert.notEqual(StatusBar.clock.timeoutID, null);
       assert.equal(StatusBar.icons.time.hidden, false);

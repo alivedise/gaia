@@ -86,8 +86,12 @@
   z-index: 32768;
 }
 
-/* Level 3: Attention screen */
-#screen > [data-z-index-level="attention-screen"] {
+/* Level 3: Attention window */
+#screen > [data-z-index-level="app"] > .appWindow.attentionWindow.telephonyWindow {
+  z-index: 16385;
+}
+
+#screen > [data-z-index-level="app"] > .appWindow.attentionWindow {
   z-index: 16384;
 }
 
@@ -97,8 +101,8 @@
 }
 
 /* Level 5: Statusbar, Utility-Tray */
-#screen > [data-z-index-level="app"] > .appWindow.transition-opening.fullscreen-app:not(.homescreen),
-#screen > [data-z-index-level="app"] > .appWindow.transition-closing.fullscreen-app:not(.homescreen) {
+#screen > [data-z-index-level="app"] > .appWindow.transition-opening.fullscreen-app:not(.homescreen):not(.attentionWindow),
+#screen > [data-z-index-level="app"] > .appWindow.transition-closing.fullscreen-app:not(.homescreen):not(.attentionWindow) {
   z-index: 4097;
 }
 
@@ -195,15 +199,15 @@
   z-index: 8;
 }
 
-#screen > [data-z-index-level="app"] > .appWindow.transition-opening:not(.homescreen) {
+#screen > [data-z-index-level="app"] > .appWindow.transition-opening:not(.homescreen):not(.attentionWindow) {
   z-index: 7;
 }
 
-#screen > [data-z-index-level="app"] > .appWindow.transition-closing:not(.homescreen) {
+#screen > [data-z-index-level="app"] > .appWindow.transition-closing:not(.homescreen):not(.attentionWindow) {
   z-index: 6;
 }
 
-#screen > [data-z-index-level="app"] > .appWindow.active:not(.homescreen) {
+#screen > [data-z-index-level="app"] > .appWindow.active:not(.homescreen):not(.attentionWindow) {
   z-index: 6;
 }
 
@@ -215,7 +219,7 @@
   z-index: 4;
 }
 
-#screen > [data-z-index-level="app"] > .appWindow {
+#screen > [data-z-index-level="app"] > .appWindow:not(.attentionWindow) {
   z-index: 3;
 }
 

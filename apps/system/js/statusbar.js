@@ -134,9 +134,7 @@ var StatusBar = {
 
   /* For other modules to acquire */
   get height() {
-    if (this.screen.classList.contains('active-statusbar')) {
-      return this.attentionBar.offsetHeight;
-    } else if (document.mozFullScreen) {
+    if (document.mozFullScreen) {
       return 0;
     } else {
       return this._cacheHeight ||
@@ -191,9 +189,9 @@ var StatusBar = {
         self.settingValues[settingKey] = false;
       })(settingKey);
     }
-    // Listen to 'attentionscreenshow/hide' from attention_screen.js
-    window.addEventListener('attentionscreenshow', this);
-    window.addEventListener('attentionscreenhide', this);
+    // Listen to 'attentionopening/closed' from AttentionWindow instance.
+    window.addEventListener('attentionopening', this);
+    window.addEventListener('attentionclosed', this);
     // Listen to 'screenchange' from screen_manager.js
     window.addEventListener('screenchange', this);
 
@@ -246,12 +244,12 @@ var StatusBar = {
       case 'screenchange':
         this.setActive(evt.detail.screenEnabled);
         break;
-      case 'attentionscreenhide':
+      case 'attentionclosed':
       case 'lock':
         // Hide the clock in the statusbar when screen is locked
         this.toggleTimeLabel(!LockScreen.locked);
         break;
-      case 'attentionscreenshow':
+      case 'attentionopening':
       case 'unlock':
         // Display the clock in the statusbar when screen is unlocked
         this.toggleTimeLabel(true);
@@ -914,7 +912,6 @@ var StatusBar = {
 
     this.element = document.getElementById('statusbar');
     this.screen = document.getElementById('screen');
-    this.attentionBar = document.getElementById('attention-bar');
   }
 };
 

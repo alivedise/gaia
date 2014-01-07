@@ -1,6 +1,6 @@
 'use strict';
 (function(window) {
-  var DEBUG = false;
+  var DEBUG = true;
   var screenElement = document.getElementById('screen');
 
   /**
@@ -222,7 +222,7 @@
       window.addEventListener('showwindows', this);
       window.addEventListener('hidewindow', this);
       window.addEventListener('showwindow', this);
-      window.addEventListener('overlaystart', this);
+      window.addEventListener('attentionopening', this);
       window.addEventListener('homegesture-enabled', this);
       window.addEventListener('homegesture-disabled', this);
       window.addEventListener('system-resize', this);
@@ -245,6 +245,7 @@
     },
 
     handleEvent: function awm_handleEvent(evt) {
+      this.debug('handling ' + evt.type);
       switch (evt.type) {
         case 'system-resize':
           this.debug(' Resizing...');
@@ -367,7 +368,7 @@
           }
           break;
 
-        case 'overlaystart':
+        case 'attentionopening':
           // Instantly blur the frame in order to ensure hiding the keyboard
           var app = this._activeApp;
           if (app) {
