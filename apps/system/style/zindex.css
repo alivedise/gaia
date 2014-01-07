@@ -86,8 +86,8 @@
   z-index: 32768;
 }
 
-/* Level 3: Attention screen */
-#screen > [data-z-index-level="attention-screen"] {
+/* Level 3: Attention window */
+#screen > [data-z-index-level="app"] > .appWindow.attentionWindow {
   z-index: 16384;
 }
 

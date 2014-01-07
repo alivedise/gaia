@@ -28,10 +28,6 @@ var AttentionScreen = {
   },
 
   init: function as_init() {
-    window.addEventListener('mozbrowseropenwindow', this.open.bind(this), true);
-
-    window.addEventListener('mozbrowserclose', this.close.bind(this), true);
-    window.addEventListener('mozbrowsererror', this.close.bind(this), true);
 
     window.addEventListener('keyboardchange', this.resize.bind(this), true);
     window.addEventListener('keyboardhide', this.resize.bind(this), true);

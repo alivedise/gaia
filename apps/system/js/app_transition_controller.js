@@ -170,8 +170,11 @@
       if (!this.app || !this.app.element)
         return;
 
-      this.app.setVisible(false, true);
-      this.app.element.setAttribute('aria-hidden', 'true');
+      // XXX: Fix me
+      if (!this.app instanceof AttentionWindow) {
+        this.app.setVisible(false, true);
+        this.app.element.setAttribute('aria-hidden', 'true');
+      }
       this.app.element.classList.remove('active');
     };
 
@@ -269,7 +272,8 @@
 
       var classes = ['enlarge', 'reduce', 'to-cardview', 'from-cardview',
         'invoking', 'invoked', 'zoom-in', 'zoom-out',
-        'transition-opening', 'transition-closing'];
+        'transition-opening', 'transition-closing', 'slidedown', 'slideup',
+        'slideleft', 'slideright'];
 
       classes.forEach(function iterator(cls) {
         this.app.element.classList.remove(cls);
