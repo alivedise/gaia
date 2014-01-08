@@ -361,6 +361,7 @@ var CallsHandler = (function callsHandler() {
   }
 
   function _changeMaxFontSize(evt) {
+    console.log('alive:resized');
     handledCalls.forEach(function(hc) {
       hc.formatPhoneNumber();
     });

@@ -702,9 +702,17 @@
    * Show screenshot overlay and hide the iframe.
    */
   AppWindow.prototype._showScreenshotOverlay =
-    function aw__showScreenshotOverlay() {
+    function aw__showScreenshotOverlay(useExistedScreenshot) {
       if (!this.screenshotOverlay) {
         this._hideFrame();
+        return;
+      }
+
+      if (useExistedScreenshot && this._screenshotBlob) {
+        var screenshotURL = this.requestScreenshotURL();
+        this.screenshotOverlay.style.backgroundImage =
+          'url(' + screenshotURL + ')';
+        this.screenshotOverlay.classList.add('visible');
         return;
       }
       this.getScreenshot(function onGettingScreenshot(screenshotBlob) {
@@ -1210,6 +1218,7 @@
         if (invoked)
           return;
         invoked = true;
+        console.log('a');
         setTimeout(callback);
       });
       if (this.isHomescreen) {
@@ -1219,6 +1228,7 @@
       this.tryWaitForFullRepaint(function() {
         if (invoked)
           return;
+        console.log('b');
         invoked = true;
         setTimeout(callback);
       });

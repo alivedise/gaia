@@ -8,6 +8,13 @@
    * @module  System
    */
   window.System = {
+    init: function() {
+      window.addEventListener('volumedown', this);
+    },
+
+    handleEvent: function() {
+      this.slowTransition = !this.slowTransition;
+    },
     /**
      * Record the start time of the system for later debugging usage.
      * @access private
@@ -60,4 +67,6 @@
       }
     }
   };
+
+  System.init();
 }(this));

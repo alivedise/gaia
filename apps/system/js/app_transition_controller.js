@@ -163,6 +163,11 @@
         return;
       this.app.element.setAttribute('aria-hidden', 'true');
       this.switchTransitionState('closing');
+
+      // XXX: Fix me
+      if (this.app instanceof AttentionWindow) {
+        this.app.setVisible(false, true);
+      }
     };
 
   AppTransitionController.prototype.handle_closed =
@@ -174,6 +179,8 @@
       if (!this.app instanceof AttentionWindow) {
         this.app.setVisible(false, true);
         this.app.element.setAttribute('aria-hidden', 'true');
+      } else {
+        this.app.setVisible(true);
       }
       this.app.element.classList.remove('active');
     };
@@ -185,7 +192,9 @@
       this.app.launchTime = Date.now();
       this.app.fadeIn();
       this.app.element.removeAttribute('aria-hidden');
-      this.app.setVisible(true);
+      if (!this.app instanceof AttentionWindow) {
+        this.app.setVisible(true);
+      }
 
       // TODO:
       // May have orientation manager to deal with lock orientation request.

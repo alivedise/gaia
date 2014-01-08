@@ -80,14 +80,7 @@
     // We'll open ourselves automatically,
     // but maybe we should do requestOpen and let manager open us.
     var self = this;
-    if (!this.loaded) {
-      this.element.addEventListener('_loaded', function onLoaded() {
-        self.element.removeEventListener('_loaded', onLoaded);
-        self.open();
-      });
-    } else {
-      this.open();
-    }
+    this.requestOpen();
   };
 
   AttentionWindow.prototype.__proto__ = AppWindow.prototype;
@@ -105,11 +98,12 @@
   AttentionWindow.prototype.openAnimation = 'slidedown';
   AttentionWindow.prototype.closeAnimation = 'slideup';
 
-  AttentionWindow.prototype.view = function acw_view() {
-    this.instanceID = _id;
+  AttentionWindow.prototype.view = function attw_view() {
+    this.instanceID = _id++;
     return '<div class="appWindow attentionWindow' +
-            '" id="attention-window-' + _id++ + '">' +
-            '<div class="attention-bar></div>' +
+            '" id="attention-window-' + this.instanceID +
+            '" transition-state="initial">' +
+            '<div class="attention-bar"></div>' +
             '<div class="screenshot-overlay"></div>' +
             '<div class="fade-overlay"></div>' +
             '</div>';
@@ -126,7 +120,7 @@
       'mozbrowserloadend', 'mozbrowserattentiondone', 'mozbrowserloadstart',
       '_localized', '_opened', '_closing', 'mozbrowserresize'];
 
-  AttentionWindow.prototype.render = function acw_render() {
+  AttentionWindow.prototype.render = function attw_render() {
     this.publish('willrender');
     this.containerElement.insertAdjacentHTML('beforeend', this.view());
     // the iframe is provided already.
@@ -140,16 +134,54 @@
     this.iframe = this.browser.element;
     this.screenshotOverlay = this.element.querySelector('.screenshot-overlay');
     this.fadeOverlay = this.element.querySelector('.fade-overlay');
-    /*
-      this.attentionBar = this.element.querySelector('.attention-bar');
-      this.attentionBar.addEventListener('click', function() {
-        this.open();
-      }.bind(this));
-    */
+
+    this.attentionBar = this.element.querySelector('.attention-bar');
+    this.attentionBar.addEventListener('click', function() {
+      this.requestOpen();
+    }.bind(this));
 
     this._registerEvents();
     this.installSubComponents();
     this.publish('rendered');
+  };
+
+  AttentionWindow.prototype._handle_mozbrowserresize =
+    function attw__handle_mozbrowserresize(evt) {
+      this.resized = true;
+      this.debug('browser is resized..' + JSON.stringify(evt.detail));
+      if (evt.detail.height <= 40) {
+        this.close();
+      } else {
+        this.requestOpen();
+      }
+    };
+
+  AttentionWindow.prototype.ready = function attw_ready(callback) {
+    if (!this.element) {
+      return;
+    }
+
+    var self = this;
+    this.debug('requesting to open');
+    if (!this.loaded) {
+      this.element.addEventListener('_loaded', function onLoaded() {
+        self.element.removeEventListener('_loaded', onLoaded);
+        setTimeout(callback);
+      });
+    } else {
+      var invoked = false;
+      this.element.setAttribute('transition-state', 'initial');
+      this.debug(this.browser.element.clientHeight);
+      this.debug('waiting full repaint');
+      this.tryWaitForFullRepaint(function() {
+        if (invoked) {
+          return;
+        }
+        self.debug('ready to open!!!!');
+        invoked = true;
+        setTimeout(callback);
+      });
+    }
   };
 
   /**
