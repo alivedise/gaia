@@ -1,7 +1,7 @@
 'use strict';
 
 (function(window) {
-  var DEBUG = false;
+  var DEBUG = true;
   /**
    * LayoutManager gathers all external events which would affect
    * the layout of the windows and redirect the event to AppWindowManager.
@@ -108,13 +108,23 @@
            * Fired when layout needs to be adjusted.
            * @event module:LayoutManager#system-resize
            */
-          this.publish('system-resize');
+          this.publishResize(evt.type);
           break;
         default:
           if (evt.type === 'keyboardhide')
             this.keyboardEnabled = false;
-          this.publish('system-resize');
+          this.publishResize(evt.type);
           break;
+      }
+    },
+
+    publishResize: function lm_publishResize(reason) {
+      if (AttentionWindowManager.hasActiveWindow()) {
+        if (reason.indexOf('attention') < 0) {
+          this.publish('attention-resize');
+        }
+      } else {
+        this.publish('system-resize');
       }
     },
 

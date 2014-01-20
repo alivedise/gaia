@@ -908,7 +908,8 @@
 
   AppWindow.prototype._resize = function aw__resize() {
     var height, width;
-    this.debug('force RESIZE...');
+    this.debug('force resizing...');
+    this._dump();
     if (LayoutManager.keyboardEnabled) {
       /**
        * The event is dispatched on the app window only when keyboard is up.

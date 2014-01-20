@@ -48,9 +48,8 @@
       window.addEventListener('attentionopened', this);
       window.addEventListener('attentionclosed', this);
       window.addEventListener('home', this);
-      window.addEventListener('keyboardchange', this);
-      window.addEventListener('keyboardhide', this);
       window.addEventListener('emergencyalert', this);
+      window.addEventListener('attention-resize', this);
 
       // Request from ScreenManager: show the call screen.
       window.addEventListener('show-callscreen', this);
@@ -59,7 +58,8 @@
     handleEvent: function attwm_handleEvent(evt) {
       this.debug('handling ' + evt.type);
       this.debug('active attention window is ' +
-        this._activeAttentionWindow ? this._activeAttentionWindow.name : null);
+        (this._activeAttentionWindow ?
+          this._activeAttentionWindow.name : null));
       switch (evt.type) {
         case 'show-callscreen':
           for (var id in this._instances) {
@@ -129,8 +129,7 @@
           }
           break;
 
-        case 'keyboardchange':
-        case 'keyboardhide':
+        case 'attention-resize':
           if (this._activeAttentionWindow) {
             this._activeAttentionWindow.resize();
           }
