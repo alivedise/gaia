@@ -87,11 +87,11 @@
 
     init: function lm_init() {
       window.addEventListener('resize', this);
-      window.addEventListener('status-active', this);
-      window.addEventListener('status-inactive', this);
+      window.addEventListener('attentionclosed', this);
+      window.addEventListener('attentionopened', this);
       window.addEventListener('keyboardchange', this);
       window.addEventListener('keyboardhide', this);
-      window.addEventListener('attentionclosed', this);
+      window.addEventListener('attentionterminated', this);
       window.addEventListener('mozfullscreenchange', this);
       window.addEventListener('software-button-enabled', this);
       window.addEventListener('software-button-disabled', this);

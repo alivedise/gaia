@@ -1,5 +1,5 @@
 (function(window) {
-  var DEBUG = false;
+  var DEBUG = true;
   var AttentionWindowManager = {
     _instances: {},
     _count: 0,
@@ -58,6 +58,8 @@
 
     handleEvent: function attwm_handleEvent(evt) {
       this.debug('handling ' + evt.type);
+      this.debug('active attention window is ' +
+        this._activeAttentionWindow ? this._activeAttentionWindow.name : null);
       switch (evt.type) {
         case 'show-callscreen':
           for (var id in this._instances) {

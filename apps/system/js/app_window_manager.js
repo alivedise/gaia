@@ -1,6 +1,6 @@
 'use strict';
 (function(window) {
-  var DEBUG = true;
+  var DEBUG = false;
   var screenElement = document.getElementById('screen');
 
   /**
