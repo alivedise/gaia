@@ -59,7 +59,7 @@
       this.debug('handling ' + evt.type);
       this.debug('active attention window is ' +
         (this._activeAttentionWindow ?
-          this._activeAttentionWindow.name : null));
+            this._activeAttentionWindow.name : null));
       switch (evt.type) {
         case 'show-callscreen':
           for (var id in this._instances) {

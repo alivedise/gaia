@@ -119,6 +119,7 @@
     },
 
     publishResize: function lm_publishResize(reason) {
+      this.debug('publising resize event, reason is ' + reason);
       if (AttentionWindowManager.hasActiveWindow()) {
         if (reason.indexOf('attention') < 0) {
           this.publish('attention-resize');
