@@ -20,6 +20,7 @@ suite('system/AttentionWindowManager', function() {
     att2 = new AttentionWindow(fakeAttentionConfig);
     att3 = new AttentionWindow(fakeAttentionConfig);
 
+    requireApp('system/js/system.js');
     requireApp('system/js/attention_window_manager.js', done);
   });
 
@@ -35,56 +36,62 @@ suite('system/AttentionWindowManager', function() {
   };
 
   function injectRunningAttentions() {
-    AttentionWindowManager._instances = {};
+    var AttWM = new AttentionWindowManager();
+    AttWM._instances = {};
     Array.slice(arguments).forEach(function iterator(att) {
-      AttentionWindowManager._instances[att.instanceID] = att;
+      AttWM._instances[att.instanceID] = att;
     });
+    return AttWM;
   };
 
   suite('Handle events', function() {
     test('Keyboard show', function() {
-      AttentionWindowManager._activeAttentionWindow = att1;
+      var AttWM = new AttentionWindowManager();
+      AttWM._activeAttentionWindow = att1;
       var stubResize = this.sinon.stub(att1, 'resize');
-      AttentionWindowManager.handleEvent({
+      AttWM.handleEvent({
         type: 'keyboardchange'
       });
       assert.isTrue(stubResize.called);
     });
 
     test('Keyboard hide', function() {
-      AttentionWindowManager._activeAttentionWindow = att2;
+      var AttWM = new AttentionWindowManager();
+      AttWM._activeAttentionWindow = att2;
       var stubResize = this.sinon.stub(att2, 'resize');
-      AttentionWindowManager.handleEvent({
+      AttWM.handleEvent({
         type: 'keyboardhide'
       });
       assert.isTrue(stubResize.called);
     });
 
     test('Home button', function() {
-      AttentionWindowManager._activeAttentionWindow = att3;
+      var AttWM = new AttentionWindowManager();
+      AttWM._activeAttentionWindow = att3;
       var stubClose = this.sinon.stub(att3, 'close');
-      AttentionWindowManager.handleEvent({
+      AttWM.handleEvent({
         type: 'home'
       });
       assert.isTrue(stubClose.called);
     });
 
     test('Emergency alert is shown', function() {
-      AttentionWindowManager._activeAttentionWindow = att1;
+      var AttWM = new AttentionWindowManager();
+      AttWM._activeAttentionWindow = att1;
       var stubClose = this.sinon.stub(att1, 'close');
-      AttentionWindowManager.handleEvent({
+      AttWM.handleEvent({
         type: 'emergencyalert'
       });
       assert.isTrue(stubClose.called);
     });
 
     test('Show callscreen', function() {
-      injectRunningAttentions(att1, att2, att3);
+      var AttWM = injectRunningAttentions(att1, att2, att3);
       var stubHasTelephonyPermission =
         this.sinon.stub(att3, 'hasTelephonyPermission');
       stubHasTelephonyPermission.returns(true);
       var stubRequestOpen = this.sinon.stub(att3, 'requestOpen');
-      AttentionWindowManager.handleEvent({
+      AttWM.handleEvent({
         type: 'show-callscreen'
       });
       assert.isTrue(stubRequestOpen.called);

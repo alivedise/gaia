@@ -10,6 +10,7 @@ window.addEventListener('load', function startup() {
       FtuLauncher.retrieve();
     });
     HomescreenLauncher.init();
+    window.attentionWindowManager = new AttentionWindowManager();
   }
 
   if (Applications.ready) {

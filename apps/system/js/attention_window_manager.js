@@ -1,6 +1,15 @@
-(function(window) {
+(function(exports) {
   var DEBUG = true;
-  var AttentionWindowManager = {
+  /**
+   * AttentionWindowManager manages the attention window instances.
+   * See AttentionWindow class to know more about it.
+   *
+   * @class AttentionWindowManager
+   */
+  var AttentionWindowManager = function() {
+    this.init();
+  };
+  AttentionWindowManager.prototype = {
     _instances: {},
     _count: 0,
     _activeAttentionWindow: null,
@@ -138,6 +147,5 @@
     }
   };
 
-  AttentionWindowManager.init();
-  window.AttentionWindowManager = AttentionWindowManager;
+  exports.AttentionWindowManager = AttentionWindowManager;
 }(this));
