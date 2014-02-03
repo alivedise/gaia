@@ -4,45 +4,71 @@ var StackManager = {
   init: function sm_init() {
     window.addEventListener('appcreated', this);
     window.addEventListener('launchapp', this);
+    window.addEventListener('appopening', this);
     window.addEventListener('appterminated', this);
     window.addEventListener('home', this);
   },
 
   getCurrent: function sm_getCurrent() {
-    return this._stack[this._current];
+    if (this._current < 0) {
+      return undefined;
+    }
+    return this._stack[this._current].getActiveWindow();
   },
   getPrev: function sm_getPrev() {
-    return this._stack[this._current - 1];
+    var inGroupPrev = this.getCurrent().getActiveWindow().getPrev();
+    if (inGroupPrev) {
+      return inGroupPrev;
+    }
+    var previousGroup = this._stack[this._current - 1];
+    if (previousGroup) {
+      return previousGroup.getLeafWindow();
+    }
+
+    return undefined;
   },
   getNext: function sm_getNext() {
-    return this._stack[this._current + 1];
+    var inGroupNext = this.getCurrent().getActiveWindow().getNext();
+    if (inGroupNext) {
+      return inGroupNext;
+    }
+    var nextGroup = this._stack[this._current + 1];
+    if (nextGroup) {
+      return nextGroup.getRootWindow();
+    }
+
+    return undefined;
   },
 
   goPrev: function sm_goPrev() {
-    var newApp = this.getPrev();
     var oldApp = this.getCurrent();
-    if (!newApp || !oldApp) {
+    var newApp = this.getPrev();
+    if (!oldApp || !newApp) {
       return;
     }
 
     newApp.broadcast('swipein');
     oldApp.broadcast('swipeout');
 
-    this._current--;
+    if (newApp.groupID !== oldApp.groupID) {
+      this._current--;
+    }
     this._stackChanged();
   },
 
   goNext: function sm_goNext() {
-    var newApp = this.getNext();
     var oldApp = this.getCurrent();
-    if (!newApp || !oldApp) {
+    var newApp = this.getNext();
+    if (!oldApp || !newApp) {
       return;
     }
 
     newApp.broadcast('swipein');
     oldApp.broadcast('swipeout');
 
-    this._current++;
+    if (newApp.groupID !== oldApp.groupID) {
+      this._current++;
+    }
     this._stackChanged();
   },
 
@@ -57,6 +83,9 @@ var StackManager = {
     switch (e.type) {
       case 'appcreated':
         var app = e.detail;
+        if (app.parentWindow) {
+          return;
+        }
         if (app.stayBackground) {
           this._insertBelow(app);
         } else {
@@ -75,13 +104,22 @@ var StackManager = {
           }
         }
         break;
+      case 'appopening':
+        var app = e.detail;
+        var root = app.getRootWindow();
+
+        var idx = this._indexOfInstanceID(root.instanceID);
+        if (idx !== undefined && idx !== this._current) {
+          this._current = idx;
+        }
+        break;
       case 'home':
         this._moveToTop(this._current);
         this._current = -1;
         break;
       case 'appterminated':
-        var manifestURL = e.detail.manifestURL;
-        this._remove(manifestURL);
+        var instanceID = e.detail.instanceID;
+        this._remove(instanceID);
         break;
     }
     this._stackChanged();
@@ -122,15 +160,30 @@ var StackManager = {
     return result;
   },
 
-  _remove: function sm_remove(manifestURL) {
+  _indexOfInstanceID: function sm_indexOfIntanceID(instanceID) {
+    var result = undefined;
+    var self = this;
+    this._stack.some(function(app, idx) {
+      if (app.instanceID == instanceID) {
+        result = idx;
+        return true;
+      } false;
+    });
+
+    return result;
+  },
+
+  _remove: function sm_remove(instanceID) {
     for (var i = (this._stack.length - 1); i >= 0; i--) {
       var sConfig = this._stack[i];
 
-      if (sConfig.manifestURL == manifestURL) {
+      if (sConfig.instanceID == instanceID) {
         this._stack.splice(i, 1);
-        if (i <= this._current) {
+
+        if (i <= this._current && this._current > 0) {
           this._current--;
         }
+        this._dump();
         return;
       }
     }
@@ -149,11 +202,18 @@ var StackManager = {
 
   /* Debug */
   _dump: function sm_dump() {
-    console.log('StackManager : dump');
     var prefix = 'StackManager';
     for (var i = 0; i < this._stack.length; i++) {
       var separator = (i == this._current) ? ' * ' : ' - ';
-      console.log(prefix + separator + i + ' -> ' + this._stack[i].name);
+      console.log(prefix + separator + i + ' -> ' + this._stack[i].name +
+        '/' + this._stack[i].instanceID);
+      var child = this._stack[i].childWindow;
+      while (child) {
+        var separator = (child.isActive()) ? ' @ ' : ' = ';
+        console.log(prefix + separator + i + ' ---> ' + this._stack[i].name +
+                  '/' + this._stack[i].instanceID);
+        child = child.childWindow;
+      }
     }
   },
   __clearAll: function sm_clearAll() {
