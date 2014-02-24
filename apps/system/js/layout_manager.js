@@ -81,6 +81,15 @@
      */
     keyboardEnabled: false,
 
+    multiWindow: true,
+
+    top: 20,
+
+    left: 0,
+
+    _width: 320,
+    _height: 480,
+
     init: function lm_init() {
       window.addEventListener('resize', this);
       window.addEventListener('status-active', this);
@@ -91,11 +100,21 @@
       window.addEventListener('mozfullscreenchange', this);
       window.addEventListener('software-button-enabled', this);
       window.addEventListener('software-button-disabled', this);
+
+      window.addEventListener('apprequestrender', this);
     },
 
     handleEvent: function lm_handleEvent(evt) {
       this.debug('resize event got: ', evt.type);
       switch (evt.type) {
+        case 'apprequestrender':
+          var app = evt.detail;
+          if (this.multiWindow) {
+            app.render(this.top, this.left, this._width, this._height);
+          } else {
+            app.render();
+          }
+          break;
         case 'keyboardchange':
           if (document.mozFullScreen)
             document.mozCancelFullScreen();

@@ -15,6 +15,8 @@
    * @module AppWindowManager
    */
   window.AppWindowManager = {
+    multiWindow: true,
+
     continuousTransition: false,
 
     element: document.getElementById('windows'),
@@ -171,8 +173,9 @@
         }
 
         appNext.open(immediateTranstion ? 'immediate' :
-                      ((switching === true) ? 'invoked' : openAnimation));
-        if (appCurrent) {
+                      ((switching === true && !this.multiWindow) ?
+                        'invoked' : openAnimation));
+        if (appCurrent && !this.multiWindow) {
           appCurrent.close(immediateTranstion ? 'immediate' :
             ((switching === true) ? 'invoking' : closeAnimation));
         } else {
@@ -231,6 +234,7 @@
       window.addEventListener('homegesture-enabled', this);
       window.addEventListener('homegesture-disabled', this);
       window.addEventListener('system-resize', this);
+      window.addEventListener('apptofront', this);
 
       // update app name when language setting changes
       SettingsListener.observe('language.current', null,
@@ -428,6 +432,10 @@
           var config = evt.detail;
           this.debug('launching' + config.origin);
           this.launch(config);
+          break;
+
+        case 'apptofront':
+          this.broadcastMessage('toback');
           break;
       }
     },

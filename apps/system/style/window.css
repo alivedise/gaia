@@ -1,5 +1,5 @@
-#windows > .appWindow,
-#windows > .activityWindow {
+.appWindow,
+.activityWindow {
   position: absolute;
   left: 0;
   border: 0;
@@ -11,14 +11,30 @@
   background-position: center center;
 }
 
+.appWindow.resizer {
+  -moz-box-sizing: border-box;
+  border: silver 2px solid;
+}
+
+.appWindow.resizer > iframe {
+  top: 15px;
+  height: calc(100% - 15px);
+}
+
+.appWindow > .menu {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 15px;
+  width: 100%;
+  text-align: right;
+  background-color: black;
+}
+
 @media not all and (-moz-physical-home-button) {
   #screen:not(.software-button-disabled) > #windows > .appWindow {
     bottom: 5rem;
   }
-}
-
-.appWindow[transition-state="closed"]:not(.fadeout):not(.homescreen):not(.edge-candidate) {
-  opacity: 0;
 }
 
 #screen.software-button-enabled #windows > .appWindow {

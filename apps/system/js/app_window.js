@@ -41,7 +41,7 @@
    */
   var AppWindow = function AppWindow(configuration) {
     this.reConfig(configuration);
-    this.render();
+    this.requestRender();
     /**
      * This is fired when the app window is instantiated.
      * @event AppWindow#appcreated
@@ -55,6 +55,10 @@
     this.launchTime = Date.now();
 
     return this;
+  };
+
+  AppWindow.prototype.requestRender = function() {
+    this.publish('requestrender');
   };
 
   /**
@@ -479,7 +483,7 @@
    * Render the mozbrowser iframe and some overlays.
    * @inner
    */
-  AppWindow.prototype._render = function aw__render() {
+  AppWindow.prototype._render = function aw__render(x, y, w, h) {
     if (this.element) {
       return;
     }
@@ -512,6 +516,12 @@
     if (this.isFullScreen()) {
       this.element.classList.add('fullscreen-app');
     }
+    if (w && h) {
+      this.element.style.top = x + 'px';
+      this.element.style.left = y + 'px';
+      this.element.style.width = w + 'px';
+      this.element.style.height = h + 'px';
+    }
 
     this.element.appendChild(this.browser.element);
     this.screenshotOverlay = this.element.querySelector('.screenshot-overlay');
@@ -532,7 +542,7 @@
   };
 
   AppWindow.prototype.render = function aw_render() {
-    this._render();
+    this._render.apply(this, arguments);
     this._registerEvents();
     this.installSubComponents();
     // Pre determine the rotation degree.
@@ -559,14 +569,15 @@
      'mozbrowserloadend', 'mozbrowseractivitydone', 'mozbrowserloadstart',
      'mozbrowsertitlechange', 'mozbrowserlocationchange',
      'mozbrowsericonchange',
-     '_localized', '_swipein', '_swipeout', '_kill_suspended'];
+     '_localized', '_swipein', '_swipeout', '_kill_suspended', '_toback'];
 
   AppWindow.SUB_COMPONENTS = {
     'transitionController': window.AppTransitionController,
     'modalDialog': window.AppModalDialog,
     'authDialog': window.AppAuthenticationDialog,
     'contextmenu': window.BrowserContextMenu,
-    'childWindowFactory': window.ChildWindowFactory
+    'childWindowFactory': window.ChildWindowFactory,
+    'resizer': window.WindowResizer
   };
 
   AppWindow.prototype.openAnimation = 'enlarge';
@@ -1527,6 +1538,20 @@
       app = app.childWindow;
     }
     return app;
+  };
+
+  AppWindow.prototype.toFront = function() {
+    this.publish('tofront');
+    this.element.classList.add('focus');
+    this.setVisible(true);
+  };
+
+  AppWindow.prototype._handle__toback = function() {
+    this.toBack();
+  };
+
+  AppWindow.prototype.toBack = function() {
+    this.element.classList.remove('focus');
   };
 
   exports.AppWindow = AppWindow;

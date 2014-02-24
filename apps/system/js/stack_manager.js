@@ -2,6 +2,7 @@
 
 var StackManager = {
   init: function sm_init() {
+    new AppTaskManager(this);
     window.addEventListener('appcreated', this);
     window.addEventListener('launchapp', this);
     window.addEventListener('appopening', this);

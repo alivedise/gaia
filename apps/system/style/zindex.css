@@ -169,6 +169,7 @@
 
 
 /* Level 7: Dialog Module */
+#screen > [data-z-index-level="app-task-manager"],
 #screen > [data-z-index-level="dialog-overlay"],
 #screen > [data-z-index-level="value-selector"],
 #screen > [data-z-index-level="ime-layout-dialog"],
@@ -196,6 +197,10 @@
  * - app frame must be on top of homescreen frame, inactive or active.
  * - finally, everything else needs to be on top of them (hence the lowest nums)
  */
+#screen > [data-z-index-level="app"] > .appWindow.focus.active:not(.homescreen) {
+  z-index: 9;
+}
+
 #screen > [data-z-index-level="app"] > .appWindow[data-z-index-level="top-app"],
 #screen > [data-z-index-level="app"] > .appWindow.out-to-right {
   z-index: 8;

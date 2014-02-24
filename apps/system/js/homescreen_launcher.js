@@ -80,7 +80,7 @@
         case 'appopened':
           // XXX: Remove the dependency in trustedUI rework.
           if (!TrustedUIManager.hasTrustedUI(evt.detail.origin)) {
-            this.getHomescreen().fadeOut();
+            //this.getHomescreen().fadeOut();
           }
           break;
       }
