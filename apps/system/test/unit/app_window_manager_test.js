@@ -383,13 +383,12 @@ suite('system/AppWindowManager', function() {
       assert.isTrue(stub_updateActiveApp.called);
     });
 
-    test('Contiunous app open requests', function() {
+    test('Continunous app open requests', function() {
       injectRunningApps(home, app1, app2);
-      AppWindowManager.displayedApp = home.origin;
       AppWindowManager._activeApp = home;
 
-      AppWindowManager.display(app1.origin);
-      AppWindowManager.display(app2.origin);
+      AppWindowManager.display(app1);
+      AppWindowManager.display(app2);
 
       assert.deepEqual(AppWindowManager._activeApp, app2);
     });

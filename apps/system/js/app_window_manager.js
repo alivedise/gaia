@@ -109,8 +109,7 @@
       var switching = appCurrent && !appCurrent.isHomescreen &&
                       !appNext.isHomescreen;
 
-      this._updateActiveApp(appNext.isHomescreen ?
-          HomescreenLauncher.origin : appNext.origin);
+      this._updateActiveApp(appNext.instanceID);
 
       if (appCurrent && LayoutManager.keyboardEnabled) {
         // Ask keyboard to hide before we switch the app.
