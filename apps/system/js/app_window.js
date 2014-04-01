@@ -2,7 +2,7 @@
 'use strict';
 
 (function(exports) {
-  var DEBUG = false;
+  var DEBUG = true;
   var _id = 0;
 
   /**
@@ -1009,7 +1009,7 @@
 
   AppWindow.prototype.determineClosingRotationDegree =
     function aw__determineClosingRotationDegree() {
-      if (!this.manifest) {
+      if (!this.manifest || this.isHomescreen) {
         return 0;
       }
 
@@ -1017,7 +1017,7 @@
       var homeOrientation = self.OrientationManager.defaultOrientation;
       var currentOrientation = self.OrientationManager
         .fetchCurrentOrientation();
-      this.debug(currentOrientation);
+      this.debug('Current device orientation is ', currentOrientation);
       var table = OrientationRotationTable[homeOrientation];
       var degree = table[OrientationRotationArray.indexOf(currentOrientation)];
       return Math.abs(360 - degree) % 360;

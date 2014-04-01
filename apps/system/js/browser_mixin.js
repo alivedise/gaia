@@ -30,8 +30,10 @@
      *                             after we get next paint event.
      */
     waitForNextPaint: function bm_waitForNextPaint(callback) {
-      if (!this.browser || !this.browser.element) {
+      this._dump();
+      if (!this.browser || !this.browser.element || !this.loaded) {
         if (callback) {
+          elf.debug('Not loaded, callback right away');
           callback();
         }
         return;
