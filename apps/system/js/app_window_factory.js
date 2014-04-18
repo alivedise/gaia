@@ -149,6 +149,7 @@
      * @memberof AppWindowFactory.prototype
      */
     launch: function awf_launch(config) {
+      console.log('alive', config.url, window.location.href);
       if (config.url === window.location.href) {
         return;
       }

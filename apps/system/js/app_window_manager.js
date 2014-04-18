@@ -1,6 +1,6 @@
 'use strict';
 (function(window) {
-  var DEBUG = false;
+  var DEBUG = true;
   var screenElement = document.getElementById('screen');
 
   /**
@@ -313,6 +313,7 @@
     },
 
     handleEvent: function awm_handleEvent(evt) {
+      this.debug('handling ' + evt.type);
       var activeApp = this._activeApp;
       switch (evt.type) {
         case 'system-resize':

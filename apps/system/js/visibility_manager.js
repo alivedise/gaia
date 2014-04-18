@@ -2,7 +2,7 @@
 'use strict';
 
 (function(exports) {
-  var DEBUG = false;
+  var DEBUG = true;
   /**
    * VisibilityManager manages visibility events and broadcast
    * to AppWindowManager.
@@ -26,7 +26,9 @@
       'attentionscreenhide',
       'status-active',
       'status-inactive',
-      'mozChromeEvent'
+      'mozChromeEvent',
+      'appclosing',
+      'homescreenopening'
     ];
   };
 
@@ -47,21 +49,26 @@
       clearTimeout(this._attentionScreenTimer);
     }
     switch (evt.type) {
+      case 'appclosing':
+      case 'homescreenopening':
+        console.log('set audio channel to false');
+        this._normalAudioChannelActive = false;
+        console.log(this._normalAudioChannelActive);
+        break;
       case 'status-active':
       case 'attentionscreenhide':
       case 'will-unlock':
         if (window.lockScreen && window.lockScreen.locked) {
+          this.publish('showlockscreenwindow');
           return;
         }
 
-        this.publish('showwindows');
         if (!AttentionScreen.isFullyVisible()) {
           this.publish('showwindow', { type: evt.type });
         }
         this._resetDeviceLockedTimer();
         break;
       case 'lock':
-        this.publish('hidewindows');
         // If the audio is active, the app should not set non-visible
         // otherwise it will be muted.
         // TODO: Remove this hack.
@@ -86,6 +93,7 @@
         break;
       case 'mozChromeEvent':
         if (evt.detail.type == 'visible-audio-channel-changed') {
+          console.log('alive:', evt.detail.channel);
           this._resetDeviceLockedTimer();
 
           if (this._normalAudioChannelActive &&
