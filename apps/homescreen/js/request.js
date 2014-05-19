@@ -1,117 +1,128 @@
 
 'use strict';
 
-var Permissions = (function() {
-  // A queue of pending requests.
-  // Callers must be careful not to create an infinite loop!
-  var pending = [];
+var ConfirmDialog = (function() {
 
-  var screen = null;
-  var dialog = null;
-  var header = null;
-  var message = null;
-  var yes = null;
-  var no = null;
+  var dialog, titleElem, messageElem, cancelButton, confirmButton;
+
+  var _ = navigator.mozL10n.get;
+
+  function initialize() {
+    dialog = document.getElementById('confirm-dialog');
+
+    titleElem = document.getElementById('confirm-dialog-title');
+    messageElem = document.getElementById('confirm-dialog-message');
+
+    cancelButton = document.getElementById('confirm-dialog-cancel-button');
+    confirmButton = document.getElementById('confirm-dialog-confirm-button');
+  }
+
+  initialize();
 
   return {
-    hide: function permissions_hide() {
-      if (screen === null)
-        return;
+    hide: function dialog_hide() {
+      cancelButton.onclick = confirmButton.onclick = null;
 
-      document.body.removeChild(screen);
-      screen = null;
-      dialog = null;
-      header = null;
-      message = null;
-      yes = null;
-      no = null;
-      pending = [];
+      var classList = dialog.classList;
+      if (classList.contains('show')) {
+        dialog.addEventListener('transitionend', function transitionend() {
+          dialog.removeEventListener('transitionend', transitionend);
+          classList.remove('visible');
+        });
+        classList.remove('show');
+      }
     },
 
-    show: function permissions_show(title, msg, yescallback, nocallback) {
-      if (screen === null) {
-        screen = document.createElement('div');
-        screen.id = 'permission-screen';
+    show: function dialog_show(title, msg, cancel, confirm) {
+      titleElem.textContent = title;
+      messageElem.textContent = msg;
 
-        dialog = document.createElement('div');
-        dialog.id = 'permission-dialog';
-        screen.appendChild(dialog);
+      cancelButton.textContent = cancel.title;
+      confirmButton.textContent = confirm.title;
 
-        header = document.createElement('p');
-        header.id = 'permission-title';
-        dialog.appendChild(header);
+      cancelButton.className = '';
+      confirmButton.className = '';
 
-        message = document.createElement('p');
-        message.id = 'permission-message';
-        dialog.appendChild(message);
-
-        no = document.createElement('button');
-        no.appendChild(document.createTextNode('Cancel'));
-        no.id = 'permission-no';
-        dialog.appendChild(no);
-
-        yes = document.createElement('button');
-        yes.appendChild(document.createTextNode('Remove'));
-        yes.id = 'permission-yes';
-        dialog.appendChild(yes);
-
-        document.body.appendChild(screen);
+      if (cancel.applyClass) {
+        cancelButton.classList.add(cancel.applyClass);
+      }
+      if (confirm.applyClass) {
+        confirmButton.classList.add(confirm.applyClass);
       }
 
-      // If there is already a pending permission request, queue this one
-      if (screen.classList.contains('visible')) {
-        pending.push({
-          header: title,
-          message: msg,
-          yescallback: yescallback,
-          nocallback: nocallback
-        });
-        return;
-      }
-
-      // Put the message in the dialog.
-      // Note plain text since this may include text from
-      // untrusted app manifests, for example.
-      header.textContent = title;
-      message.textContent = msg;
-
-      // Make the screen visible
-      screen.classList.add('visible');
-      // Put the dialog in the middle of the screen
-      dialog.style.marginTop = -dialog.offsetHeight / 2 + 'px';
-
-      // This is the event listener function for the buttons
       function clickHandler(evt) {
-        // cleanup the event handlers
-        yes.removeEventListener('click', clickHandler);
-        no.removeEventListener('click', clickHandler);
-
-        // Hide the dialog
-        screen.classList.remove('visible');
-
-        // Call the appropriate callback, if it is defined
-        if (evt.target === yes && yescallback) {
-          yescallback();
-        } else if (evt.target === no && nocallback) {
-          nocallback();
-        }
-
-        // And if there are pending permission requests, trigger the next one
-        if (pending.length > 0) {
-          var request = pending.shift();
-          window.setTimeout(function() {
-            Permissions.show(request.header,
-                            request.message,
-                            request.yescallback,
-                            request.nocallback);
-          });
-        }
+        evt.target === confirmButton ? confirm.callback() : cancel.callback();
+        return false;
       }
 
-      // Set event listeners for the yes and no buttons
-      yes.addEventListener('click', clickHandler);
-      no.addEventListener('click', clickHandler);
-    }
-  };
-}());
+      dialog.classList.add('visible');
+      setTimeout(function animate() {
+        dialog.addEventListener('transitionend', function transitionend() {
+          dialog.removeEventListener('transitionend', transitionend);
+          cancelButton.onclick = confirmButton.onclick = clickHandler;
+        });
+        dialog.classList.add('show');
+      }, 50); // Give the opportunity to paint the UI component
+    },
 
+    showApp: function dialog_showApp(icon) {
+      var title, body, app = icon.app;
+
+      var cancel = {
+        title: _('cancel'),
+        callback: function onCancel() {
+          ConfirmDialog.hide();
+          var evt = new CustomEvent('confirmdialog', {
+            'detail': {
+              'action': 'cancel',
+              'app': app
+            }
+          });
+          window.dispatchEvent(evt);
+        }
+      };
+
+      var confirm = {
+        callback: function onAccept() {
+          ConfirmDialog.hide();
+          if (app.type === GridItemsFactory.TYPE.COLLECTION) {
+            app.uninstall();
+          } else {
+            navigator.mozApps.mgmt.uninstall(app);
+          }
+
+          var evt = new CustomEvent('confirmdialog', {
+            'detail': {
+              'action': 'confirm',
+              'app': app
+            }
+          });
+          window.dispatchEvent(evt);
+        },
+        applyClass: 'danger'
+      };
+
+      // Show a different prompt if the user is trying to remove
+      // a bookmark shortcut instead of an app.
+      var nameObj = {
+        name: icon.getName()
+      };
+
+      if (app.type === GridItemsFactory.TYPE.COLLECTION) {
+        title = _('remove-title-2', nameObj);
+        body = _('remove-body', nameObj);
+        confirm.title = _('remove');
+      } else {
+        // Make sure to get the localized name
+        title = _('delete-title', nameObj);
+        body = _('delete-body', nameObj);
+        confirm.title = _('delete');
+      }
+
+      this.show(title, body, cancel, confirm);
+    },
+
+    init: initialize
+  };
+
+}());

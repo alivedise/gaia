@@ -1,210 +1,136 @@
-(function(window) {
-  if (typeof(Calendar) === 'undefined') {
-    window.Calendar = {};
+Calendar.ns('Views').MonthsDay = (function() {
+  'use strict';
+
+  var Parent = Calendar.Views.DayChild,
+      template = Calendar.Templates.MonthsDay;
+
+  function MonthsDay() {
+    Parent.apply(this, arguments);
   }
 
-  if (typeof(Calendar.Views) === 'undefined') {
-    Calendar.Views = {};
-  }
+  MonthsDay.prototype = {
+    __proto__: Parent.prototype,
 
-  var template = Calendar.Templates.Day;
+    renderAllHours: false,
 
-  function Day(options) {
-    var key;
+    selectors: {
+      element: '#months-day-view',
+      events: '.day-events',
+      currentDate: '#event-list-date',
+      emptyMessage: '#empty-message'
+    },
 
-    for (key in options) {
-      if (options.hasOwnProperty(key)) {
-        this[key] = options[key];
-      }
-    }
+    get element() {
+      return this._findElement('element');
+    },
 
-    this._initEvents();
-  }
+    get events() {
+      return this._findElement('events');
+    },
 
-  function getEl(selectorName, elName) {
-    var selector;
-    if (!this[elName]) {
-      selector = this[selectorName];
-      this[elName] = document.body.querySelector(selector);
-    }
-    return this[elName];
-  }
+    get currentDate() {
+      return this._findElement('currentDate');
+    },
 
-  Day.prototype = {
+    get emptyMessage() {
+      return this._findElement('emptyMessage');
+    },
 
-    /**
-     * Hack this should be localized.
-     */
-    dayNames: [
-      'Sunday',
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday'
-    ],
+    get allDayElement() {
+      return this.events;
+    },
 
-    /**
-     * Hack this should be localized.
-     */
-    monthNames: [
-      'January',
-      'Feburary',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December'
-    ],
+    changeDate: function(date) {
+      Parent.prototype.changeDate.apply(this, arguments);
+      var l10n = navigator.mozL10n;
+      this.currentDate.innerHTML =
+        l10n.get('weekday-' + date.getDay() + '-long') + ', ' +
+        l10n.get('month-' + date.getMonth() + '-short') + ' ' +
+        date.getDate();
 
-    headerSelector: '#selected-day-title',
-    eventsSelector: '#event-list',
+      var children = this.events.children;
+      this.emptyMessage.classList.toggle(
+        'active',
+        !children || children.length === 0
+      );
+    },
 
     _initEvents: function() {
-      var self = this;
-
-      this.controller.on('selectedDayChange', function() {
-        self._updateEvents();
-        self._updateHeader();
+      this.controller.on('selectedDayChange', this);
+      this.delegate(this.events, 'click', '[data-id]', function(e, target) {
+        Calendar.App.router.show('/event/show/' + target.dataset.id + '/');
       });
     },
 
-    eventsElement: function() {
-      return getEl.call(this, 'eventsSelector', '_eventsEl');
-    },
+    /**
+     * Overriddes Calendar.Views.DayChild#_renderEvent so that we can use
+     * our own event template which has diverged from the default day event.
+     */
+    _renderEvent: function(busytime, event, hour) {
+      var attendees;
+      var classes;
 
-    headerElement: function() {
-      return getEl.call(this, 'headerSelector', '_headerEl');
-    },
-
-    _updateHeader: function(date) {
-      date = date || this.controller.selectedDay;
-      var header = [
-        this.dayNames[date.getDay()],
-        this.monthNames[date.getMonth()],
-        date.getDate()
-      ].join(' ');
-
-      this.headerElement().textContent = header;
-    },
-
-    _renderDay: function(date) {
-      var events = this.controller.eventList,
-          eventItems = events.eventsForDay(date),
-          self = this,
-          eventHtml = [],
-          groupsByHour = [];
-
-      if (eventItems.length === 0) {
-        return '';
+      if (event.remote.alarms && event.remote.alarms.length) {
+        classes = 'has-alarms';
       }
 
-      var sorted = eventItems.sort(function(a, b) {
-        var aHour = a.date.getHours(),
-            bHour = b.date.getHours();
-
-        if (aHour === bHour) {
-          return 0;
-        }
-
-        if (aHour < bHour) {
-          return -1;
-        } else {
-          return 1;
-        }
-
-      });
-
-      var lastHour,
-          batch = [];
-
-      sorted.forEach(function(item) {
-        var hour = item.date.getHours();
-
-        if (hour != lastHour) {
-          lastHour = hour;
-          if (batch.length > 0) {
-            eventHtml.push(self._renderEventsForHour(batch));
-            batch = [];
-          }
-        }
-
-        batch.push(item);
-      });
-
-      eventHtml.push(self._renderEventsForHour(batch));
-
-      return eventHtml.join('');
-    },
-
-    _formatHour: function(hour) {
-      newHour = hour;
-      if (hour > 12) {
-        var newHour = (hour - 12) || 12;
-        return String(newHour) + ' pm';
-      } else {
-        if (hour == 0) {
-          hour = 12;
-        }
-        return String(hour) + 'am';
+      if (event.remote.attendees) {
+        attendees = this._renderAttendees(
+          event.remote.attendees
+        );
       }
-    },
-
-    _renderEventsForHour: function(group) {
-      var eventHtml = [],
-          hour = group[0].date.getHours();
-
-      group.forEach(function(item) {
-        eventHtml.push(this._renderEventDetails(item.event));
-      }.bind(this));
-
-      return template.hour.render({
-        hour: hour,
-        items: eventHtml.join('')
-      });
-    },
-
-    _renderEventDetails: function(object) {
-      var name = object.name,
-          location = object.location,
-          attendees = object.attendees;
 
       return template.event.render({
-        title: name,
-        location: location,
-        attendees: this._renderAttendees(attendees)
+        classes: classes,
+        busytimeId: busytime._id,
+        calendarId: event.calendarId,
+        title: event.remote.title,
+        location: event.remote.location,
+        attendees: attendees,
+        startTime: Calendar.App.dateFormat.localeFormat(
+          event.remote.startDate, navigator.mozL10n.get('shortTimeFormat')),
+        endTime: Calendar.App.dateFormat.localeFormat(
+          event.remote.endDate, navigator.mozL10n.get('shortTimeFormat')),
+        isAllDay: hour === Calendar.Calc.ALLDAY
       });
     },
 
-    _renderAttendees: function(list) {
-      if (!(list instanceof Array)) {
-        list = [list];
-      }
+    handleEvent: function(e) {
+      Parent.prototype.handleEvent.apply(this, arguments);
 
-      return template.attendee.renderEach(list).join(',');
+      switch (e.type) {
+        case 'selectedDayChange':
+          this.changeDate(e.data[0], true);
+          break;
+      }
     },
 
-    _updateEvents: function(date) {
-      var date = date || this.controller.selectedDay;
-      var html = this._renderDay(date);
+    add: function() {
+      Parent.prototype.add.apply(this, arguments);
 
-      this.eventsElement().innerHTML = html;
+      // If we were showing "No Events" before,
+      // we should remove it now.
+      this.emptyMessage.classList.remove('active');
+    },
+
+    remove: function() {
+      Parent.prototype.remove.apply(this, arguments);
+      // If the only event today was just removed,
+      // we should add the "No Events" label.
+      var children = this.events.children;
+      if (!children || children.length === 0) {
+        this.emptyMessage.classList.add('active');
+      }
     },
 
     render: function() {
-      var now = new Date();
-      this._updateHeader(now);
-      this._updateEvents(now);
+      this._initEvents();
+      var date = Calendar.Calc.createDay(new Date());
+      this.changeDate(date);
     }
-
   };
 
-  Calendar.Views.MonthsDay = Day;
+  MonthsDay.prototype.onfirstseen = MonthsDay.prototype.render;
 
-}(this));
+  return MonthsDay;
+}());

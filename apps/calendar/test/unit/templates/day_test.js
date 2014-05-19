@@ -1,8 +1,8 @@
-requireApp('calendar/js/template.js');
-requireApp('calendar/js/templates/day.js');
+suiteGroup('Templates.Day', function() {
+  'use strict';
 
-suite('templates/day', function() {
   var subject;
+  var dynamicClass = 'happy-class';
 
   suiteSetup(function() {
     subject = Calendar.Templates.Day;
@@ -39,16 +39,22 @@ suite('templates/day', function() {
   test('event', function() {
     var result = renderHTML('event', {
       title: 'titlez',
-      location: 'sos',
-      attendees: a()
+      location: 'sos'
     });
 
     assert.ok(result);
 
+    assert.ok(result.indexOf(dynamicClass) === -1);
     assert.include(result, 'titlez');
     assert.include(result, 'sos');
-    assert.include(result, a());
   });
 
-});
+  test('event with classes', function() {
+    var result = renderHTML('event', {
+      classes: dynamicClass
+    });
 
+    assert.ok(result);
+    assert.include(result, dynamicClass);
+  });
+});

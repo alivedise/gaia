@@ -1,201 +1,642 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
-'use strict';
+/* globals ContactPhotoHelper, Notification, Threads*/
 
-// Based on Resig's pretty date
-var localeStr = document.mozL10n.get;
-function prettyDate(time) {
-
-  switch (time.constructor) {
-    case String:
-      time = parseInt(time);
-      break;
-    case Date:
-      time = time.getTime();
-      break;
-  }
-
-  var diff = (Date.now() - time) / 1000;
-  var day_diff = Math.floor(diff / 86400);
-
-  if (isNaN(day_diff))
-    return '(incorrect date)';
-
-  if (day_diff < 0 || diff < 0) {
-    // future time
-    return (new Date(time)).toLocaleFormat('%x %R');
-  }
-
-  return day_diff == 0 && (
-    diff < 60 && localeStr('justNow') ||
-    diff < 120 && localeStr('aMinuteAgo') ||
-    diff < 3600 && Math.floor(diff / 60) + ' ' + localeStr('minutesAgo') ||
-    diff < 7200 && localeStr('anHourAgo') ||
-    diff < 86400 && Math.floor(diff / 3600) + ' ' + localeStr('hoursAgo')) ||
-    day_diff == 1 && localeStr('yesterday') ||
-    day_diff < 7 && (new Date(time)).toLocaleFormat('%A') ||
-    (new Date(time)).toLocaleFormat('%x');
-}
-
-(function() {
-  var updatePrettyDate = function updatePrettyDate() {
-    var labels = document.querySelectorAll('[data-time]');
-    var i = labels.length;
-    while (i--) {
-      labels[i].textContent = prettyDate(labels[i].dataset.time);
-    }
+(function(exports) {
+  'use strict';
+  var rdashes = /-(.)/g;
+  var rescape = /[.?*+^$[\]\\(){}|-]/g;
+  var rparams = /([^?=&]+)(?:=([^&]*))?/g;
+  var rnondialablechars = /[^,#+\*\d]/g;
+  var downsamplingRefSize = {
+    // Estimate average Thumbnail size:
+    // 120 X 60 (max pixel) X 3 (full color) / 20 (average jpeg compress ratio)
+    // = 1080 (byte)
+    'thumbnail' : 1080
+    // TODO: For mms resizing
   };
-  var timer = setInterval(updatePrettyDate, 60 * 1000);
 
-  document.addEventListener('mozvisibilitychange', function visibility(e) {
-    clearTimeout(timer);
-    if (!document.mozHidden) {
-      updatePrettyDate();
-      timer = setInterval(updatePrettyDate, 60 * 1000);
-    }
-  });
-})();
-
-/* ***********************************************************
-
-  Code below are for desktop testing!
-
-*********************************************************** */
-
-if (!navigator.mozSms) {
-  // We made up a fake database on
-  var messagesHack = [];
-  (function() {
-    var messages = [
-      {
-        sender: null,
-        receiver: '1-977-743-6797',
-        body: 'Nothing :)',
-        delivery: 'sent',
-        id: 41,
-        timestamp: new Date(Date.now() - 44000000)
-      },
-      {
-        sender: '1-977-743-6797',
-        body: 'Hey! What\s up?',
-        delivery: 'received',
-        id: 40,
-        timestamp: new Date(Date.now() - 50000000)
+  var Utils = {
+    date: {
+      shared: new Date(),
+      get format() {
+        // Remove the accessor
+        delete Utils.date.format;
+        // Late initialization allows us to safely mock the mozL10n object
+        // without creating race conditions or hard script dependencies
+        return (Utils.date.format = new navigator.mozL10n.DateTimeFormat());
       }
-    ];
+    },
+    escapeRegex: function ut_escapeRegex(str) {
+      if (typeof str !== 'string') {
+        return '';
+      }
+      return str.replace(rescape, '\\$&');
+    },
+    getFormattedHour: function ut_getFormattedHour(time) {
+      this.date.shared.setTime(+time);
+      return this.date.format.localeFormat(
+        this.date.shared, navigator.mozL10n.get('shortTimeFormat')
+      );
+    },
+    getDayDate: function re_getDayDate(time) {
+      this.date.shared.setTime(+time);
+      this.date.shared.setHours(0, 0, 0, 0);
+      return this.date.shared.getTime();
+    },
+    getHeaderDate: function ut_giveHeaderDate(time) {
+      var _ = navigator.mozL10n.get;
+      var today = Utils.getDayDate(Date.now());
+      var otherDay = Utils.getDayDate(time);
+      var dayDiff = (today - otherDay) / 86400000;
+      this.date.shared.setTime(+time);
 
-    for (var i = 0; i < 40; i++) {
-      messages.push({
-        sender: '1-488-678-3487',
-        body: 'Hello world!',
-        delivery: 'received',
-        id: 39 - i,
-        timestamp: new Date(Date.now() - 60000000)
-      });
-    }
+      if (isNaN(dayDiff)) {
+        return _('incorrectDate');
+      }
 
-    messagesHack = messages;
-  })();
+      if (dayDiff < 0) {
+        // future time
+        return this.date.format.localeFormat(
+          this.date.shared, '%x'
+        );
+      }
 
-  var GetMessagesHack = function gmhack(callback, filter, invert) {
-    function applyFilter(msgs) {
-      if (!filter)
-        return msgs;
+      return dayDiff === 0 && _('today') ||
+        dayDiff === 1 && _('yesterday') ||
+        dayDiff < 6 && this.date.format.localeFormat(this.date.shared, '%A') ||
+        this.date.format.localeFormat(this.date.shared, '%x');
+    },
+    getFontSize: function ut_getFontSize() {
+      if (!this.rootFontSize) {
+        var htmlCss = window.getComputedStyle(document.documentElement, null);
+        this.rootFontSize = parseInt(htmlCss.getPropertyValue('font-size'), 10);
+      }
+      return this.rootFontSize;
+    },
 
-      if (filter.numbers) {
-        msgs = msgs.filter(function(element, index, array) {
-          var num = filter.numbers;
-          return (num && (num.indexOf(element.sender) != -1 ||
-                          num.indexOf(element.receiver) != -1));
+    // We will apply createObjectURL for details.photoURL if contact image exist
+    // Please remember to revoke the photoURL after utilizing it.
+    getContactDetails:
+      function ut_getContactDetails(number, contacts, include) {
+      var _ = navigator.mozL10n.get;
+      var details = {};
+
+      include = include || {};
+
+      function updateDetails(contact) {
+        var name, phone, carrier, i, length, subscriber, org;
+        name = contact.name[0];
+        org = contact.org && contact.org[0];
+        length = contact.tel ? contact.tel.length : 0;
+        phone = length && contact.tel[0].value ? contact.tel[0] : {
+          value: '',
+          type: '',
+          carrier: ''
+        };
+        carrier = phone.carrier;
+        subscriber = number.length > 7 ? number.substr(-8) : number;
+
+        // Check which of the contacts phone number are we using
+        for (i = 0; i < length; i++) {
+          // Based on E.164 (http://en.wikipedia.org/wiki/E.164)
+          if (contact.tel[i].value.indexOf(subscriber) !== -1) {
+            phone = contact.tel[i];
+            carrier = phone.carrier;
+            break;
+          }
+        }
+
+        // Add data values for contact activity interaction
+        details.isContact = true;
+
+        // Add photo
+        if (include.photoURL) {
+          var photo = ContactPhotoHelper.getThumbnail(contact);
+          if (photo) {
+            details.photoURL = window.URL.createObjectURL(photo);
+          }
+        }
+
+        // Carrier logic
+        if (name) {
+          // Check if other phones with same type and carrier
+          // Convert the tel-type to string before tel-type comparison.
+          // TODO : We might need to handle multiple tel type in the future.
+          for (i = 0; i < length; i++) {
+            var telType = contact.tel[i].type && contact.tel[i].type.toString();
+            var phoneType = phone.type && phone.type.toString();
+            if (contact.tel[i].value !== phone.value &&
+                telType === phoneType &&
+                contact.tel[i].carrier === phone.carrier) {
+              carrier = phone.value;
+            }
+          }
+        }
+
+        details.name = name;
+        details.carrier = carrier || phone.value || '';
+        // We pick the first discovered org name as the phone number's detail
+        // org information.
+        details.org = details.org || org;
+
+        if (phone.type) {
+          details.carrier =
+            phone.type + (_('thread-separator') || ' | ') + details.carrier;
+        }
+      }
+
+      // In no contact or contact with empty information cases, we will leave
+      // the title as the empty string and let caller to decide the title.
+      if (!contacts || (Array.isArray(contacts) && contacts.length === 0)) {
+        details.title = '';
+      } else if (!Array.isArray(contacts)) {
+        updateDetails(contacts);
+        details.title = details.name || details.org;
+      } else {
+        // Rule for fetching details with multiple contact entries:
+        // 1) If we got more than 1 contact entry, find another entry if
+        //    current entry got no name/company.
+        // 2) If we could not get any information from all the entries,
+        //    just display phone number.
+        for (var i = 0, l = contacts.length; i < l; i++) {
+          updateDetails(contacts[i]);
+          if (details.name) {
+            break;
+          }
+        }
+        details.title = details.name || details.org;
+      }
+
+      return details;
+    },
+
+    getCarrierTag: function ut_getCarrierTag(input, tels, details) {
+      /**
+        1. If a phone number has carrier associated with it
+            the output will be:
+
+          type | carrier
+
+        2. If there is no carrier associated with the phone number
+            the output will be:
+
+          type | phonenumber
+
+        3. If for some reason a single contact has two phone numbers with
+            the same type and the same carrier the output will be:
+
+          type | phonenumber
+
+        4. If for some reason a single contact has no name and no carrier,
+            the output will be:
+
+          type
+
+        5. If for some reason a single contact has no name, no type
+            and no carrier, the output will be nothing.
+      */
+      var length = tels.length;
+      var hasDetails = typeof details !== 'undefined';
+      var hasUniqueCarriers = true;
+      var hasUniqueTypes = true;
+      var name = hasDetails ? details.name : '';
+      var found, tel, type, carrier, value, ending;
+      var _ = navigator.mozL10n.get;
+
+      for (var i = 0; i < length; i++) {
+        tel = tels[i];
+
+        if (tel.value && Utils.probablyMatches(tel.value, input)) {
+          found = tel;
+        }
+
+        if (carrier && carrier === tel.carrier) {
+          hasUniqueCarriers = false;
+        }
+
+        if (type && type === tel.type[0]) {
+          hasUniqueTypes = false;
+        }
+
+        carrier = tel.carrier;
+        type = (tel.type && tel.type[0]) || '';
+      }
+
+      if (!found) {
+        return '';
+      }
+
+      type = (found.type && found.type[0]) || '';
+      // Non localized label is better than a blank string
+      type = type && _(type) || type;
+      carrier = (hasUniqueCarriers || hasUniqueTypes) ? found.carrier : '';
+      value = carrier || found.value;
+      ending = (carrier || value);
+
+      if (hasDetails && !name && !carrier) {
+        ending = '';
+      }
+
+      if (type && ending) {
+        return _('thread-header', {
+          numberType: type,
+          numberDetail: ending
         });
+      } else {
+        return type + ending;
+      }
+    },
+
+    // Based on "non-dialables" in https://github.com/andreasgal/PhoneNumber.js
+    //
+    // @param {String} input Value to remove nondialiable chars from.
+    //
+    removeNonDialables: function ut_removeNonDialables(input) {
+      return input.replace(rnondialablechars, '');
+    },
+    // @param {String} a First recipient field.
+    // @param {String} b Second recipient field
+    //
+    // Based on...
+    //  - ITU-T E.123 (http://www.itu.int/rec/T-REC-E.123-200102-I/)
+    //  - ITU-T E.164 (http://www.itu.int/rec/T-REC-E.164-201011-I/)
+    //
+    // ...It would appear that a maximally-minimal
+    // 7 digit comparison is safe.
+    probablyMatches: function ut_probablyMatches(a, b) {
+      var service = navigator.mozPhoneNumberService;
+
+      // String comparison starts here
+      if (typeof a !== 'string' || typeof b !== 'string') {
+        return false;
       }
 
-      return msgs;
-    }
+      if (service && service.normalize) {
+        a = service.normalize(a);
+        b = service.normalize(b);
+      } else {
+        a = Utils.removeNonDialables(a);
+        b = Utils.removeNonDialables(b);
+      }
 
-    var msg = messagesHack.slice();
-    if (invert)
-      msg.reverse();
-    callback(applyFilter(msg));
-  };
+      return a === b || a.slice(-7) === b.slice(-7);
+    },
 
-  MessageManager.getMessages = function(callback, filter, invert) {
-    GetMessagesHack(callback, filter, invert);
-    return;
-  };
+    /**
+     * multiRecipientMatch
+     *
+     * Check multi-repients without regard to order
+     *
+     * @param {(String|string[])} a First recipient field.
+     * @param {(String|string[])} b Second recipient field.
+     *
+     * @return {Boolean} Return true if all recipients match.
+     */
+    multiRecipientMatch: function ut_multiRecipientMatch(a, b) {
+      // When ES6 syntax is allowed, replace with
+      // multiRecipientMatch([...a], [...b])
+      a = [].concat(a);
+      b = [].concat(b);
+      var blen = b.length;
+      if (a.length !== blen) {
+        return false;
+      }
+      // Check each recipient in a against each in b
+      // Allows for any order (and fails early)
+      return a.every(function(number) {
+        for (var i = 0; i < blen; i++) {
+          if (Utils.probablyMatches(number, b[i])) {
+            return true;
+          }
+        }
+      });
+    },
 
-  MessageManager.send = function(number, text, callback) {
-    var message = {
-      sender: null,
-      receiver: number,
-      delivery: 'sent',
-      body: text,
-      id: messagesHack.length,
-      timestamp: new Date()
-    };
+    // Default image size limitation is set to 295KB for MMS user story.
+    // If limit is not given or bigger than default 295KB, default value need
+    // to be applied here for size checking. Parameters could be:
+    // (blob, callback) : Resizing image to default limit 295k.
+    // (blob, limit, callback) : Resizing image to given limitation.
+    getResizedImgBlob: function ut_getResizedImgBlob(blob, limit, callback) {
+      var defaultLimit = 295 * 1024;
+      if (typeof limit === 'function') {
+        callback = limit;
+        limit = defaultLimit;
+      }
+      limit = limit === 0 ? defaultLimit : Math.min(limit, defaultLimit);
 
-    var simulateFail = /fail/i.test(text);
-
-    window.setTimeout(function sent() {
-      if (simulateFail) {
-        // simulate failure
-        callback(null);
+      if (blob.size < limit) {
+        setTimeout(function blobCb() {
+          callback(blob);
+        });
         return;
       }
 
-      // simulate success
-      callback(message);
+      var ratio = Math.sqrt(blob.size / limit);
+      Utils._resizeImageBlobWithRatio({
+        blob: blob,
+        limit: limit,
+        ratio: ratio,
+        callback: callback
+      });
+    },
 
-      // the SMS DB is written after the callback
-      window.setTimeout(function writeDB() {
-        messagesHack.unshift(message);
-      }, 90 * Math.random());
-    }, 3000 * Math.random());
+    //  resizeImageBlobWithRatio have additional ratio to force image
+    //  resize to smaller size to avoid edge case about quality adjustment
+    //  not working.
+    //  For JPG images, a ratio between 2 and 8 will be set to a close
+    //  power of 2. A ratio between 1 and 2 will be set to 2. A ratio bigger
+    //  than 8 will be rounded to the closest bigger integer.
+    //
+    _resizeImageBlobWithRatio: function ut_resizeImageBlobWithRatio(obj) {
+      var blob = obj.blob;
+      var callback = obj.callback;
+      var limit = obj.limit;
+      var ratio = Math.ceil(obj.ratio);
+      var qualities = [0.65, 0.5, 0.25];
 
-    if (simulateFail)
-      return;
+      var sampleSize = 1;
+      var sampleSizeHash = '';
 
-    window.setTimeout(function hiBack() {
-      var message = {
-        sender: number,
-        receiver: null,
-        delivery: 'received',
-        body: 'Hi back! ' + text,
-        id: messagesHack.length,
-        timestamp: new Date()
+      if (blob.size < limit || ratio <= 1) {
+        setTimeout(function blobCb() {
+          callback(blob);
+        });
+        return;
+      }
+
+      if (blob.type === 'image/jpeg') {
+        if (ratio >= 8) {
+          sampleSize = 8;
+        } else {
+          sampleSize = ratio = Utils.getClosestSampleSize(ratio);
+        }
+
+        sampleSizeHash = '#-moz-samplesize=' + sampleSize;
+      }
+
+      var img = document.createElement('img');
+      var url = window.URL.createObjectURL(blob);
+      img.src = url + sampleSizeHash;
+
+      img.onload = function onBlobLoaded() {
+        window.URL.revokeObjectURL(url);
+        var targetWidth = img.width * sampleSize / ratio;
+        var targetHeight = img.height * sampleSize / ratio;
+
+        var canvas = document.createElement('canvas');
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        var context = canvas.getContext('2d', { willReadFrequently: true });
+
+        context.drawImage(img, 0, 0, targetWidth, targetHeight);
+        img.src = '';
+        // Bug 889765: Since we couldn't know the quality of the original jpg
+        // The 'resized' image might have a bigger size because it was saved
+        // with quality or dpi. Here we will adjust the jpg quality(or resize
+        // blob again if low quality blob size still exceed limit) to make
+        // sure the size won't exceed the limitation.
+        var level = 0;
+
+        function cleanup() {
+          canvas.width = canvas.height = 0;
+          canvas = null;
+        }
+
+        function ensureSizeLimit(resizedBlob) {
+          if (resizedBlob.size < limit) {
+            cleanup();
+
+            // using a setTimeout so that used objects can be garbage collected
+            // right now
+            setTimeout(callback.bind(null, resizedBlob));
+          } else {
+            resizedBlob = null; // we don't need it anymore
+            // Reduce image quality for match limitation. Here we set quality
+            // to 0.65, 0.5 and 0.25 for image blob resizing.
+            // (Default image quality is 0.92 for jpeg)
+            if (level < qualities.length) {
+              canvas.toBlob(ensureSizeLimit, 'image/jpeg',
+                qualities[level++]);
+            } else {
+              // We will resize the blob if image quality = 0.25 still exceed
+              // size limitation.
+              cleanup();
+
+              // using a setTimeout so that used objects can be garbage
+              // collected right now
+              setTimeout(
+                Utils._resizeImageBlobWithRatio.bind(Utils, {
+                  blob: blob,
+                  limit: limit,
+                  ratio: ratio * 2,
+                  callback: callback
+                })
+              );
+            }
+          }
+        }
+
+        canvas.toBlob(ensureSizeLimit, blob.type);
+      };
+    },
+
+    getClosestSampleSize: function ut_getClosestSampleSize(ratio) {
+      if (ratio >= 8) {
+        return 8;
+      }
+
+      if (ratio >= 4) {
+        return 4;
+      }
+
+      if (ratio >= 2) {
+        return 2;
+      }
+
+      return 1;
+    },
+
+    // Return the url path with #-moz-samplesize postfix and downsampled image
+    // could be loaded directly from backend graphics lib.
+    getDownsamplingSrcUrl: function ut_getDownsamplingSrcUrl(options) {
+      var newUrl = options.url;
+      var size = options.size;
+      var ref = downsamplingRefSize[options.type];
+
+      if (size && ref) {
+        // Estimate average Thumbnail size
+        var ratio = Math.min(Math.sqrt(size / ref), 16);
+
+        if (ratio >= 2) {
+          newUrl += '#-moz-samplesize=' + Math.floor(ratio);
+        }
+      }
+      return newUrl;
+    },
+    camelCase: function ut_camelCase(str) {
+      return str.replace(rdashes, function replacer(str, p1) {
+        return p1.toUpperCase();
+      });
+    },
+    typeFromMimeType: function ut_typeFromMimeType(mime) {
+      var MAX_MIME_TYPE_LENGTH = 256; // ought to be enough for anybody
+      if (typeof mime !== 'string' || mime.length > MAX_MIME_TYPE_LENGTH) {
+        return null;
+      }
+
+      var index = mime.indexOf('/');
+      if (index === -1) {
+        return null;
+      }
+      var mainPart = mime.slice(0, index);
+      switch (mainPart) {
+        case 'image':
+          return 'img';
+        case 'video':
+        case 'audio':
+        case 'text':
+          return mainPart;
+        default:
+          return null;
+      }
+    },
+    params: function(input) {
+      var parsed = {};
+      input.replace(rparams, function($0, $1, $2) {
+        parsed[$1] = $2;
+      });
+      return parsed;
+    },
+    /*
+      Using a contact resolver, a function that can looks for contacts,
+      get the format for the dissambiguation.
+
+      Used mainly in activities since they need to pick a contact from just
+      the number.
+
+      In order to workaround facebook contact issue(bug 895817), it should be
+      able to handle the case about phone number without matched contact.
+
+      Phone number comes directly from the activity in the case we call 'pick'
+      from SMS App.
+    */
+    getContactDisplayInfo: function(resolver, phoneNumber, callback) {
+      resolver(phoneNumber, function onContacts(contacts) {
+        callback(Utils.basicContact(phoneNumber, contacts));
+      });
+    },
+
+    basicContact: function(number, records, callback) {
+      var record;
+      if (Array.isArray(records)) {
+        if (records.length > 0) {
+          record = records[0];
+        }
+      } else if (records !== null) {
+        record = records;
+      }
+
+      // Only exit when no record and no phone number case.
+      if (!record && !number) {
+        if (typeof callback === 'function') {
+          callback(null);
+        }
+        return;
+      }
+
+      var telLength = (record && record.tel) ? record.tel.length : 0;
+      var tel;
+      // Look for the right tel. A record can contains more than
+      // one record, so we need to identify which one is the right one.
+      for (var i = 0; i < telLength; i++) {
+        if (record.tel[i].value === number) {
+          tel = record.tel[i];
+          break;
+        }
+      }
+      // If after looking there is no tel. matching, we apply
+      // directly the number
+      if (!tel) {
+        tel = {type: [''], value: number, carrier: ''};
+      }
+      // Get the title in the standard way
+      var details = Utils.getContactDetails(tel, record);
+      var info = Utils.getDisplayObject(details.title || null, tel);
+
+      return info;
+    },
+
+    /*
+      Given a title for a contact, a the current information for
+      an specific phone, of that contact, creates an object with
+      all the information needed to display data.
+    */
+    getDisplayObject: function(theTitle, tel) {
+      var _ = navigator.mozL10n.get;
+      var number = tel.value;
+      var title = theTitle || number;
+      var type = tel.type && tel.type.length ? tel.type[0] : '';
+      // For both carrierSeparator and separator we want to avoid using an
+      // empty string as separator because of a bad l10n file.
+      var carrierSeparator = _('carrier-separator') || ', ';
+      var carrier = tel.carrier ? (tel.carrier + carrierSeparator) : '';
+      var separator = type || carrier ? (_('thread-separator') || ' | ') : '';
+      var data = {
+        name: title,
+        number: number,
+        type: type,
+        carrier: carrier,
+        separator: separator,
+        nameHTML: '',
+        numberHTML: ''
       };
 
-      var evt = {
-        type: 'received',
-        message: message
-      };
+      return data;
+    },
 
-      ConversationView.handleEvent.call(ConversationView, evt);
-      ConversationListView.handleEvent.call(ConversationView, evt);
+    /*
+      TODO: It's workaround to avoid url revoke bug. Need platform fixing
+            to remove the async load/remove.(Please ref bug 972245)
+    */
+    asyncLoadRevokeURL: function(url) {
+      setTimeout(function() {
+        var image = new Image();
+        image.src = url;
+        image.onload = image.onerror = function revokePhotoURL() {
+          window.URL.revokeObjectURL(this.src);
+        };
+      });
+    },
 
-      // the SMS DB is written after the callback
-      window.setTimeout(function writeDB() {
-        messagesHack.unshift(message);
-      }, 90 * Math.random());
+    /*
+      Helper function for removing notifications. It will fetch the notification
+      using the current threadId or the parameter if provided, and close them
+       from the returned list.
+    */
+    closeNotificationsForThread: function ut_closeNotificationsForThread(tid) {
+      var threadId = tid ? tid : Threads.currentId;
+      if (!threadId) {
+        return;
+      }
 
-    }, 5000 + 3000 * Math.random());
+      var targetTag = 'threadId:' + threadId;
+
+      return Notification.get({tag: targetTag})
+        .then(
+          function onSuccess(notifications) {
+            for (var i = 0; i < notifications.length; i++) {
+              notifications[i].close();
+            }
+          }
+        ).catch(function onError(reason) {
+          console.error('Notification.get(tag: ' + targetTag + '): ', reason);
+        });
+    }
   };
-}
 
-function escapeHTML(str, escapeQuotes) {
-  var span = document.createElement('span');
-  span.textContent = str;
+  exports.Utils = Utils;
 
-  if (escapeQuotes)
-    return span.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
-  return span.innerHTML;
-}
-
-if (!navigator.mozSettings) {
-  window.addEventListener('load', function loadWithoutSettings() {
-    selectedLocale = 'en-US';
-    ConversationView.init();
-    ConversationListView.init();
-  });
-}
+}(this));

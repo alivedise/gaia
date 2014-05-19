@@ -1,132 +1,551 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-
+/* global LazyLoader, AppWindowManager, applications, ManifestHelper*/
+/* global Template*/
 'use strict';
+(function(exports) {
+  /**
+   * Handle Web API permissions such as geolocation, getUserMedia
+   * @class PermissionManager
+   * @requires Applications
+   */
+  function PermissionManager() {
+  }
 
-(function PermissionManager() {
-  window.addEventListener('mozChromeEvent', function handleWebappInstall(evt) {
-    var detail = evt.detail;
-    if (detail.type !== 'webapps-ask-install')
-      return;
+  PermissionManager.prototype = {
 
-    // This is how we say yes or no to the request after the user decides
-    var self = this;
-    function sendResponse(id, allow) {
+    currentOrigin: undefined,
+    permissionType: undefined,
+    currentPermissions: undefined,
+    currentChoices: {}, //select choices
+    fullscreenRequest: undefined,
+    isVideo: false,
+    isAudio: false,
+    responseStatus: undefined,
+    /**
+     * A queue of pending requests. Callers of requestPermission() must be
+     * careful not to create an infinite loop!
+     */
+    pending: [],
 
-      var event = document.createEvent('CustomEvent');
-      event.initCustomEvent('mozContentEvent', true, true, {
-        id: id,
-        type: allow ? 'webapps-install-granted' : 'webapps-install-denied'
+    /**
+     * The ID of the next permission request. This is incremented by one
+     * on every request, modulo some large number to prevent overflow problems.
+     */
+    nextRequestID: 0,
+
+    /**
+     * The ID of the request currently visible on the screen. This has the value
+     * "undefined" when there is no request visible on the screen.
+     */
+    currentRequestId: undefined,
+
+    /**
+     * start the PermissionManager to init variables and listeners
+     * @memberof PermissionManager.prototype
+     */
+    start: function pm_start() {
+      // Div over in which the permission UI resides.
+      this.overlay = document.getElementById('permission-screen');
+      this.dialog = document.getElementById('permission-dialog');
+      this.message = document.getElementById('permission-message');
+      this.moreInfo = document.getElementById('permission-more-info');
+      this.moreInfoLink = document.getElementById('permission-more-info-link');
+      this.hideInfoLink = document.getElementById('permission-hide-info-link');
+      this.moreInfoBox = document.getElementById('permission-more-info-box');
+
+      // "Yes"/"No" buttons on the permission UI.
+      this.yes = document.getElementById('permission-yes');
+      this.no = document.getElementById('permission-no');
+
+      // Remember the choice checkbox
+      this.remember = document.getElementById('permission-remember-checkbox');
+      this.rememberSection =
+        document.getElementById('permission-remember-section');
+      this.devices = document.getElementById('permission-devices');
+
+      var self = this;
+      this.rememberSection.addEventListener('click',
+        function onLabelClick() {
+        self.remember.checked = !self.remember.checked;
       });
-      window.dispatchEvent(event);
-    }
 
-    var app = detail.app;
-    if (document.location.toString().indexOf(app.installOrigin) == 0) {
-      sendResponse(detail.id, true);
-      return;
-    }
+      window.addEventListener('mozChromeEvent', this);
+      /* On home/holdhome pressed, discard permission request.
+       * XXX: We should make permission dialog be embededd in appWindow
+       * Gaia bug is https://bugzilla.mozilla.org/show_bug.cgi?id=853711
+       * Gecko bug is https://bugzilla.mozilla.org/show_bug.cgi?id=852013
+       */
+      this.discardPermissionRequest = this.discardPermissionRequest.bind(this);
+      window.addEventListener('home', this.discardPermissionRequest);
+      window.addEventListener('holdhome', this.discardPermissionRequest);
+    },
 
-    var name = app.manifest.name;
-    var locales = app.manifest.locales;
-    var lang = navigator.language;
-    if (locales && locales[lang] && locales[lang].name)
-      name = locales[lang].name;
+    /**
+     * stop the PermissionManager to reset variables and listeners
+     * @memberof PermissionManager.prototype
+     */
+    stop: function pm_stop() {
+      this.currentOrigin = null;
+      this.permissionType = null;
+      this.currentPermissions = null;
+      this.currentChoices = {};
+      this.fullscreenRequest = null;
+      this.isVideo = false;
+      this.isAudio = false;
 
-    var str = document.mozL10n.get('install', {
-      'name': name, 'origin': app.origin
-    });
-    requestPermission(str, function() { sendResponse(detail.id, true); },
-                           function() { sendResponse(detail.id, false); });
-  });
+      this.responseStatus = null;
+      this.pending = [];
+      this.nextRequestID = null;
+      this.currentRequestId = null;
 
-  var requestPermission = (function() {
-    // A queue of pending requests.
-    // Callers must be careful not to create an infinite loop!
-    var pending = [];
+      this.overlay = null;
+      this.dialog = null;
+      this.message = null;
+      this.moreInfo = null;
+      this.moreInfoLink = null;
+      this.moreInfoBox = null;
 
-    var screen = null;
-    var dialog = null;
-    var message = null;
-    var yes = null;
-    var no = null;
+      this.yes = null;
+      this.no = null;
 
-    return function requestPermission(msg, yescallback, nocallback) {
-      if (screen === null) {
-        screen = document.createElement('div');
-        screen.id = 'permission-screen';
+      this.remember = null;
+      this.rememberSection = null;
+      this.devices = null;
 
-        dialog = document.createElement('div');
-        dialog.id = 'permission-dialog';
-        screen.appendChild(dialog);
+      window.removeEventListener('mozChromeEvent', this);
+      window.removeEventListener('home', this);
+      window.removeEventListener('holdhome', this);
+    },
 
-        message = document.createElement('div');
-        message.id = 'permissions-message';
-        dialog.appendChild(message);
+    /**
+     * Reset current values
+     * @memberof PermissionManager.prototype
+     */
+    cleanDialog: function pm_cleanDialog() {
+      this.permissionType = undefined;
+      this.currentPermissions = undefined;
+      this.isVideo = false;
+      this.isAudio = false;
+      this.currentChoices = {};
+      this.devices.innerHTML = '';
+      if (!this.moreInfoBox.classList.contains('hidden')) {
+        this.moreInfoBox.classList.add('hidden');
+      }
+    },
 
-        yes = document.createElement('button');
-        yes.appendChild(document.createTextNode('Yes'));
-        yes.id = 'permission-yes';
-        dialog.appendChild(yes);
+    /**
+     * Event handler interface for mozChromeEvent.
+     * @memberof PermissionManager.prototype
+     * @param {DOMEvent} evt The event.
+     */
+    handleEvent: function pm_handleEvent(evt) {
+      var detail = evt.detail;
+      switch (detail.type) {
+        case 'permission-prompt':
+          this.cleanDialog();
+          this.currentOrigin = detail.origin;
 
-        no = document.createElement('button');
-        no.appendChild(document.createTextNode('No'));
-        no.id = 'permission-no';
-        dialog.appendChild(no);
+          if (detail.permissions) {
+            if ('video-capture' in detail.permissions) {
+              this.isVideo = true;
 
-        document.body.appendChild(screen);
+              LazyLoader.load('shared/js/template.js');
+            }
+            if ('audio-capture' in detail.permissions) {
+              this.isAudio = true;
+            }
+          } else {
+            // work in compatible mode
+            if (detail.permission) {
+              this.permissionType = detail.permission;
+              if ('video-capture' === detail.permission) {
+                this.isVideo = true;
+
+                LazyLoader.load('shared/js/template.js');
+              }
+              if ('audio-capture' === detail.permission) {
+                this.isAudio = true;
+              }
+            }
+          }
+
+          // Set default permission
+          if (this.isVideo && this.isAudio) {
+            this.permissionType = 'media-capture';
+          } else {
+            for (var permission in detail.permissions) {
+              if (detail.permissions.hasOwnProperty(permission)) {
+                this.permissionType = permission;
+              }
+            }
+          }
+          this.overlay.dataset.type = this.permissionType;
+
+          // Not show remember my choice option in gUM
+          if (this.isAudio || this.isVideo) {
+            this.rememberSection.style.display = 'none';
+
+            // Set default options
+            this.currentPermissions = detail.permissions;
+            for (var permission2 in detail.permissions) {
+              if (detail.permissions.hasOwnProperty(permission2)) {
+                // gecko might not support audio/video option
+                if (detail.permissions[permission2].length > 0) {
+                  this.currentChoices[permission2] =
+                    detail.permissions[permission2][0];
+                }
+              }
+            }
+          } else {
+            this.rememberSection.style.display = 'block';
+          }
+
+          this.handlePermissionPrompt(detail);
+          break;
+        case 'cancel-permission-prompt':
+          this.discardPermissionRequest();
+          break;
+        case 'fullscreenoriginchange':
+          delete this.overlay.dataset.type;
+          this.handleFullscreenOriginChange(detail);
+          break;
+      }
+    },
+
+    /**
+     * Handle getUserMedia device select options
+     * @memberof PermissionManager.prototype
+     * @param {DOMEvent} evt The event.
+     */
+    optionClickhandler: function pm_optionClickhandler(evt) {
+      var link = evt.target;
+      if (!link) {
+        return;
+      }
+      if (link.classList.contains('input-enable')) {
+        if (link.checked) {
+          this.currentChoices['video-capture'] = link.id;
+        }
+        var items = this.devices.querySelectorAll('input[type="checkbox"]');
+        // Uncheck unselected option, allow 1 selection at same time
+        for (var i = 0; i < items.length; i++) {
+          if (items[i].id !== link.id) {
+            items[i].checked = false;
+            items[i].disabled = false; // Not allow to uncheck last option
+          } else {
+            link.disabled = true;
+          }
+        }
+      }
+    },
+
+    /**
+     * Show the request for the new domain
+     * @memberof PermissionManager.prototype
+     * @param {Object} detail The event detail object.
+     */
+    handleFullscreenOriginChange:
+      function pm_handleFullscreenOriginChange(detail) {
+      // If there's already a fullscreen request visible, cancel it,
+      // we'll show the request for the new domain.
+      if (this.fullscreenRequest !== undefined) {
+        this.cancelRequest(this.fullscreenRequest);
+        this.fullscreenRequest = undefined;
+      }
+      if (detail.fullscreenorigin !== AppWindowManager.getActiveApp().origin) {
+        var _ = navigator.mozL10n.get;
+        // The message to be displayed on the approval UI.
+        var message =
+          _('fullscreen-request', { 'origin': detail.fullscreenorigin });
+        this.fullscreenRequest =
+          this.requestPermission(detail.origin, detail.permission, message, '',
+                                              /* yesCallback */ null,
+                                              /* noCallback */ function() {
+                                                document.mozCancelFullScreen();
+                                              });
+      }
+    },
+
+    /**
+     * Prepare for permission prompt
+     * @memberof PermissionManager.prototype
+     * @param {Object} detail The event detail object.
+     */
+    handlePermissionPrompt: function pm_handlePermissionPrompt(detail) {
+      if (this.isAudio || this.isVideo) {
+        this.remember.checked = false;
+      } else {
+        this.remember.checked = detail.remember ? true : false;
+      }
+      var str = '';
+      var permissionID = 'perm-' + this.permissionType.replace(':', '-');
+      var _ = navigator.mozL10n.get;
+
+      if (detail.isApp) { // App
+        var app = applications.getByManifestURL(detail.manifestURL);
+        str = _(permissionID + '-appRequest',
+          { 'app': new ManifestHelper(app.manifest).name });
+      } else { // Web content
+        str = _(permissionID + '-webRequest', { 'site': detail.origin });
       }
 
-      // If there is already a pending permission request, queue this one
-      if (screen.classList.contains('visible')) {
-        pending.push({
-          message: message,
+      var moreInfoText = _(permissionID + '-more-info');
+      var self = this;
+      this.requestPermission(detail.origin, this.permissionType,
+        str, moreInfoText,
+        function pm_permYesCB() {
+          self.dispatchResponse(detail.id, 'permission-allow',
+            self.remember.checked);
+        },
+        function pm_permNoCB() {
+          self.dispatchResponse(detail.id, 'permission-deny',
+            self.remember.checked);
+      });
+    },
+    /**
+     * Send permission choice to gecko
+     * @memberof PermissionManager.prototype
+     */
+    dispatchResponse: function pm_dispatchResponse(id, type, remember) {
+      remember = remember ? true : false;
+      this.responseStatus = type;
+
+      var response = {
+        id: id,
+        type: type,
+        remember: remember
+      };
+
+      if (this.isVideo || this.isAudio) {
+        response.choices = this.currentChoices;
+      }
+      var event = document.createEvent('CustomEvent');
+      event.initCustomEvent('mozContentEvent', true, true, response);
+      window.dispatchEvent(event);
+    },
+
+    /**
+     * Hide prompt
+     * @memberof PermissionManager.prototype
+     */
+    hidePermissionPrompt: function pm_hidePermissionPrompt() {
+      this.overlay.classList.remove('visible');
+      this.devices.removeEventListener('click', this);
+      this.devices.classList.remove('visible');
+      this.currentRequestId = undefined;
+      // Cleanup the event handlers.
+      this.yes.removeEventListener('click', this.yesHandler);
+      this.yes.callback = null;
+      this.no.removeEventListener('click', this.noHandler);
+      this.no.callback = null;
+      this.moreInfoLink.removeEventListener('click',
+        this.moreInfoHandler);
+      this.hideInfoLink.removeEventListener('click',
+        this.moreInfoHandler);
+      this.moreInfo.classList.add('hidden');
+    },
+
+    /**
+     * Show the next request, if we have one.
+     * @memberof PermissionManager.prototype
+     */
+    showNextPendingRequest: function pm_showNextPendingRequest() {
+      if (this.pending.length === 0) {
+        return;
+      }
+      var request = this.pending.shift();
+      // bug 907075 Dismiss continuous same permission request but
+      // dispatch mozContentEvent as well if remember is checked
+      if (this.remember.checked) {
+        if ((this.currentOrigin === request.origin) &&
+          (this.permissionType === request.permission)) {
+          this.dispatchResponse(request.id, this.responseStatus,
+            this.remember.checked);
+          return;
+        }
+      }
+      this.showPermissionPrompt(request.id,
+                           request.message,
+                           request.moreInfoText,
+                           request.yescallback,
+                           request.nocallback);
+    },
+
+    /**
+     * Event listener function for the yes/no buttons.
+     * @memberof PermissionManager.prototype
+     */
+    clickHandler: function pm_clickHandler(evt) {
+      var callback = null;
+      if (evt.target === this.yes && this.yes.callback) {
+        callback = this.yes.callback;
+      } else if (evt.target === this.no && this.no.callback) {
+        callback = this.no.callback;
+      } else if (evt.target === this.moreInfoLink ||
+                 evt.target === this.hideInfoLink) {
+        this.toggleInfo();
+        return;
+      }
+      this.hidePermissionPrompt();
+
+      // Call the appropriate callback, if it is defined.
+      if (callback) {
+        window.setTimeout(callback, 0);
+      }
+      this.showNextPendingRequest();
+    },
+
+    toggleInfo: function pm_toggleInfo() {
+      this.moreInfoLink.classList.toggle('hidden');
+      this.hideInfoLink.classList.toggle('hidden');
+      this.moreInfoBox.classList.toggle('hidden');
+    },
+
+    /**
+     * Queue or show the permission prompt
+     * @memberof PermissionManager.prototype
+     */
+    requestPermission: function pm_requestPermission(origin, permission,
+                                     msg, moreInfoText,
+                                     yescallback, nocallback) {
+      var id = this.nextRequestID;
+      this.nextRequestID = (this.nextRequestID + 1) % 1000000;
+
+      if (this.currentRequestId !== undefined) {
+        // There is already a permission request being shown, queue this one.
+        this.pending.push({
+          id: id,
+          permission: permission,
+          message: msg,
+          origin: origin,
+          moreInfoText: moreInfoText,
           yescallback: yescallback,
           nocallback: nocallback
         });
-        return;
+        return id;
       }
+      this.showPermissionPrompt(id, msg, moreInfoText,
+        yescallback, nocallback);
 
-      // Put the message in the dialog.
+      return id;
+    },
+
+    /**
+     * Form the media source selection list
+     * @memberof PermissionManager.prototype
+     */
+    listDeviceOptions: function pm_listDeviceOptions() {
+      var _ = navigator.mozL10n.get;
+      var self = this;
+      var template = new Template('device-list-item-tmpl');
+      var checked;
+      this.currentPermissions['video-capture'].forEach(function(option) {
+        // Match currentChoices
+        checked = (self.currentChoices['video-capture'] === option) ?
+            'checked=true disabled=true' : '';
+        if (checked) {
+          self.currentChoices['video-capture'] = option;
+        }
+
+        var item_li = document.createElement('li');
+        item_li.className = 'device-cell';
+        item_li.innerHTML = template.interpolate({
+                              id: option,
+                              checked: checked,
+                              label: _('device-' + option)
+                            });
+        self.devices.appendChild(item_li);
+      });
+      this.devices.addEventListener('click',
+        this.optionClickhandler.bind(this));
+      this.devices.classList.add('visible');
+    },
+
+    /**
+     * Put the message in the dialog.
+     * @memberof PermissionManager.prototype
+     */
+    showPermissionPrompt: function pm_showPermissionPrompt(
+          id, msg, moreInfoText, yescallback, nocallback) {
       // Note plain text since this may include text from
       // untrusted app manifests, for example.
-      message.textContent = msg;
+      this.message.textContent = msg;
+      if (moreInfoText) {
+        // Show the "More info… " link.
+        this.moreInfo.classList.remove('hidden');
+        this.moreInfoHandler = this.clickHandler.bind(this);
+        this.hideInfoHandler = this.clickHandler.bind(this);
+        this.moreInfoLink.addEventListener('click', this.moreInfoHandler);
+        this.hideInfoLink.addEventListener('click', this.hideInfoHandler);
+        this.moreInfoBox.textContent = moreInfoText;
+      }
+      this.currentRequestId = id;
 
-      // Make the screen visible
-      screen.classList.add('visible');
-
-      // This is the event listener function for the buttons
-      function clickHandler(evt) {
-        // cleanup the event handlers
-        yes.removeEventListener('click', clickHandler);
-        no.removeEventListener('click', clickHandler);
-
-        // Hide the dialog
-        screen.classList.remove('visible');
-
-        // Call the appropriate callback, if it is defined
-        if (evt.target === yes && yescallback) {
-          yescallback();
-        } else if (evt.target === no && nocallback) {
-          nocallback();
-        }
-
-        // And if there are pending permission requests, trigger the next one
-        if (pending.length > 0) {
-          var request = pending.shift();
-          window.setTimeout(function() {
-            requestPermission(request.message,
-                              request.yescallback,
-                              request.nocallback);
-          });
-        }
+      // Not show the list if there's only 1 option
+      if (this.isVideo && this.currentPermissions['video-capture'].length > 1) {
+        this.listDeviceOptions();
       }
 
+      // Make the screen visible
+      this.overlay.classList.add('visible');
+
       // Set event listeners for the yes and no buttons
-      yes.addEventListener('click', clickHandler);
-      no.addEventListener('click', clickHandler);
-    };
-  }());
-})();
+      var isSharedPermission = this.isVideo || this.isAudio ||
+           this.permissionType === 'geolocation';
 
+      var _ = navigator.mozL10n.get;
+      this.yes.textContent =
+        isSharedPermission ? _('share-' + this.permissionType) : _('allow');
+      this.yesHandler = this.clickHandler.bind(this);
+      this.yes.addEventListener('click', this.yesHandler);
+      this.yes.callback = yescallback;
 
+      this.no.textContent = isSharedPermission ?
+          _('dontshare-' + this.permissionType) : _('dontallow');
+      this.noHandler = this.clickHandler.bind(this);
+      this.no.addEventListener('click', this.noHandler);
+      this.no.callback = nocallback;
+    },
+
+    /**
+     * Cancels a request with a specfied id. Request can either be
+     * currently showing, or pending. If there are further pending requests,
+     * the next is shown.
+     * @memberof PermissionManager.prototype
+     */
+    cancelRequest: function pm_cancelRequest(id) {
+      if (this.currentRequestId === id) {
+        // Request is currently being displayed. Hide the permission prompt,
+        // and show the next request, if we have any.
+        this.hidePermissionPrompt();
+        this.showNextPendingRequest();
+      } else {
+        // The request is currently not being displayed. Search through the
+        // list of pending requests, and remove it from the list if present.
+        for (var i = 0; i < this.pending.length; i++) {
+          if (this.pending[i].id === id) {
+            this.pending.splice(i, 1);
+            break;
+          }
+        }
+      }
+    },
+
+    /**
+     * Clean current request queue and
+     * send refuse permission request message to gecko
+     * @memberof PermissionManager.prototype
+     */
+    discardPermissionRequest: function pm_discardPermissionRequest() {
+      if (this.currentRequestId === undefined ||
+          this.currentRequestId === null) {
+        return;
+      }
+      this.dispatchResponse(this.currentRequestId, 'permission-deny', false);
+      this.hidePermissionPrompt();
+      this.pending = [];
+    }
+  };
+
+  exports.PermissionManager = PermissionManager;
+
+})(window);

@@ -1,0 +1,129 @@
+
+.hud {
+  display: flex;
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 9rem;
+  padding: 0 1.5rem;
+  align-items: center;
+  justify-content: space-between;
+  opacity: 0;
+  transition: opacity 300ms;
+  transform: translateZ(1px);
+}
+
+.hud.visible {
+  opacity: 1;
+}
+
+/**
+ * hidden
+ */
+.hud.hidden,
+.hud[timer=active],
+.hud[recording=true] {
+  pointer-events: none;
+  opacity: 0;
+}
+
+/**
+ * disabled
+ */
+
+.hud[camera=busy] {
+  pointer-events: none;
+}
+
+/** Buttons
+ ---------------------------------------------------------*/
+
+/**
+ * 1. Extend touchable zone.
+ * 2. When the button is pressed
+ *    it changes color instanly.
+ *    When it is released it transitons
+ *    back to the default color.
+ * 3. Offset large border
+ */
+
+.hud_btn,
+.settings_close {
+  height: 5rem;
+  width: 5rem;
+  margin: -2rem; /* 3 */
+  font-size: 2rem;
+  line-height: 5rem;
+  text-align: center;
+  border-radius: 50%;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-color: rgba(0,0,0,0.12);
+  background-clip: padding-box; /* 1 */
+  border: solid 2rem transparent; /* 1 */
+  -moz-box-sizing: content-box; /* 1 */
+  color: #fff;
+}
+
+.hud_btn:active {
+  background-color: #00b9df;
+}
+
+/** Camera Button
+ ---------------------------------------------------------*/
+
+/**
+ * 1. Hidden by default
+ */
+
+.hud_camera {
+  font-size: 2.6rem;
+  opacity: 0; /* 1 */
+}
+
+/**
+ * camera-enabled=true
+ */
+
+.hud[camera-enabled=true] .hud_camera {
+  opacity: 1;
+}
+
+/**
+ * camera-enabled=false
+ */
+
+.hud[camera-enabled=false] .hud_camera {
+  pointer-events: none;
+}
+
+/** Flash Button
+ ---------------------------------------------------------*/
+
+/**
+ * 1. Hidden by default
+ */
+
+.hud_flash {
+  width: 5.8rem;
+  height: 5.8rem;
+  line-height: 5.8rem;
+  font-size: 2.5rem;
+  opacity: 0; /* 1 */
+}
+
+/**
+ * flash-enabled=true
+ */
+
+.hud[flash-enabled=true] .hud_flash {
+  opacity: 1;
+}
+
+/**
+ * flash-enabled=false
+ */
+
+.hud[flash-enabled=false] .hud_flash {
+  pointer-events: none;
+}

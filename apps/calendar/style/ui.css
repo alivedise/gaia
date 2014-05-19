@@ -1,343 +1,313 @@
-/*
-COLORS
+/* loading */
 
-BUSY BACKGROUND: #CCC
-BORDER: #AAA;
-CALENDER BORDER: #B0B0B0
-MONTH DAY BG: #FFF
-MONTH DAY PAST BG: #A8A8A8
-MONTH DAY PAST COLOR: #666
-MONTH DAY TODAY BORDER COLOR: #444
-MONTH DAY SELECTED BG: #444
-MONTH DAY SELECTED COLOR: white
+body.loading {
+  visibility: hidden;
+}
 
-MONTHS DAY TOOLBAR BG: #E2E2E2
-MONTHS DAY EVENT: #CACACA 
+/* general elements */
 
-EVENT TIME COLOR: #333
-*/
+a:active {
+  border: none;
+}
 
-html, body {
-  margin: 0;
-  padding: 0;
-  font-size: 2.7mozmm;
+p {
+  font-size: 1.5rem;
+  line-height: 130%;
+}
+
+menu[type="toolbar"] a {
+  text-decoration: none;
+}
+
+ol.link-list label,
+ol.link-list a {
+  display: block;
+  min-height: 5.5rem;
+  line-height: 5.5rem;
+  font-size: 1.7rem;
+  padding: 0 1.5rem;
+  border-bottom: 0.1rem solid #C5C5C5;
+  text-decoration: none;
+  color: #000;
+  margin: 0 1.5rem;
+}
+
+ol.link-list li:last-child label,
+ol.link-list li:only-child label,
+ol.link-list li:last-child a,
+ol.link-list li:only-child a {
+  border-bottom: 0;
+}
+
+#today .icon-today {
+  font-size: 1.4rem;
+  line-height: 4.6rem;
+}
+
+#today .icon-today:before {
+  position: absolute;
+  width: 100%;
+  display: block;
+  font-size: 3rem;
+  line-height: 4.5rem;
+}
+
+#view-selector > .today {
+  border-right: 0.1rem solid #F2F2F2;
+}
+
+#view-selector a[aria-selected="true"] {
+  color: #00aacc;
+  font-weight: 500;
+}
+
+body[data-path="/month/"] #view-selector > .month a:after,
+body[data-path="/week/"] #view-selector > .week a:after,
+body[data-path="/day/"] #view-selector > .day > a:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: calc(100% - 0.3rem);
+  border-bottom: 0.3rem solid #00aacc;
+}
+
+body[data-path="/month/"] #view-selector > .month a:active,
+body[data-path="/week/"] #view-selector > .week a:active,
+body[data-path="/day/"] #view-selector > .day > a:active {
+  color: #5F5F5F;
+}
+
+.bb-tablist > li > a:after,
+.bb-tablist > li > button:after {
+  display: block !important;
+}
+
+/* view management */
+
+.fullscreen-view {
+  display: none;
+}
+
+.fullscreen-view.active {
+  display: block;
+}
+
+#time-views {
+  display: flex;
+  flex-direction: column;
   height: 100%;
-  background: white;
+}
+
+#time-views > section {
+  display: none;
+  position: relative;
+  height: calc(100% - 9.5rem);
+  background: #fff;
+}
+
+#time-views > section.active {
+  display: block;
+}
+
+#time-header [type="toolbar"] {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.settings-drawer-visible #time-header [type="toolbar"] {
+  opacity: 0;
+}
+
+/* view loading */
+
+.during-progress {
+  display: none;
+}
+
+#views .in-progress .during-progress {
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  position: absolute;
+  z-index: 200;
+  background-color: #CCC;
+  opacity: 0.5;
+  text-align: center;
+}
+
+#progress-indicator {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 0.3rem;
+  border: none;
+  overflow: hidden;
+  z-index: 1000;
+  display: none;
+}
+
+.pending-operation #progress-indicator {
+  display: block
+}
+
+#throbber {
+  height: 5.2rem;
+  background: url('ui/progress.png') repeat-x left bottom / 32rem !important;
+  animation: .5s throb infinite steps(12);
+}
+
+@keyframes throb {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(0, -4.8rem);
+  }
+}
+
+#advanced-settings-view .content {
+  height: calc(100% - 5rem);
+  overflow-y: scroll;
+}
+
+#advanced-settings-view .create-account-item {
+  text-align: center;
+}
+
+#advanced-settings-view button {
+  margin: 1.1rem auto;
+  width: calc(100% - 3rem);
+  text-align: center;
+}
+
+#advanced-settings-view .settings-list label {
+  height: auto;
+  margin: 0 1.5rem;
+  padding: 0.5rem 0 1.5rem;
   line-height: 100%;
 }
 
-#views {
-  height: -moz-calc(100% - 18mozmm);
-}
-
-#views > section {
-  height: 100%;
-}
-
-/* month view */
-/* sub: toolbar  */
-
-#top-toolbar {
-  /*height: 8mozmm;*/
-}
-
-#top-toolbar header.toolbar {
-  width: 100%;
-  overflow: hidden;
-  padding: 2.5mozmm 1.5mozmm;
-  border-bottom: 2px solid black;
-}
-
-#top-toolbar header.toolbar h3,
-#top-toolbar header.toolbar a {
+#advanced-settings-view .settings-list label span {
   display: block;
-  float: left;
-  width: 33%;
-}
-
-.rtl #top-toolbar header.toolbar h3,
-.rtl #top-toolbar header.toolbar a {
-  float: right;
-}
-
-#top-toolbar header.toolbar h3 {
-  text-align: center;
-}
-
-.rtl #top-toolbar header.toolbar a.new-event,
-.ltr #top-toolbar header.toolbar a.accounts {
-  text-align: left;
-}
-
-.rtl #top-toolbar header.toolbar a.accounts,
-.ltr #top-toolbar header.toolbar a.new-event {
-  text-align: right;
-}
-
-/* sub common: day headers, day boxes */
-
-#month-days {
-  overflow: hidden;
-  /*height: 3.6mozmm;*/
-}
-
-#month .month li,
-#month-days li {
-  width: 14.28%;
-  line-height: 120%;
-  font-weight: bold;
-}
-
-.rtl #month-days li,
-.rtl #month .month li {
-  float: right;
-}
-
-.ltr #month-days li,
-.ltr #month .month li {
-  float: left;
-}
-
-/* sub: day header row */
-
-#month-days {
-  clear: both;
-}
-
-#month-days li {
-  color: white;
-  text-align: center;
-  background-color: #AAA;
-  text-transform: uppercase;
-  font-size: 90%;
-  padding: 0.5mozmm 0;
-}
-
-#month-displays {
-  height: 50%;
-}
-
-section.month {
-  height: 100%;
-  clear: both;
-}
-
-/* sub: day rows */
-
-section.month.inactive {
-  display: none
-}
-
-section.month {
-  overflow: hidden;
-  border-left: 1px solid #AAA;
-  border-right: 1px solid #AAA;
-}
-
-.rtl section.month li {
-  text-align: left;
-}
-
-.rtl section.month li > .day {
-  padding-left: 0.8mozmm;
-}
-
-.ltr section.month li {
-  text-align: right;
-}
-
-.ltr section.month li > .day {
-  padding-right: 0.8mozmm;
-}
-
-section.month ol {
-  height: 20%;
-}
-
-section.month li {
-  padding-top: 0.3%;
-  border-bottom: 1px solid #AAA;
-  border-left: 1px solid #AAA;
-  height: 100%;
   position: relative;
-  background-color: white;
+  margin-bottom: 0;
+  font-size: 1.9rem;
+  line-height: 3.3rem;
 }
 
-section.month ol:last-child li {
-  border-bottom: none;
+#advanced-settings-view .settings-list label .button {
+  height: 4rem;
 }
 
-section.month li.present {
-  border: 3px solid #444;
+#advanced-settings-view .settings-list label select {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: calc(100% + 3rem);
+  padding: 0.8rem 1rem 0;
+  font-size: 1.7rem;
+  font-weight: 500;
 }
 
-section.month li.selected {
-  background-color: #444 !important;
-  color: white;
+#advanced-settings-view .settings-list label span:first-child {
+  padding-left: 1.5rem;
 }
 
-section.month li.past {
-  background-color: #E7E7E7;
-  color: #9A9A9A;
-}
-
-section.month li.other-month {
-  color: #9A9A9A;
-}
-
-/* sub day rows: busy indicators */
-
-section.month li .busy-indicator,
-section.month li .busy-indicator > span{
-  height: 1.2mozmm;
-  padding-top: 1mozmm;
-}
-
-section.month li .busy-indicator {
+#advanced-settings-view .settings-list label,
+#advanced-settings-view .account-list a {
+  text-transform: none;
   overflow: hidden;
-  clear: both;
-  bottom: 0px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  width: calc(100% - 3rem);
+}
+
+/* For the account listing, want the final child to still have
+   a bottom border to separate it from the Add Account button */
+#advanced-settings-view .account-list li:last-child label,
+#advanced-settings-view .account-list li:only-child label,
+#advanced-settings-view .account-list li:last-child a,
+#advanced-settings-view .account-list li:only-child a {
+  border-bottom: 0.1rem solid #C5C5C5;
+}
+
+#advanced-settings-view .account-list a {
+  padding-right: 4rem;
+}
+
+#advanced-settings-view .account-list .error a {
+  background: transparent url('icons/accountwarning.png') no-repeat left;
+  padding-left: 3.5rem;
+}
+
+#advanced-settings-view .preset:after {
+  content: ' - '
+}
+
+#advanced-settings-view .user {
+  width: 50%;
+}
+
+/* create account view */
+#create-account-view > p {
+  margin: 0 2rem;
+}
+
+.fullscreen-view.active {
+  visibility: visible;
+}
+
+.fullscreen-view {
+  z-index: 1000;
+  overflow: hidden;
+  visibility: hidden;
+  /* completely override other views */
+  background-color: #f4f4f4;
   position: absolute;
+  top: 0;
   width: 100%;
+  height: 100%
 }
 
-section.month li .busy-indicator:before {
-  /* &nsbp; */
-  content:"\00a0";
-}
-
-section.month li .busy-indicator > span {
-  top: 0px;
-  width: 8.33%;
-  background-color: #CCC;
-  position: absolute;
-  text-indent: -1000em;
-}
-
-/**
-Indicators are in units of 12
-*/
-/* ltr busy units */
-.ltr .busy-indicator .busy-1 { left: 0%; }
-.ltr .busy-indicator .busy-2 { left: 8.33%; }
-.ltr .busy-indicator .busy-3 { left: 16.66%; }
-.ltr .busy-indicator .busy-4 { left: 24.990000000000002%; }
-.ltr .busy-indicator .busy-5 { left: 33.32%; }
-.ltr .busy-indicator .busy-6 { left: 41.65%; }
-.ltr .busy-indicator .busy-7 { left: 49.980000000000004%; }
-.ltr .busy-indicator .busy-8 { left: 58.31%; }
-.ltr .busy-indicator .busy-9 { left: 66.64%; }
-.ltr .busy-indicator .busy-10 { left: 74.97%; }
-.ltr .busy-indicator .busy-11 { left: 83.3%; }
-.ltr .busy-indicator .busy-12 { left: 91.63%; }
-
-
-/* rtl busy units */
-.rtl .busy-indicator .busy-1 { right: 0%; }
-.rtl .busy-indicator .busy-2 { right: 8.33%; }
-.rtl .busy-indicator .busy-3 { right: 16.66%; }
-.rtl .busy-indicator .busy-4 { right: 24.990000000000002%; }
-.rtl .busy-indicator .busy-5 { right: 33.32%; }
-.rtl .busy-indicator .busy-6 { right: 41.65%; }
-.rtl .busy-indicator .busy-7 { right: 49.980000000000004%; }
-.rtl .busy-indicator .busy-8 { right: 58.31%; }
-.rtl .busy-indicator .busy-9 { right: 66.64%; }
-.rtl .busy-indicator .busy-10 { right: 74.97%; }
-.rtl .busy-indicator .busy-11 { right: 83.3%; }
-.rtl .busy-indicator .busy-12 { right: 91.63%; }
-
-/* sub: months day view */
-
-#months-day-view {
-  border-top: 2px solid #B0B0B0;
-  background-color: white;
-  height: -moz-calc(50% - 3.5mozmm);
-}
-
-#months-day-view .day-events {
-  height: -moz-calc(100% - 4.3mozmm);
-  overflow-y: auto;
-}
-
-#months-day-view  header.toolbar {
-  background-color: #E2E2E2;
-  border-bottom: 1px solid #CCC;
-  text-align: center;
-  padding: 1mozmm;
-}
-
-/** sub: view selector **/
-
-#bottom-toolbar {
-  height: 9mozmm;
-  background: #EFEFEF;
-}
-
+/* [BB][tabs]*/
 #view-selector {
-  margin-top: 1mozmm;
-  border-top: 1px solid black;
-  padding: 1.5mozmm 1.5mozmm;
-  overflow: hidden;
+  position: absolute;
+  bottom: 0;
+  height: 4.5rem;
 }
 
-#view-selector a {
-  text-decoration: none;
-  color: black;
+#view-selector > li > a {
+  outline: none;
 }
 
-.rtl #view-selector li {
-  float: right;
-}
-
-.ltr #view-selector li {
-  float: left;
-}
-
-#view-selector > li.today {
-  width: -moz-calc(30% - 2mozmm);
-  margin-right: 2mozmm;
-}
-
-#view-selector menu li.week {
-  border-right: 1px solid #9B9B9B;
-  border-left: 1px solid #9B9B9B;
-}
-
-#view-selector > li.time-selection {
-  width: 70%;
-}
-
-#view-selector > li a {
-  padding: 1.5mozmm 2mozmm;
-  display: block;
-}
-
-#view-selector > li {
-  height: 5.9mozmm;
-  text-align: center;
-  font-weight: bold;
-  color: black;
-  display: block;
-  border-radius: 5px;
-  border: 1px solid #656565;
-  background-color: #DDD;
-  width: 100%;
-}
-
-
-#view-selector menu li {
-  width: 33%;
-}
-
-/* DEVICE SETTINGS */
-
-@media screen and (max-width: 480px) {
-  html, body {
-    font-size: 2mozmm;
+@keyframes fade-status {
+  from {
+    opacity: 1;
   }
 
-  #months-day-view .day-events {
-    height: -moz-calc(100% - 3mozmm);
+  to {
+    opacity: 0;
   }
 }
 
+section[role="status"] {
+  display: none;
+}
+
+section[role="status"].active {
+  display: block;
+  animation-name: fade-status;
+  animation-delay: 2.5s;
+  animation-duration: 1.5s;
+}
+
+/* Hide on initial render to prevent flashing */
+#settings {
+  visibility: hidden;
+}

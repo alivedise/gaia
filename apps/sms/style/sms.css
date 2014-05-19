@@ -1,685 +1,1015 @@
 html, body {
   height: 100%;
+  width: 100%;
   padding: 0;
   margin: 0;
-  overflow-x: hidden;
-  overflow-y: hidden;
+  font-size: 10px;
+  overflow-x: hidden !important;
+  overflow-y: hidden !important;
 }
 
-body {
+
+/*
+  Override BB. Some CSS tweaks for having a better confirm readability
+*/
+form[role="dialog"][data-type="confirm"] p {
+  margin-top: 0 !important;
+  border-bottom: 0.1rem solid #686868;
+}
+
+form[role="dialog"][data-type="confirm"] p small{
+  line-height: 2rem;
+}
+
+
+/* Override Building Block [Header] styles */
+section[role="region"] > header:first-child .icon.icon-clear {
+  background-image: url(images/icons/clear.png);
+  background-position: center calc(50% + 0.1rem);
+  background-size: 3rem;
+  width: 2rem;
   margin: 0;
+  padding: 0 2rem;
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+section[role="region"] > header:first-child form {
+  display: none;
+}
+
+/* TODO: Move this into the shared building block
+ * if we use the icon in more places
+ */
+section[role="region"] > header:first-child .icon.icon-attachment {
+  background-image: url(images/icons/attachments.png);
+}
+
+/* Override Building Block [Imput areas] styles */
+form.bottom[role="search"] {
+  z-index: 3;
+}
+
+#messages-recipient {
+  padding-right: 3rem;
+  font-size: 1.8rem;
+}
+
+/* Override Building Block [Edit mode] styles */
+form[role="dialog"][data-type="edit"] header {
+  transform: translateY(-110%);
+}
+
+form[role="dialog"][data-type="edit"] > menu {
+  transform: translateY(110%);
+}
+
+/* Override Building Block [Lists] styles */
+[data-type="list"] {
+  padding: 0;
+  text-align: left;
+}
+
+#threads-container[data-type="list"] .mms-icon {
+  display: none;
+  margin-left: 0.3rem;
+
+  font-size: 1.5rem;
+  color: #ff6622;
+}
+
+#threads-container[data-type="list"] [data-last-message-type="mms"] .mms-icon {
+  display: inline;
+}
+
+#threads-container[data-type="list"] [data-last-message-type="mms"] .body-text {
+  display: none;
+}
+
+[data-type="list"] header {
+  margin: 0 1.5rem;
+}
+
+#sticky {
+  position: absolute;
+
+  /* The sticky element is positioned at the beginning of the list. */
+  top: 5rem;
+
+  /* The width is not 100% so the scrollbar is visible. */
+  width: calc(100% - 1.5rem);
+
+  /* The height needs to be kept in sync with the header height. */
+  height: 3.1rem;
+
+  /* The sticky element needs to be above the list. */
+  z-index: 2;
+
+  /* Those style will affect the bagroundImage: -moz-element. */
+  background-repeat: no-repeat;
+  background-position: 1.5rem 0;
+}
+
+#threads-container[data-type="list"] header {
+  background: #fff;
+}
+
+#threads-container[data-type="list"] ul {
+  padding: 0 1.5rem;
+  background-color: #fff;
+}
+
+#threads-container[data-type="list"] aside.empty {
+  display: none;
+}
+
+/**
+ * Bug 967878, 979018 -[Messages] Background doesn't
+ * scroll with the threads causing expensive over-invalidation
+ */
+#threads-container > div {
+  background-color: #fff;
+}
+
+[data-type="list"] li > label {
+  right: 5rem;
+  display: block;
+  overflow: hidden;
+  opacity: 0;
+}
+
+[data-type="list"] aside.icon-unread {
+  margin: 0;
+  width: 1.5rem;
+}
+
+[data-type="list"] .unread aside.icon-unread {
+  background: url("../style/images/unread.png") no-repeat left center / 1rem;
+}
+
+[data-type="list"] .draft a * {
+  pointer-events: none;
+}
+
+[data-type="list"] .draft .icon-draft {
+  background: url("../style/images/draft.png") no-repeat left center / 1rem;
+}
+
+[data-type="list"] .is-draft .pack-end {
+  opacity: 0.5;
+}
+
+[data-type="list"] .is-draft .name {
+  font-style: italic;
+  color: #5f5f5f;
+}
+
+
+[data-type="list"] p time {
+  display: inline-block;
+}
+
+[data-type="list"] .unread p time {
+  color: #1D8399;
+}
+
+/* Lists: edit mode */
+.edit [data-type="list"] li > label {
+  opacity: 1;
+  pointer-events: auto;
+  left: -1.4rem;
+}
+
+.edit [data-type="list"] li > .pack-checkbox input ~ span:after {
+  opacity: 1;
+  transform: translateX(4.5rem);
+  left: -2.2rem;
+}
+
+.edit [data-type="list"] li > a > aside.icon-unread {
+  opacity: 0;
+}
+
+.edit [data-type="list"] li > a > p {
+  transform: translateX(3.5rem);
+}
+
+.edit #threads-container[data-type="list"] aside.pack-end {
+  margin: 0 0 0 -3rem;
+}
+
+.edit #threads-container[data-type="list"] aside.pack-end span {
+  transform: translateX(7.5rem);
+}
+
+/* Panel handling */
+#main-wrapper {
+  position: absolute;
+  overflow: hidden;
   width: 100%;
   height: 100%;
-  background-color: #000;
-  font-family: 'Open Sans', sans-serif;
+  left: 0;
+  top: 0;
+  background: #fff;
 }
 
-@font-face {
-  font-family: 'Open Sans';
-  src: url('fonts/Open-Sans.woff');
-}
-@font-face {
-  font-family: 'Open Sans';
-  font-weight: bold;
-  src: url('fonts/Open-Sans-Bold.woff');
-}
-@font-face {
-  font-family: 'Open Sans';
-  font-weight: 600;
-  src: url('fonts/Open-Sans-Semibold.woff');
+.panel:first-child {
+  left: 0;
 }
 
 .panel {
   position: absolute;
-  display: block;
+  left: 100%;
   width: 100%;
   height: 100%;
-  -moz-transition: -moz-transform 0.3s ease;
-  top: 0;
+
+  transition: transform .4s ease;
 }
 
-body.conversation .panel {
-  -moz-transform: translateX(-100%);
+#main-wrapper[data-position='left'] .panel {
+  transform: translateX(-100%);
 }
 
-/* View - Slide Horizontal Transition */
-/* XXX hack: the width is adjusted (0-100%) with a delayed transition in order
- *           to hide the horizontal scrollbar on the device (at least, when the
- *           transition is over).
- * This is just a workaround: the platform bug should be fixed later.  */
-
-#view {
-  -moz-transform: translateX(100%);
-
-  /* XXX hack */
-  overflow: hidden;
-  z-index: 1;
-  width: 0%;
-  -moz-transition: -moz-transform 0.3s ease, width 0s linear 0.5s;
+#main-wrapper[data-position='right'] .panel {
+  transform: translateX(0%);
 }
 
-#msg-conversations {
-  -moz-transform: translateX(0);
-
-  /* XXX hack */
-  overflow: hidden;
+#threads-container, #thread-messages {
   z-index: 10;
+  background: white;
 }
 
-body.conversation #view {
-  -moz-transform: translateX(0);
-
-  /* XXX hack */
-  z-index: 10;
-  width: 100%;
-  -moz-transition: -moz-transform 0.3s ease;
-}
-
-body.conversation #msg-conversations {
-  -moz-transform: translateX(-100%);
-
-  /* XXX hack */
-  z-index: 1;
-  width: 0%;
-  -moz-transition: -moz-transform 0.3s ease, width 0s linear 0.5s;
-}
-
-.toolbar {
-  -moz-box-sizing: border-box;
-  position: absolute;
-  display: block;
-  left: 0;
-  right: 0;
-  background-color: #fff;
-  background: url("images/app-texture.png") repeat scroll 50% 50%, -moz-linear-gradient(center top , rgb(244, 244, 244), rgb(234, 234, 234)) repeat scroll 0% 0% transparent;
-  margin: 0;
-  padding: 0;
-}
-
-.toolbar-top {
-  top: 0;
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
-  height: 64px;
-  border-bottom: solid 3px #9b9b9b;
-  z-index: 5;
-}
-
-.toolbar-bottom {
-  bottom: 0;
-  height: 80px;
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
-  border-top: solid 3px #9b9b9b;
-}
-
-.toolbar-panel {
-  display: -moz-box;
-  -moz-box-orient: horizontal;
-  width: 100%;
-}
-
-.toolbar-panel-item {
-  -moz-box-flex: 1;
-}
-
-.toolbar-panel-fixed-item {
-  -moz-box-flex: 0;
-}
-
-/* media queries for removing rounded border when keyboard is shown */
-@media screen and (max-height: 700px) {
-  .toolbar-bottom {
-    bottom: 0;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-    border-top: solid 3px #9b9b9b;
-  }
-}
-
-.list {
-  position: absolute;
-  top: 64px;
-  bottom: 80px;
-  left: 0;
-  right: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  -moz-user-select: none;
-}
-
-input, textarea {
-  -moz-box-sizing: border-box;
-  border: solid 3px #7d8389;
-  border-radius: 20px;
-  height: 40px;
-  margin: 13px 15px;
-  font-size: 20px;
-  line-height: 25px;
-  font-family: 'Open Sans', sans-serif;
-  padding: 0;
-  background: -moz-linear-gradient(center top , rgba(0, 0, 0, 0.2) 0px, rgba(255, 255, 255, 0) 20px, rgb(255, 255, 255) 100%) repeat scroll 0% 0% rgb(255, 255, 255);
-}
-
-.button {
-  -moz-box-sizing: border-box;
-  text-align: center;
-  border-radius: 20px;
-  color: #fff;
-  text-shadow: 0pt -1px 1px rgba(0, 0, 0, 0.5);
-  border: none;
-  padding: 0 16px;
-  outline: medium none;  
-  background: -moz-linear-gradient(top, hsl(39,100%,73%) 0, hsla(35,100%,80%,0.2) 2px, hsla(35,100%,50%,.4) 20%,
-                hsl(32,100%,38%) 98%, hsl(32,100%,38%) 99%, hsl(31,100%,50%) 100%),
-              -moz-linear-gradient(top, hsl(39,100%,73%) 0, hsla(35,100%,50%,1) 2px, hsl(32,100%,38%) 98%,
-                hsl(32,100%,38%) 99%, hsl(31,100%,50%) 100%);
-}
-
-.back-button {
-  width: 80px;
-  height: 48px;
-  position: absolute;
-  margin: 6px 0 0 24px;
-}
-
-.back-button-img {
-  background: url("./images/top-navibar-left-arrow.png") no-repeat scroll 30px 50% transparent;
-  left: 0px;
-  top: 0px;
-  width: 80px;
-  height: 48px;
-  position: absolute;
-}
-
-.back-button > h2 {
+#messages-contact-pick-button {
   display: none;
 }
 
-.button:active {
-  background: -moz-linear-gradient(bottom, hsl(39,100%,73%) 0, hsla(35,100%,80%,0.2) 2px, hsla(35,100%,50%,.4) 20%,
-                hsl(32,100%,38%) 98%, hsl(32,100%,38%) 99%, hsl(31,100%,50%) 100%),
-              -moz-linear-gradient(bottom, hsl(39,100%,73%) 0, hsla(35,100%,50%,1) 2px, hsl(32,100%,38%) 98%,
-                hsl(32,100%,38%) 99%, hsl(31,100%,50%) 100%);
+#messages-new-message-notice {
+  display: flex;
+  flex-direction: row;
+
+  padding: 1rem 1.5rem 1rem 2rem;
+  overflow: hidden;
+
+  white-space: nowrap;
+  line-height: 2rem;
+  font-size: 1.8rem;
+  text-align: left;
 }
 
-/* Remove dotted outline for button in firefox. */
-.button::-moz-focus-inner {
-  border: 0;
-}
-
-.text-button {
-  font-size: 24px;
-  font-weight: bold;
-  height: 48px;
-  line-height: 48px;
-  text-decoration: none;
-}
-
-#msg-search-container {
-  padding-right: 16px;
+#messages-new-message-notice a {
   margin: 0;
-  top: 0px;
-  width: 100%;
-  height: 64px;
-  border-bottom: solid 3px #9b9b9b;
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;  
-  z-index: 1;
-  -moz-transition: -moz-transform 0.3s ease;
 }
 
-body.msg-search-mode #msg-search-container {
-  -moz-transform: translateY(58px);
+#messages-new-message-notice .contact {
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-body.msg-search-result-mode #msg-search-container {
-  -moz-transform: translateY(0px);
-  z-index: 6;
+#messages-new-message-notice > div:first-child {
+  flex: auto;
+
+  overflow: hidden;
 }
 
-#msg-title-container {
-  padding: 0;
-  margin: 0;
-  text-align: center;
-  line-height: 60px;
-  font-size: 24px;
-  font-weight: bold;  
+#messages-new-message-notice > div:nth-child(2) {
+  flex: none;
+
+  padding: 0.2rem 0 0.2rem 1.5rem;
 }
 
-#msg-search {
-  padding: 0 0 0 32px;
-  background: url("images/input-icon-search.png") no-repeat scroll 8px 50%, -moz-linear-gradient(center top , rgba(0, 0, 0, 0.2) 0px, rgba(255, 255, 255, 0) 20px, #FFFFFF 100%) repeat scroll 0 0 #FFFFFF;
-  width: -moz-calc(100% - 15px - 15px);
+/*
+  Styles for Edit mode in Thread List
+*/
+
+.edit form[role="dialog"][data-type="edit"] > menu {
+  transform: translateY(0);
 }
 
-#msg-search-cancel {
-  margin-top: 6px;
+/* Completely hide the Compose form from view when in Edit mode */
+.edit .messages-compose-form {
+  transform: translateY(100%);
 }
 
-#msg-conversations-list {
-  background: url("images/app-texture.png") repeat scroll 50% 50%, rgb(243, 243, 243);
-  top: 64px;
-  -moz-transition: top 0.3s ease;
+.edit form[role="dialog"][data-type="edit"] header {
+  transform: translateY(0);
 }
 
-body.msg-search-mode #msg-conversations-list {
-  top: 122px;
+.edit #threads-container .checkbox-container {
+  pointer-events:auto;
+  opacity: 1;
+  transform: translateX(0);
 }
 
-#msg-conversations-list > a {
-  -moz-box-sizing: border-box;
-  display: block;
-  text-decoration: none;
-  outline: none;
-  height: 96px;
-  position: relative;
-  /* Remove the thumbnail for current stage.
-   *padding need to 112px + img width when social network integration is ready*/
-  padding: 13px 16px 0 112px;
-  border-top: 1px solid hsla(207,22%,92%,1);
-  border-bottom: 1px solid hsla(223,7%,81%,1);
-  width: -moz-calc(100% + 90px);
-  right: 90px;
-  -moz-transition: -moz-transform 0.3s ease;
-}
-
-body.msg-edit-mode #msg-conversations-list > a {
-  -moz-transform: translateX(90px);
-}
-
-#msg-conversations-list > a:active {
-  background: hsla(35,100%,50%,.2);
-}
-
-#msg-conversations-list > a.hide {
+.edit .undo-candidate {
   display: none;
 }
 
-#msg-conversations-list > a > * {
+.edit .message-block {
+  border-top: .1rem solid #DBDBDB;
+  margin-bottom: 0;
+}
+
+/*
+  Styles for new message
+*/
+
+section[role="region"].new > header:first-child h1 {
   pointer-events: none;
 }
 
-#msg-conversations-list > a:first-child {
-  border-top-color: transparent;
+section[role="region"].new > header:first-child form {
+  display: block;
 }
 
-/* fake input boxes for checkboxes*/
-#msg-conversations-list label {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+.new #messages-contact-pick-button {
+  display: block;
 }
 
-#msg-conversations-list a > input.fake-checkbox {
+#messages-contact-pick-button .icon-user {
+  display: block;
+  height: 2rem;
+  width: 2rem;
+
+  background-image: url(images/add_contact.png);
+  background-size: 2rem;
+}
+
+#messages-contact-pick-button .icon-user:active {
+  background-position: 0 2rem;
+}
+
+/*
+  Messages Style as 'bubbles'
+*/
+
+#contact-carrier {
   display: none;
 }
 
-#msg-conversations-list a > span {
-  position: absolute;
-  top: -moz-calc(50% - 34px);
-  left: 20px;
+section[class="panel has-carrier"] #contact-carrier {
   display: block;
-  width: 64px;
-  height: 64px;
-  border: none;
 }
 
-#msg-conversations-list a > input[type=checkbox] + span {
-  width: 60px;
-  height: 60px;
-  border: 4px solid;
-  border-radius: 5px;
-  -moz-border-top-colors: #c3c9cb #c3c9cb #fff #fff;
-  -moz-border-right-colors: #c3c9cb #c3c9cb #fff #fff;
-  -moz-border-bottom-colors: #c3c9cb #c3c9cb #fff #fff;
-  -moz-border-left-colors: #c3c9cb #c3c9cb #fff #fff;
-  background: -moz-linear-gradient(#eaeae4, #ffffff);
+section.has-carrier .article-list header:first-child {
+  margin-top: 2rem;
 }
 
-#msg-conversations-list a > input[type=checkbox]:checked + span {
-  background: url("./images/checked.png") no-repeat scroll center center,
-    -moz-linear-gradient(#ffffff, #eaeae4);
-}
+.article-list {
+  z-index: 5;
 
-#msg-conversations-list .photo {
-  position: absolute;
-  top: -1px;
-  left: 0;
-  width: 95px;
-  height: 95px;
-  overflow: hidden;
-  background-color: #ccc;
-  box-shadow: inset 0 1px 0 #ddd;
-}
-
-#msg-conversations-list .photo img {
-  width: 100%;
-}
-
-#msg-conversations-list .name {
-  font-size: 26px;
-  color: rgb(18, 47, 64);
-  line-height: 32px;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: -moz-calc(100% - 100px);
-}
-
-#msg-conversations-list .msg {
-  color: #666;
-  text-shadow: 0 1px 0 #ddd;
-  font-size: 22px;
-  height: 32px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-#msg-conversations-list .msg .highlight{
-  background: rgb(255, 255, 0);
-}
-
-#msg-conversations-list .time {
-  position: absolute;
-  top: 9px;
-  right: 16px;
-  text-align: right;
-  color: hsla(0,0%,0%,.5);
-  font-size: 18px;
-}
-
-body.msg-edit-mode #msg-conversations-list .name {
-  width: -moz-calc(100% - 190px);
-}
-
-body.msg-edit-mode #msg-conversations-list .msg {
-  width: -moz-calc(100% - 90px);
-}
-
-body.msg-edit-mode #msg-conversations-list .time {
-  right: 106px;
-}
-
-#msg-undo-toolbar {
-  height: 80px;
-  bottom: 80px;
-  background: url("images/app-texture.png") repeat scroll 50% 50%, -moz-linear-gradient(center top , #000, #444) repeat scroll 0% 0% transparent;
-  visibility: hidden;
-}
-
-#msg-undo-toolbar.show {
-  visibility: visible;
-}
-
-#msg-undo-title-container {
-  text-align: center;
-  line-height: 80px;
-  font-size: 16px;
-  font-weight: bold;
-  color: white;
-}
-
-#msg-new-message-container {
   padding: 0;
+
+  background: none repeat scroll 0 0 #E4E4E4;
+  text-align: left;
+}
+
+.article-list header {
+  margin: 0 0 0.6rem;
+  padding: 1.5rem 0 0 0;
+  border-bottom: none;
+
+  color: #606060;
+  font-size: 1.3rem;
+  min-height: 1.8rem;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.article-list[data-type="list"] > ul:last-child {
+  padding-bottom: 0.5rem;
+}
+
+.article-list header,
+  .article-list[data-type="list"] .message.incoming .bubble {
+  padding-left: 4rem;
+}
+
+.article-list[data-type="list"] .message {
+  position: relative;
+  z-index: 0; /* bug 970422 */
+
+  display: block;
+  overflow: hidden;
+  width: 100%;
+  height: auto;
+  margin-bottom: 1rem;
+  border-bottom: none;
+
+  transition: none;
+}
+/* remove margin for notice-button class of button */
+.notice-button {
   margin: 0;
 }
 
-#msg-new-message {
-  margin-top: 6px;
-  margin-right: 24px;
-  top: 0px;
-  right: 0px;
-  height: 48px;
-  line-height: 48px;
-  font-size: 24px;
-  font-weight: bold;
-  min-width: 100px;
-  text-decoration: none;
-  outline: none;
-  position: absolute;
-}
-
-#msg-edit-button, #msg-search-edit-button { 
-  left: 0px;
-  margin-top: 14px;
-  margin-left: 24px; 
-  position: absolute;
-  min-width: 120px;
-}
-
-#msg-search-button, #msg-delete-button, #msg-undo-button{ 
-  right: 0px;
-  top: 0px;
-  margin-top: 14px;
-  margin-right: 24px;  
-  position: absolute;
-  min-width: 120px;
-}
-
-.edit-hide, .search-hide {
-  display: block;
-}
-
-.edit-show, .search-show {
+/* hide download button via css on expired messages */
+.message.expired button {
   display: none;
 }
 
-body.msg-search-result-mode .search-hide {
+.article-list[data-type="list"] .message.hidden {
   display: none;
 }
 
-body.msg-search-result-mode .search-show {
-  display: block;
-}
-
-body.msg-edit-mode .edit-hide {
+.article-list[data-type="list"] header.hidden {
   display: none;
 }
 
-body.msg-edit-mode .edit-show {
-  display: block;
+.article-list[data-type="list"] .message .bubble {
+  overflow: visible;
+  -moz-box-sizing: border-box;
+  max-width: calc(100% - 4rem);
+  height: 100%;
+  padding: 1.5rem;
+
+  background: #fff;
 }
 
-#view-name {
-  font-size: 26px;
-  font-weight: bold;
-  margin: 0 96px;
+/**
+ * We're using border-bottom instead of just underline style as line is too
+ * close to the text and doesn't look similar to visual spec.
+ */
+.message .download {
+  display: block;
+  height: 3.2rem;
+  width: auto;
   padding: 0;
-  line-height: 64px;
-  text-align: center;
-  color: rgb(51, 51, 51);
-  text-overflow: ellipsis;
+
+  background: none;
+  border: none;
+  border-bottom: 1px solid #333;
+  font-size: 1.8rem;
+}
+
+.message .download:active {
+  border-color: #038282;
+  color: #038282;
+}
+
+.message.pending .download {
+  border-bottom: none;
+}
+
+ul.message-list {
+  background-color: #e4e4e4;
+}
+
+#messages-container[data-type="list"] .message.mms .bubble img {
+  height: auto;
+  width: auto;
+}
+
+.article-list[data-type="list"] .message .subject {
+  display: none;
+}
+
+.article-list[data-type="list"] .has-subject .bubble {
+  padding-top: 0;
+}
+
+.article-list[data-type="list"] .has-subject .subject {
+  display: block;
+  margin-bottom: 0.5rem;
+  padding-top: 0.9rem; /* 0.9 top + 1.4 line-height + 0.7 bottom = 3.0 */
+  padding-bottom: 0.7rem;
+
+  line-height: 1.4rem;
+  font-size: 1.4rem;
+  font-style: italic;
+  color: #666;
+}
+
+.article-list[data-type="list"] .has-subject.outgoing .subject {
+  /* to extend the background color and bottom border */
+  width: 100%;
+  margin-left: -1.5rem;
+  padding-left: 1.5rem;
+  padding-right: 4rem;
+
+  background: #FAFAFA;
+  border-bottom: 1px solid #EFEEEE;
+  border-radius: 0.3rem 0 0 0;
+}
+
+.article-list[data-type="list"] .has-subject.incoming .subject {
+  /* to extend the background color and bottom border */
+  width: 100%;
+  margin-left: -4rem;
+  padding-left: 4rem;
+  padding-right: 1.5rem;
+
+  background: #F7C584;
+  border-bottom: 1px solid #EFBD7C;
+  border-radius: 0 0.3rem 0 0;
+}
+
+.article-list[data-type="list"] .message.outgoing .bubble {
+  float: right;
+
+  padding-right: 4.1rem;
+  margin-left: 4rem;
+  border-radius: 0.3rem 0 0 0.3rem;
+}
+
+.article-list[data-type="list"] .message.incoming .bubble {
+  float: left;
+
+  border-radius: 0 0.3rem 0.3rem 0;
+
+  background: #FCC987;
+}
+
+.article-list[data-type="list"] .message.sending .bubble {
+  color: #5f5f5f;
+}
+
+.article-list[data-type="list"] .message.error .bubble {
+  border: 0.1rem solid #B90000;
+}
+
+.article-list[data-type="list"] .message.error.outgoing .bubble {
+  border-right-width: 0;
+}
+
+.article-list[data-type="list"] .message .bubble > div.message-content {
+  position: relative;
+}
+
+.article-list[data-type="list"] .message .bubble aside {
+  position: absolute;
+  top: -1.5rem;
+  right: -4.1rem;
+  bottom: -1.5rem;
+  height: auto;
+  z-index: auto;
+  display: none;
   overflow: hidden;
-  white-space: nowrap;
+  width: 4rem;
+  text-align: center;
 }
 
-body.conversation-new-msg #view-name {
+.article-list[data-type="list"] .message.incoming .bubble aside {
+  left: -4rem;
+  right: auto;
+  margin: 0 0.5rem 0 0;
+}
+
+.article-list[data-type="list"] .message.has-subject .bubble aside {
+  top: -0.5rem;
+}
+
+.article-list[data-type="list"] .message.error .bubble aside progress,
+.article-list[data-type="list"] .message.delivered .bubble aside progress {
   display: none;
 }
 
-#view-num {
-  display: none;
-  margin: 10px 152px;
-  padding: 0 20px;
-  -moz-box-sizing: border-box;
-  width: -moz-calc(100% - 300px);
+.article-list[data-type="list"] .message.error .bubble aside {
+  display: block;
+
+  background: url('images/icons/exclamation.png') no-repeat center center;
+  background-size: 2.2rem;
 }
 
-body.conversation-new-msg #view-num {
+.article-list[data-type="list"] .message.delivered .bubble aside {
+  display: block;
+  background: url('images/icons/deliveredtick.png') no-repeat center center;
+  background-size: 2.2rem;
+}
+
+.article-list[data-type="list"] .message.pending .bubble aside,
+.article-list[data-type="list"] .message.sending .bubble aside {
   display: block;
 }
 
-#view-edit-container {
-  position: absolute;
-  top: 0; right: 0;
-  height: 60px;
-  width: 96px;
+.article-list[data-type="list"] .message.pending .bubble aside progress,
+.article-list[data-type="list"] .message.sending .bubble aside progress {
+  display: block;
+  height: 100%;
+  margin: 0 auto;
 }
 
-#view-edit {
-  position: absolute;
+.edit .article-list[data-type="list"] .message.error .bubble aside,
+.edit .article-list[data-type="list"] .message.pending .bubble aside progress,
+.edit .article-list[data-type="list"] .message.sending .bubble aside progress {
+  display: none;
+}
+
+.article-list[data-type="list"] .message .bubble p {
+  text-align: left;
+  font-size: 1.8rem;
+  line-height: 2.3rem;
+  white-space: pre-wrap;
+  padding: 0;
+}
+
+.article-list[data-type="list"] .message.no-attachment .bubble p {
+  height: 2.3rem;
+}
+
+.article-list[data-type="list"] .message .bubble p a {
+  color: #000;
+  text-decoration: underline;
+}
+
+.article-list[data-type="list"] .message .bubble p a:active {
+  color: #FF4E00;
+}
+
+/*
+  Styles for Edit mode in Messages Container
+*/
+
+.edit .article-list[data-type="list"] .message {
+  border-color: #e7e7e7;
+}
+
+.edit [data-type="list"] .message .bubble {
+  pointer-events: none;
+}
+
+.edit-button {
+  background: -moz-linear-gradient(top, #b50404 0%, #850a0a 100%);
+  height: 100%;
+  width: 100%;
   -moz-box-sizing: border-box;
-  top: 16px;
-  right: 16px;
-  height: 32px;
-  line-height: 32px;
-  width: 64px;
-  padding: 0 8px;
-  border-radius: 5px;
-  border: 1px solid hsl(60,2%,62%);
-  text-align: center;
-  font-size: 18px;
-  font-weight: bold;
-  color: #666;
-  text-shadow: 1px 1px 1px hsla(0,0%,100%,.5);
-  background: -moz-linear-gradient(top, hsla(0,0%,97%,1) 0, hsla(280,8%,93%,1) 1px, hsla(0,0%,87%,1) 100%);
+  font-weight: 600;
+  font-size: 1.6rem;
+  color: white;
+  opacity: 0.99; /* hackaround for painting bug (bug 821221) */
 }
 
-#view-edit:active {
-  background: -moz-linear-gradient(top, hsla(0,0%,97%,1) 0, hsla(0,0%,87%,1) 1px, hsla(280,8%,93%,1) 100%);
+.disabled {
+  opacity: 0.3;
+  pointer-events: none;
 }
 
-#view-list {
-  background: url('images/conversation-view-list-bg.png');
+/* Add a margin at the end of the last thread or message node to avoid overlay
+ * with the edit mode menu */
+.edit .edit-container > :last-child {
+  margin-bottom: 7rem;
 }
 
-#view-list > div {
-  background: url("images/app-texture.png") repeat scroll 50% 50%, rgb(191, 204, 215);
-  margin: 8px;
-  min-height: 64px;
-  border-radius: 8px;
-  position: relative;
-  padding: 16px;
-  -moz-box-sizing: border-box;
-}
 
-#view-list > div.sender {
-  /* Remove the thumbnail for current stage.
-   *padding need shit back to 96px when social network integration is ready*/  
-  padding-left: 16px;
-}
+/*
+  DSDS
+*/
 
-#view-list > div.receiver {
-  /* Remove the thumbnail for current stage.
-   *padding need shit back to 96px when social network integration is ready*/  
-  padding-right: 16px;
-  text-align: right;
-}
+.js-sim-indication {
+  position: absolute;
+  left: 0;
+  top: 0.2rem;
+  display: none;
 
-#view-list > div.pending {
-  -moz-animation: fadeIn 2s ease;
+  line-height: 1;
+  width: 100%;
+
+  font-size: 1.3rem;
   opacity: 0.5;
 }
 
-@-moz-keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 0.5;
-  }
+.has-preferred-sim .js-sim-indication {
+  display: block;
 }
 
-#view-list .photo {
+.has-preferred-sim #messages-send-button {
+  height: 4.5rem;
+  padding-top: 0.5rem;
+
+  /* override BB, first one is separator, second one is background */
+  background-position: left bottom, bottom;
+}
+
+.has-preferred-sim #messages-send-button:after {
   position: absolute;
-  top: 0;
-  width: 80px;
-  height: 80px;
-  margin: 8px;
-  border-radius: 5px;
-  box-shadow: inset 0 1px 0 #ddd, 0 1px 0 #999;
-  overflow: hidden;
-  background-color: #ccc;
-  z-index: 2;
-}
-
-#view-list > div.sender .photo {
+  bottom: 0;
   left: 0;
+
+  content: '';
+  display: block;
+  width: 100%;
+  height: 1rem;
+
+  background: url(images/long-tap-indicator.png) center no-repeat;
 }
 
-#view-list > div.receiver .photo {
-  right: 0;
+/*
+  Loading screen while deleting
+*/
+
+#loading.show-loading {
+  display: block;
 }
 
-#view-list .photo img {
+#loading {
+  display: none;
+}
+
+.loading-header {
+  text-align: left;
+}
+
+#loading [role="status"] {
+  text-align: center;
+  height: 4rem;
+}
+
+#loading p {
+  border-bottom: none;
+}
+
+/*
+  No result container
+*/
+
+#threads-no-messages {
+  background-image: url('images/SMS_200x200_bubble.png');
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-position: center;
+  background-size: 20rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: calc(100% - 5rem);
   width: 100%;
 }
 
-#view-list > div .text {
-  font-size: 24px;
-  font-weight: 600;
-  color: rgb(18, 47, 64);
-  text-shadow: 0 1px 0 #ddd;
-  line-height: 32px;
+#no-result-message {
+  text-align: left;
+  line-height: 3rem;
+  position: relative;
+  top: 50%;
+  border-top: .1rem solid rgba(96,96,96,.5);
+  padding: 2rem 0.5rem;
+  width: 27rem;
+  margin: -8rem auto;
+  color: #606060;
+  font-weight: 300;
+  font-size: 2.2rem;
 }
 
-#view-list > div .time {
-  font-size: 18px;
-  line-height: 23px;
-  color: rgb(62, 86, 106);
-  text-shadow: 0 1px 0 #ddd;
+/*
+  Styles related to the layout of the composer
+*/
+#messages-to-field {
+  position: relative;
+  z-index: 10;
+
+  display: none;
+  height: 0; /* see bug 941353 */
+
+  text-align: left;
+  color: black;
+  font-size: 1.465rem;
 }
 
-#view-list > div::before {
-  content: '';
+section[role="region"].new #messages-to-field {
   display: block;
-  width: 11.2px; /* 8px * sqrt(2) */
-  height: 11.2px;
+}
+
+#to-label {
+  margin: 1.5rem 0 0 1.5rem;
+  overflow: hidden;
+
+  white-space: nowrap;
+  color: black;
+  font-size: 1.465rem;
+  float: left;
+}
+
+#messages-recipients-list-container {
+  z-index: -1;
+  -moz-box-sizing: border-box;
+  border-bottom: 0.1rem solid #4d4d4d;
+  width: 100%;
+
+  background-color: #fff;
+  transition: transform 0.2s ease-in-out;
+  transform: translateY(calc(-100% + 4.5rem));
+}
+
+#messages-recipients-list {
+  padding: 1.4rem 0 0 0.5rem;
+}
+/*
+Used by Recipients.View to display multi or single line.
+Do not remove.
+
+generateHeightRule() (in ThreadUI/thread_ui.js) will create:
+#messages-recipients-list.multiline {
+  max-height: {max available height}px;
+}
+*/
+#messages-recipients-list.singleline {
+  overflow-y: hidden;
+}
+#messages-recipients-list.multiline {
+  overflow-y: scroll;
+}
+.multiline #messages-recipients-list-container {
+  transform: translateY(0);
+}
+
+.recipient {
+  display: inline-block;
+  overflow: hidden;
+  -moz-box-sizing: border-box;
+       box-sizing: border-box;
+  max-width: calc(100% - .5rem);
+  height: 2.4rem;
+  border: .1rem solid #4d4d4d;
+  padding: 0 0.8rem;
+
+  background: -moz-linear-gradient(#fff, #f1f1f1);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: #2c2c2c;
+  margin-right: 0.5rem;
+  border-radius: .3rem;
+  font-size: 1.7rem;
+}
+
+.recipient[contenteditable=true] {
+  overflow: hidden;
+  /* Editable recipients have no `padding-left` so that they align with
+   * "assimilated" recipients (see `ThreadUI.assimilateRecipients`), but they
+   * maintain twice the `padding-right` so they wrap as if "assimilated". For
+   * discussion of this behavior, see "Bug 905260 - [messages] padding issues
+   * in the recipient panel". */
+  padding-left: 0;
+  padding-right: 1.6rem;
+
+  background: none;
+  border-color: transparent;
+  white-space: normal;
+  text-overflow: clip;
+  color: black;
+  font-size: 1.8rem;
+}
+
+/* Disable padding and margin on empty contenteditable recipients when they do
+ * not have focus. This allows the Recipients List to intelligently collapse
+ * when the final row contains no "assimilated" (i.e. non-contenteditable)
+ * recipients. */
+.recipient[contenteditable=true]:empty {
+  margin: 0;
+  padding: 0;
+  border-width: 0;
+}
+
+.recipient[contenteditable=true]:empty:focus {
+  margin-right: 0.5rem;
+  padding-right: 0.8rem;
+  border-width: 0.1rem;
+}
+
+.recipient[contenteditable=false].attention {
+  position: relative;
+
+  padding-left: 1.2rem;
+  border: 0.1rem solid #b90000;
+
+  background: transparent;
+}
+
+.recipient[contenteditable=false].attention::before {
   position: absolute;
-  top: 20px;
-  background: url("images/app-texture.png") repeat scroll 50% 50%, rgb(191, 204, 215);
-  -moz-transform: rotate(45deg);
+
+  border-bottom-left-radius: 0.3rem;
+  border-top-left-radius: 0.3rem;
+  padding: 0.2rem 0.2rem 0 0.2rem;
+  margin-left: -1.2rem;
+  margin-top: -0.1rem;
+
+  background-color: #b90000;
+  color: #fff;
+  content: "!";
 }
 
-#view-list > div.sender::before {
-  left: -5.6px;
+.article-list[data-type="list"] ul.contact-list {
+  position: absolute;
+  width: calc(100% - 3.1rem);
+  z-index: 5;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: calc(100% - 5rem);
+  padding: 0 1.5rem;
+  background: white;
 }
 
-#view-list > div.receiver::before {
-  right: -5.6px;
+body[role="application"] form[role="dialog"][data-type="action"] > section:first-child{
+  height: auto;
+  border-bottom: 0.1rem solid #616262;
+  padding-bottom: 1rem;
+  padding-left: 2.5rem;
 }
 
-#view-bottom-toolbar {
-  background: url('images/diagonal-gray-pattern.png'),
-  -moz-linear-gradient(center top , rgb(244, 244, 244), rgb(234, 234, 234)) repeat scroll 0% 0% transparent;
-  padding-right: 16px;
+/* building blocks overload
+ * TODO load building-blocks CSS before sms.css so that we don't need !important
+ * Bug XXX
+ */
+form[role="dialog"][data-type="action"].contact-prompt > header {
+  height: auto;
+  min-height: 5rem;
+  font-weight: 100;
 }
 
-#view-msg-text-container {
+.contact-header {
+  /* bottom padding is .9rem because we need .1rem more for the
+   * nice shadow line at the header bottom, defined as a :after element */
+  padding: 0.8rem 0 0.9rem;
 }
 
-#view-msg-text {
-  padding: 0 10px;
-  width: -moz-calc(100% - 16px);
+.contact-header .name {
+  line-height: 2.5rem;
+  padding: 0.5rem 0 0.8rem;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  font-size: 2.3rem;
+}
+
+.contact-header .details {
+  line-height: 1.5rem;
+  padding: 0 0 0.7rem;
+  margin: 0;
+  overflow: hidden;
+
+  font-size: 1.5rem;
+}
+
+.contact-header span[data-type=img] {
   display: block;
-  resize: none;
-  font-size: 24px;
-  font-weight: bold;
-  line-height: 44px;
-  margin: 14px 0 0 16px;
-  overflow: auto;
-  overflow-x: auto;
-  min-height: 50px;
-  max-height: 200px;
+  width: 6rem;
+  height: 6rem;
+  background-size: cover;
+  background-position: center;
 }
 
-#view-msg-send-container {
+.contact-header aside.pack-end {
+  float: right;
+  margin-right: -1.5rem; /* compensate the header's 3rem padding */
 }
 
-#view-msg-send {
-  margin: 14px 0 0 16px;
-  min-width: 96px;
+body[role="application"] form[role="dialog"][data-type="action"] > header:first-child{
+  text-align: left;
 }
 
-#view-image-button {
-  margin: 14px 0 0 10px;
-}
-/* localization */
-body.hidden *[data-l10n-id] {
-  visibility: hidden;
+section[role="region"].new .article-list[data-type="list"]  li:first-child {
+  margin-top: 4.6rem;
 }
 
+section[role="region"].new .article-list[data-type="list"]  li {
+  pointer-events: auto;
+}
+
+.suggestion * {
+  pointer-events: none;
+}
+
+.subheader {
+  position: absolute;
+  z-index: 6; /* should be between 4 and 9 (inclusive). 3 is the z-index for
+                 the input form, 10 is the z-index for the header */
+  left: 0;
+  right: 0;
+  top: 5rem;
+}
+
+.subheader menu {
+  margin: 1.5rem 1.5rem 0 0;
+  float: right;
+}
+
+/* Elements related to information view */
+section[role="region"].information #messages-options-icon,
+section[role="region"].information #messages-attach-button,
+section[role="region"].information #messages-subheader,
+section[role="region"].information #messages-container,
+section[role="region"].information #messages-compose-form {
+  display: none;
+}
+
+section[role="region"].information > header:first-child .icon.icon-back {
+  background-image: url(/shared/style/headers/images/icons/close.png);
+}
+
+#messages-back-button:hover:after {
+  background-color: transparent;
+}
+
+/* Activity mode specific style */
+#messages-close-button {
+  display: none;
+}
+
+.request-activity-mode #messages-close-button {
+  display: block;
+}
+
+.request-activity-mode #messages-back-button {
+  display: none;
+}

@@ -1,9 +1,17 @@
-requireApp('calendar/js/format.js');
-requireApp('calendar/js/template.js');
+requireLib('format.js');
+requireLib('template.js');
 
 suite('calendar/template', function() {
+  'use strict';
+
   var Template, subject,
-      tplStr = '%s foo %h';
+      tplStr = '%s foo %h',
+      support;
+
+
+  suiteSetup(function() {
+    support = testSupport.calendar;
+  });
 
   suiteSetup(function() {
     Template = Calendar.Template;
@@ -37,141 +45,193 @@ suite('calendar/template', function() {
   });
 
   test('#renderEach', function() {
-    var tpl = new Template('{x}x{y}');
-    var result = tpl.renderEach([
+    var tpl,
+        result,
+        objects;
+
+    objects = [
       { x: 1, y: 2 },
       { x: 7, y: 7 }
-    ]);
+    ];
+
+    tpl = new Template(function() { return this.h('x') + 'x' + this.h('y'); });
+    result = tpl.renderEach(objects);
 
     assert.deepEqual(result, [
       '1x2',
       '7x7'
-    ]);
+    ], 'should return array of rendered results');
+
+    result = tpl.renderEach(objects, '--');
+
+    assert.equal(
+      result,
+      '1x2--7x7',
+      'should return string joined by ","'
+    );
   });
 
   suite('#render', function() {
 
-    function renderTests(method) {
-
-
-      test('single placeholder no flag', function() {
-        var tpl = new Template(
-          'z {a} foo'
-        );
-
-        assert.equal(tpl[method]({a: 'baz'}), 'z baz foo');
-        assert.equal(tpl[method]({a: 'baz'}), 'z baz foo');
-        assert.equal(tpl[method]({a: 'baz'}), 'z baz foo');
+    test('single placeholder no flag', function() {
+      var tpl = new Template(function() {
+        return 'z ' + this.h('a') + ' foo';
       });
 
-      test('when input is not an object', function() {
-        var tpl = new Template('foo {value}!');
-        var result = tpl.render(1);
+      assert.equal(tpl.render({a: 'baz'}), 'z baz foo');
+      assert.equal(tpl.render({a: 'baz'}), 'z baz foo');
+      assert.equal(tpl.render({a: 'baz'}), 'z baz foo');
+    });
 
-        assert.equal(result, 'foo 1!');
+    test('when input is not an object', function() {
+      var tpl = new Template(function() {
+          return 'foo ' + this.h('value') + '!'; });
+      var result = tpl.render(1);
+
+      assert.equal(result, 'foo 1!');
+    });
+
+    test('without placeholders', function() {
+      var tpl = new Template(function() { return 'foo bar'; });
+      assert.equal(tpl.render(), 'foo bar');
+    });
+
+    test('multiple placeholders', function() {
+      var tpl = new Template(function() {
+        return this.h('2') + ' ! ' + this.h('1');
+      });
+      assert.equal(tpl.render({1: '1', 2: '2'}), '2 ! 1');
+    });
+
+    test('keys with dashes', function() {
+      var tpl = new Template(function() {
+        return this.h('foo-bar');
       });
 
-      test('without placeholders', function() {
-        var tpl = new Template('foo bar');
-        assert.equal(tpl.render(), 'foo bar');
+      assert.equal(tpl.render({'foo-bar': 'fo'}), 'fo');
+    });
+
+    test('html escape', function() {
+      var tpl, input, output;
+
+      tpl = new Template(function() {
+        return this.h('html');
       });
 
-      test('multiple placeholders', function() {
-        var tpl = new Template(
-          '{2} ! {1}'
-        );
-        assert.equal(tpl[method]({1: '1', 2: '2'}), '2 ! 1');
+      input = '<div class="foo">\'zomg\'</div>';
+      output = tpl.render({html: input});
+
+      assert.equal(
+        output,
+        '&lt;div class=&quot;foo&quot;&gt;&#x27;zomg&#x27;&lt;/div&gt;'
+      );
+
+      assert.equal(
+        tpl.render({}),
+        ''
+      );
+    });
+
+    test('without arguments', function() {
+      var tpl = new Template(function() { return 'foo ' + this.h('value'); });
+      assert.equal(tpl.render(), 'foo ');
+    });
+
+    test('with newlines in tpl', function() {
+      var tpl = new Template(function() { return '\nfoo ' + this.h('value'); });
+      assert.equal(tpl.render('bar'), '\nfoo bar');
+    });
+
+    test('no html escape', function() {
+      var tpl, input, output;
+
+      tpl = new Template(function() {
+        return this.s('html');
       });
 
-      test('keys with dashes', function() {
-        var tpl = new Template(
-          '{foo-bar}'
-        );
+      input = '<div class="foo">\'zomg\'</div>';
+      output = tpl.render({html: input});
 
-        assert.equal(tpl.render({'foo-bar': 'fo'}), 'fo');
+      assert.equal(
+        output,
+        input
+      );
+    });
+
+    test('bool handler', function() {
+      var tpl, output;
+      tpl = new Template(function() { return this.bool('one', 'selected'); });
+      output = tpl.render({ one: true });
+      assert.equal(output, 'selected');
+
+      output = tpl.render({ one: false });
+      assert.equal(output, '');
+    });
+
+    suite('l10n', function() {
+      var realL10n;
+      var lookup = {
+        foo: 'FOO',
+        bar: 'BAR',
+        'field-one': 'first'
+      };
+
+      suiteSetup(function() {
+        realL10n = navigator.mozL10n;
+        navigator.mozL10n = {
+          get: function(name) {
+            return lookup[name];
+          }
+        };
       });
 
-      test('html escape', function() {
-        var tpl, input, output;
-
-        tpl = new Template(
-          '{html}'
-        );
-
-        input = '<div class="foo">\'zomg\'</div>';
-        output = tpl.render({html: input});
-
-        assert.equal(
-          output,
-          '&lt;div class=&quot;foo&quot;&gt;&#x27;zomg&#x27;&lt;/div&gt;'
-        );
+      suiteTeardown(function() {
+        if (realL10n) {
+          navigator.mozL10n = realL10n;
+        }
       });
 
-      test('without arguments', function() {
-        var tpl = new Template('foo {value}');
-        assert.equal(tpl.render(), 'foo ');
+      test('prefix', function() {
+        var tpl = new Template(function() {
+          return this.l10n('start', 'field-') + ' foo';
+        });
+
+        var result = tpl.render({
+          'start': 'one'
+        });
+
+        assert.equal(result, 'first foo');
       });
 
-      test('with newlines in tpl', function() {
-        var tpl = new Template('\nfoo {value}');
-        assert.equal(tpl.render('bar'), '\nfoo bar');
+      test('simple', function() {
+        var tpl = new Template(function() {
+          return this.l10n('one') + ' ' + this.l10n('two');
+        });
+
+        var result = tpl.render({
+          one: 'foo',
+          two: 'bar'
+        });
+
+        assert.equal(result, 'FOO BAR');
       });
-
-      test('no html escape', function() {
-        var tpl, input, output;
-
-        tpl = new Template(
-          '{html|s}'
-        );
-
-        input = '<div class="foo">\'zomg\'</div>';
-        output = tpl.render({html: input});
-
-        assert.equal(
-          output,
-          input
-        );
-      });
-
-    }
-
-    renderTests('render');
+    });
 
   });
 
   suite('benchmarks', function() {
-
-    function bench(iter, cb) {
-      var start = window.performance.now(),
-          i = 0;
-
-      for (; i < iter; i++) {
-        cb();
-      }
-
-      return window.performance.now() - start;
-    }
-
-    function vs(iter, cmds) {
-      var results = {},
-          key;
-
-      for (key in cmds) {
-        if (cmds.hasOwnProperty(key)) {
-          results[key] = bench(iter, cmds[key]);
-        }
-      }
-
-      return results;
-    }
-
+    /*jshint -W027 */
     test('tpl vs format', function() {
+      // XXX: Minor performance regression
+      // come back later and inline
+      // modifiers which should make
+      // templates quite a bit faster
+      return;
+
       var tpl = 'My name is {first} {last}, Thats Mr {last}';
       var template;
 
-      var expected = 'My name is Sahaja Lal, Thats Mr Lal';
-
-      var results = vs(5000, {
+      var results = support.vs(5000, {
         compiled: function() {
           template = template || new Template(tpl);
           template.render({first: 'Sahaja', last: 'Lal'});
@@ -200,9 +260,9 @@ suite('calendar/template', function() {
 
       div.appendChild(span);
 
-      var results = vs(5000, {
+      support.vs(5000, {
         html: function() {
-          var myDiv = div.cloneNode(),
+          var myDiv = div.cloneNode(true),
               mySpan = myDiv.querySelector('span');
 
           myDiv.className = 'dynamic';
@@ -214,11 +274,12 @@ suite('calendar/template', function() {
         },
 
         template: function() {
-          tpl = tpl || new Template(
-            '<div class="{divClass}">' +
-              '<span class="{spanClass}">{content}</span>' +
-            '</div>'
-          );
+          tpl = tpl || new Template(function() {
+            return '<div class="' + this.h('divClass') + '">' +
+              '<span class="' + this.h('spanClass') + '">' +
+                this.h('content') + '</span>' +
+            '</div>';
+          });
           container.innerHTML = '';
           container.innerHTML = tpl.render({
             divClass: 'dynamic',

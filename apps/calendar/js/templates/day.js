@@ -1,34 +1,79 @@
 (function(window) {
-  if (typeof(Calendar.Templates) === 'undefined') {
-    Calendar.Templates = {};
-  }
+  'use strict';
 
   var Day = Calendar.Template.create({
-    hour: [
-      '<section>',
-        '<h4>{hour}</h4>',
-        '<ol class="events">',
-          '{items|s}',
-        '</ol>',
-      '</section>'
-    ].join(''),
+    hour: function() {
+      var hour = this.h('hour');
+      var l10n = '';
+      var displayHour;
+      var isAllDay = hour === Calendar.Calc.ALLDAY;
 
-    attendee: '<span class="attendee">{value}</span>',
+      if (isAllDay) {
+        l10n = ' data-l10n-id="hour-allday" ';
+        displayHour = navigator.mozL10n.get('hour-allday');
+      } else {
+        displayHour = this.h('displayHour');
+      }
 
-    event: [
-      '<li class="event">',
-        '<h5>{title}</h5>',
-        '<span class="details">',
-          '<span class="location">',
-            '{location}',
-          '</span>',
-          '\n-\n',
-          '{attendees|s}',
-        '</span>',
-      '</li>'
-    ].join('')
+      var classes = [
+        'hour',
+        'hour-' + hour,
+        this.h('classes')
+      ].join(' ');
+
+      return '<section class="' + classes + '" data-hour="' + hour + '">' +
+          '<div class="hour-header">' +
+            (isAllDay ? '<i class="icon-allday"></i>' : '') +
+            '<span ' + l10n + 'class="display-hour ' + hour + '">' +
+              displayHour +
+            '</span>' +
+          '</div>' +
+          // we add a wrapper to allday events to improve the scroll
+          // performance and avoid glitches
+          (isAllDay ? '<div class="allday-events-wrapper">' : '') +
+            '<div class="events">' + this.s('items') + '</div>' +
+          (isAllDay ? '</div>' : '') +
+        '</section>';
+    },
+
+    attendee: function() {
+      return '<span class="attendee">' + this.h('value') + '</span>';
+    },
+
+    event: function() {
+      var calendarId = this.h('calendarId');
+      var hasAlarm = this.arg('hasAlarm');
+
+      var eventClassName = [
+        'event',
+        'calendar-id-' + calendarId,
+        'calendar-display',
+        'calendar-bg-color',
+        this.h('classes')
+      ].join(' ');
+
+      var containerClassName = 'container calendar-border-color ' +
+        'calendar-id-' + calendarId;
+
+      if (hasAlarm) {
+        containerClassName += ' has-alarm';
+      }
+
+      return '<section class="' + eventClassName + '" ' +
+        'data-id="' + this.h('busytimeId') + '">' +
+          '<div class="' + containerClassName + '">' +
+            '<div class="event-title">' + this.h('title') + '</div>' +
+            '<span class="event-location">' +
+              this.h('location') +
+            '</span>' +
+          '</div>' +
+          (hasAlarm ? '<i class="icon-alarm calendar-text-color"></i>' : '') +
+        '</section>';
+    }
   });
 
-  Calendar.Templates.Day = Day;
-}(this));
+  Day.eventSelector = '.event';
+  Day.hourEventsSelector = '.events';
 
+  Calendar.ns('Templates').Day = Day;
+}(this));

@@ -40,6 +40,14 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+// GAIA-
+Components.utils.import('resource://gre/modules/Services.jsm');
+const GAIA_DOMAIN = Services.prefs.getCharPref("extensions.gaia.domain");
+const GAIA_APP_RELATIVEPATH = Services.prefs.getCharPref("extensions.gaia.app_relative_path");
+const GAIA_LOCALES_PATH = Services.prefs.getCharPref("extensions.gaia.locales_debug_path");
+const GAIA_DEVICE_PIXEL_SUFFIX = Services.prefs.getCharPref("extensions.gaia.device_pixel_suffix");
+// -GAIA
+
 /*
  * An implementation of an HTTP server both as a loadable script and as an XPCOM
  * component.  See the accompanying README file for user documentation on
@@ -294,7 +302,7 @@ function toDateString(date)
   {
     var hrs = date.getUTCHours();
     var rv  = (hrs < 10) ? "0" + hrs : hrs;
-    
+
     var mins = date.getUTCMinutes();
     rv += ":";
     rv += (mins < 10) ? "0" + mins : mins;
@@ -595,11 +603,17 @@ nsHttpServer.prototype =
   registerDirectory: function(path, directory)
   {
     // XXX true path validation!
-    if (path.charAt(0) != "/" ||
-        path.charAt(path.length - 1) != "/" ||
-        (directory &&
-         (!directory.exists() || !directory.isDirectory())))
+    if (path.charAt(0) != "/" || path.charAt(path.length - 1) != "/") {
+      dumpn('*** Error: registerDirectory: First argument must start and end ' +
+          'with a / character.');
       throw Cr.NS_ERROR_INVALID_ARG;
+    }
+
+    if (directory && (!directory.exists() || !directory.isDirectory())) {
+      dumpn('*** Error: registerDirectory: Second argument must be a valid ' +
+          'directory.');
+      throw Cr.NS_ERROR_INVALID_ARG;
+    }
 
     // XXX determine behavior of nonexistent /foo/bar when a /foo/bar/ mapping
     //     exists!
@@ -613,6 +627,14 @@ nsHttpServer.prototype =
   registerPathHandler: function(path, handler)
   {
     this._handler.registerPathHandler(path, handler);
+  },
+
+  //
+  // see nsIHttpServer.registerPrefixHandler
+  //
+  registerPrefixHandler: function(prefix, handler)
+  {
+    this._handler.registerPrefixHandler(prefix, handler);
   },
 
   //
@@ -818,7 +840,7 @@ const HOST_REGEX =
                // toplabel
                "[a-z](?:[a-z0-9-]*[a-z0-9])?" +
              "|" +
-               // IPv4 address 
+               // IPv4 address
                "\\d+\\.\\d+\\.\\d+\\.\\d+" +
              ")$",
              "i");
@@ -1029,7 +1051,7 @@ ServerIdentity.prototype =
       // Not the default primary location, nothing special to do here
       this.remove("http", "127.0.0.1", this._defaultPort);
     }
-    
+
     // This is a *very* tricky bit of reasoning here; make absolutely sure the
     // tests for this code pass before you commit changes to it.
     if (this._primaryScheme == "http" &&
@@ -1420,17 +1442,41 @@ RequestReader.prototype =
           var hostPort = request._headers.getHeader("Host");
           var colon = hostPort.indexOf(":");
           var host = (colon < 0) ? hostPort : hostPort.substring(0, colon);
-          if (host != "@GAIA_DOMAIN@" && host.indexOf(".") != -1) {
+          if (host != GAIA_DOMAIN && host.indexOf(".") != -1) {
             var oldPath = request._path;
+            let file;
+            let _handler = this._connection.server._handler;
 
-            var applicationName = host.split(".")[0];
-            var testsApps = ["template", "test-agent", "uitest"];
-            if (testsApps.indexOf(applicationName) != -1) {
-              request._path = "/test_apps/" + applicationName + oldPath;
-            } else {
-              request._path = "/apps/" + applicationName + oldPath;
+            try {
+              file = _handler._getFileForPath(oldPath);
+            } catch(e) {
             }
-            dumpn(request._path + '\n');
+
+            if (!file || !file.exists() || !file.isFile()) {
+              var applicationName = host.split(".")[0];
+
+              // find the file path depending on the application name
+              var filePath = this._findRealPath(applicationName);
+              try {
+                file = _handler._getFileForPath(filePath + oldPath);
+              } catch(e) {
+              }
+
+              if (!file || !file.exists()) {
+                request._path = filePath + oldPath;
+                let foundL10nFile = this._findLocalizationPath();
+                if (!foundL10nFile) {
+                  // find the file path in build_stage instead.
+                  var stageFilePath = this._findStageRealPath(applicationName);
+                  request._path = stageFilePath + oldPath;
+                }
+              } else {
+                request._path = filePath + oldPath;
+              }
+            }
+
+            // TODO refactor this to a "filter" style
+            this._findHidpiPath();
           }
         } catch (e) {
           dump(e);
@@ -1445,6 +1491,117 @@ RequestReader.prototype =
       this._handleError(e);
       return false;
     }
+  },
+
+  _findHidpiPath: function() {
+    var request = this._metadata;
+    var oldPath = request.path;
+
+    // Replace by high quality assets if available.
+    if (GAIA_DEVICE_PIXEL_SUFFIX && (oldPath.endsWith('.png') ||
+        oldPath.endsWith('.gif') || oldPath.endsWith('.jpg'))) {
+      var hidpiPath = oldPath.slice(0, -4) +
+            GAIA_DEVICE_PIXEL_SUFFIX + oldPath.slice(-4);
+      var file =
+            this._connection.server._handler._getFileForPath(hidpiPath);
+      if (file.exists() && file.isFile()) {
+        request._path = hidpiPath;
+      }
+    }
+  },
+
+  _findLocalizationPath: function() {
+    var oldPath = this._metadata.path;
+
+    // Handle localization files
+    if (oldPath.indexOf(".properties") !== -1 &&
+        oldPath.indexOf("en-US.properties") === -1) {
+      return this._findPropertiesPath();
+    }
+    return false;
+  },
+
+  /**
+   * Try to find out real path of apps,
+   * according to GAIA_APP_RELATIVEPATH provided by Makefile.
+   */
+  _findRealPath: function(appName) {
+    if (this._realPath) {
+      return this._realPath[appName];
+    }
+
+    this._realPath = {};
+
+    var appPathList = GAIA_APP_RELATIVEPATH.trim().split(" ");
+    for (var i = 0; i < appPathList.length; i++) {
+      var currentAppName = appPathList[i].split("/")[1];
+
+      if (!currentAppName) {
+        continue;
+      }
+
+      this._realPath[currentAppName] = appPathList[i];
+    }
+    return "/" + this._realPath[appName];
+  },
+
+  /**
+   * If the file doesn't exist, we will try to find them in the build_stage
+   * directory, as a fail safe.
+   */
+  _findStageRealPath: function(appName) {
+    return '/build_stage/' + appName;
+  },
+
+  /**
+   * Try finding the localization files in GAIA_LOCALES_PATH
+   */
+  _findPropertiesPath: function() {
+    var request = this._metadata;
+    var path = request.path;
+
+    // /apps/browser/locales/browser.fr.properties
+    // /apps/browser/shared/locales/date/date.fr.properties
+
+    // browser.fr.properties, date/date.fr.properties
+    var resource = path.split("/locales/")[1];
+    if (!resource) {
+      return false;
+    }
+
+    var resourceParts = resource.split(".");
+    if (!resourceParts.length) {
+      return false;
+    }
+
+    var resourceName = resourceParts[0]; // browser, date/date
+    var localeCode = resourceParts[1]; // fr, fr
+
+    var debugPath = "/" + GAIA_LOCALES_PATH + "/" + localeCode;
+    if (path.contains('/shared/')) {
+      // /apps/browser/shared/locales/date/date.fr.properties
+      // -> /locales/fr/shared/date/date.properties
+      //
+      debugPath += "/shared/" + resourceName + ".properties";
+    } else if (path.startsWith('/apps/')) {
+      // /apps/browser/locales/browser.fr.properties
+      // -> /locales/fr/apps/browser/browser.properties
+      //
+      let appName = path.split("/")[2]; // browser
+      debugPath += "/apps/" + appName + "/" + resourceName + ".properties";
+    } else {
+      return false;
+    }
+
+    dumpn("l10n: try loading " + debugPath + " instead of " + path);
+
+    // check if the file at the new path exists
+    var file = this._connection.server._handler._getFileForPath(debugPath);
+    if (file.exists() && file.isFile()) {
+      request._path = debugPath;
+      return true;
+    }
+    return false;
   },
 
   /**
@@ -1482,7 +1639,7 @@ RequestReader.prototype =
         this._handleResponse();
         return true;
       }
-      
+
       return false;
     }
     catch (e)
@@ -2155,7 +2312,7 @@ function maybeAddHeaders(file, metadata, response)
         code = status.substring(0, space);
         description = status.substring(space + 1, status.length);
       }
-    
+
       response.setStatusLine(metadata.httpVersion, parseInt(code, 10), description);
 
       line.value = "";
@@ -2225,7 +2382,16 @@ function ServerHandler(server)
    * @see ServerHandler.prototype._defaultPaths
    */
   this._overridePaths = {};
-  
+
+  /**
+   * Custom request handlers for the path prefixes on the server in which this
+   * resides.  Path-handler pairs are stored as property-value pairs in this
+   * property.
+   *
+   * @see ServerHandler.prototype._defaultPaths
+   */
+  this._overridePrefixes = {};
+
   /**
    * Custom request handlers for the error handlers in the server in which this
    * resides.  Path-handler pairs are stored as property-value pairs in this
@@ -2290,7 +2456,23 @@ ServerHandler.prototype =
         }
         else
         {
-          this._handleDefault(request, response);
+          var longestPrefix = "";
+          for (let prefix in this._overridePrefixes) {
+            if (prefix.length > longestPrefix.length &&
+                path.substr(0, prefix.length) == prefix)
+            {
+              longestPrefix = prefix;
+            }
+          }
+          if (longestPrefix.length > 0)
+          {
+            dumpn("calling prefix override for " + longestPrefix);
+            this._overridePrefixes[longestPrefix](request, response);
+          }
+          else
+          {
+            this._handleDefault(request, response);
+          }
         }
       }
       catch (e)
@@ -2393,6 +2575,18 @@ ServerHandler.prototype =
       throw Cr.NS_ERROR_INVALID_ARG;
 
     this._handlerToField(handler, this._overridePaths, path);
+  },
+
+  //
+  // see nsIHttpServer.registerPrefixHandler
+  //
+  registerPrefixHandler: function(path, handler)
+  {
+    // XXX true path validation!
+    if (path.charAt(0) != "/" || path.charAt(path.length - 1) != "/")
+      throw Cr.NS_ERROR_INVALID_ARG;
+
+    this._handlerToField(handler, this._overridePrefixes, path);
   },
 
   //
@@ -2696,13 +2890,31 @@ ServerHandler.prototype =
     }
     else
     {
+      var lastModified;
+
       try
       {
-        response.setHeader("Last-Modified",
-                           toDateString(file.lastModifiedTime),
-                           false);
+        lastModified = toDateString(file.lastModifiedTime);
+        response.setHeader("Last-Modified", lastModified, false);
       }
-      catch (e) { /* lastModifiedTime threw, ignore */ }
+      catch (e) {
+        /* lastModifiedTime threw, ignore */
+        lastModified = null;
+      }
+
+      // force revalidation
+      response.setHeader("Expires", "-1");
+
+      var ifModifiedSince;
+      if (metadata.hasHeader("If-Modified-Since")) {
+        ifModifiedSince = metadata.getHeader("If-Modified-Since");
+      }
+
+      if (lastModified && ifModifiedSince && lastModified === ifModifiedSince) {
+        dumpn(">>> file was not modified, returning a 304 code");
+        response.setStatusLine("1.1", 304);
+        return;
+      }
 
       response.setHeader("Content-Type", type, false);
       maybeAddHeaders(file, metadata, response);
@@ -3043,7 +3255,7 @@ ServerHandler.prototype =
     dumpn("*** error in request: " + errorCode);
 
     this._handleError(errorCode, new Request(connection.port), response);
-  }, 
+  },
 
   /**
    * Handles a request which generates the given error code, using the
@@ -3181,7 +3393,7 @@ ServerHandler.prototype =
                     <body>\
                       <h1>404 Not Found</h1>\
                       <p>\
-                        <span style='font-family: monospace;'>" +
+                        <span style='font-family: sans-serif;'>" +
                           htmlEscape(metadata.path) +
                        "</span> was not found.\
                       </p>\
@@ -3292,7 +3504,7 @@ ServerHandler.prototype =
 
       if (metadata.queryString)
         body +=  "?" + metadata.queryString;
-        
+
       body += " HTTP/" + metadata.httpVersion + "\r\n";
 
       var headEnum = metadata.headers;
@@ -4838,17 +5050,17 @@ nsHttpHeaders.prototype =
     var value = headerUtils.normalizeFieldValue(fieldValue);
 
     // The following three headers are stored as arrays because their real-world
-    // syntax prevents joining individual headers into a single header using 
+    // syntax prevents joining individual headers into a single header using
     // ",".  See also <http://hg.mozilla.org/mozilla-central/diff/9b2a99adc05e/netwerk/protocol/http/src/nsHttpHeaderArray.cpp#l77>
     if (merge && name in this._headers)
     {
       if (name === "www-authenticate" ||
           name === "proxy-authenticate" ||
-          name === "set-cookie") 
+          name === "set-cookie")
       {
         this._headers[name].push(value);
       }
-      else 
+      else
       {
         this._headers[name][0] += "," + value;
         NS_ASSERT(this._headers[name].length === 1,
@@ -4871,8 +5083,8 @@ nsHttpHeaders.prototype =
    * @returns string
    *   the field value for the given header, possibly with non-semantic changes
    *   (i.e., leading/trailing whitespace stripped, whitespace runs replaced
-   *   with spaces, etc.) at the option of the implementation; multiple 
-   *   instances of the header will be combined with a comma, except for 
+   *   with spaces, etc.) at the option of the implementation; multiple
+   *   instances of the header will be combined with a comma, except for
    *   the three headers noted in the description of getHeaderValues
    */
   getHeader: function(fieldName)
@@ -5134,7 +5346,7 @@ Request.prototype =
   //
   // see nsIPropertyBag.getProperty
   //
-  getProperty: function(name) 
+  getProperty: function(name)
   {
     this._ensurePropertyBag();
     return this._bag.getProperty(name);
@@ -5156,7 +5368,7 @@ Request.prototype =
 
 
   // PRIVATE IMPLEMENTATION
-  
+
   /** Ensures a property bag has been created for ad-hoc behaviors. */
   _ensurePropertyBag: function()
   {

@@ -1,0 +1,23 @@
+/*
+* web asset generated css file.
+* Do not directly the contents.
+*/
+/* ----------------------------------
+ * INPUT AREAS
+ * ---------------------------------- */
+ body[role="application"] label {
+   display: block;
+   position: relative;
+ }
+
+#settings {
+  position: absolute;
+  width: 80%;
+  background-color: #2c353b;
+  height: 100%;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  font-family: sans-serif;
+}
+

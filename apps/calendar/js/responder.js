@@ -13,7 +13,7 @@
    * @param {Object} list of events to add onto responder.
    */
   var Responder = exports.Calendar.Responder = function Responder(events) {
-    this.events = {};
+    this._$events = Object.create(null);
 
     if (typeof(events) !== 'undefined') {
       this.addEventListener(events);
@@ -43,10 +43,10 @@
     try {
       data = (json.forEach) ? json : JSON.parse(json);
     } catch (e) {
-      throw new Error("Could not parse json: '" + json + '"');
+      throw new Error('Could not parse json: "' + json + '"');
     }
 
-    return {event: data[0], data: data[1]};
+    return data;
   };
 
   Responder.prototype = {
@@ -70,18 +70,12 @@
      * @return {Object} result of WebSocketCommon.parse.
      */
     respond: function respond(json) {
-      var event = Responder.parse(json),
-          args = Array.prototype.slice.call(arguments).slice(1);
-
-      args.unshift(event.data);
-      args.unshift(event.event);
-
-      this.emit.apply(this, args);
+      var event = Responder.parse(json);
+      var args = Array.prototype.slice.call(arguments).slice(1);
+      this.emit.apply(this, event.concat(args));
 
       return event;
     },
-
-    //TODO: Extract event emitter logic
 
     /**
      * Adds an event listener to this object.
@@ -103,11 +97,11 @@
         return this;
       }
 
-      if (!(type in this.events)) {
-        this.events[type] = [];
+      if (!(type in this._$events)) {
+        this._$events[type] = [];
       }
 
-      this.events[type].push(callback);
+      this._$events[type].push(callback);
 
       return this;
     },
@@ -123,8 +117,9 @@
     once: function once(type, callback) {
       var self = this;
       function onceCb() {
-        callback.apply(this, arguments);
+        /*jshint validthis:true */
         self.removeEventListener(type, onceCb);
+        callback.apply(this, arguments);
       }
 
       this.addEventListener(type, onceCb);
@@ -147,11 +142,15 @@
           eventList,
           self = this;
 
-      if (event in this.events) {
-        eventList = this.events[event];
+      if (event in this._$events) {
+        eventList = this._$events[event];
 
         eventList.forEach(function(callback) {
-          callback.apply(self, args);
+          if (typeof(callback) === 'object' && callback.handleEvent) {
+            callback.handleEvent({ type: event, data: args });
+          } else {
+            callback.apply(self, args);
+          }
         });
       }
 
@@ -165,9 +164,9 @@
      * @param {String} event event type to remove.
      */
     removeAllEventListeners: function removeAllEventListeners(name) {
-      if (name in this.events) {
+      if (name in this._$events) {
         //reuse array
-        this.events[name].length = 0;
+        this._$events[name].length = 0;
       }
 
       return this;
@@ -184,11 +183,11 @@
     removeEventListener: function removeEventListener(name, callback) {
       var i, length, events;
 
-      if (!(name in this.events)) {
+      if (!(name in this._$events)) {
         return false;
       }
 
-      events = this.events[name];
+      events = this._$events[name];
 
       for (i = 0, length = events.length; i < length; i++) {
         if (events[i] && events[i] === callback) {
@@ -204,7 +203,7 @@
 
   Responder.prototype.on = Responder.prototype.addEventListener;
 }(
-  (typeof(window) === 'undefined') ? module.exports : window
+  (typeof(module) === 'undefined') ? this : module.exports
 ));
 
 

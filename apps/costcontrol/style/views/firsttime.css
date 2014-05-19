@@ -1,0 +1,163 @@
+/* FIRST TIME EXPERIENCE VIEW */
+
+#firsttime-view, #firsttime-view .view {
+  top: 0;
+  transform: translate(0, 0);
+}
+
+#firsttime-view .view[data-viewport="right"] {
+  transform: translateX(100%);
+}
+
+/* Steps state */
+#firsttime-view .step-state {
+  height: 0;
+  font: 0/0 a;
+  border-top: solid 0.1rem #b7b7b7;
+  border-bottom: solid 0.1rem #fff;
+  position: absolute;
+  top: 5.5rem;
+  left: 1.5rem;
+  right: 1.5rem;
+  z-index: 100;
+}
+
+#firsttime-view .step-state:before {
+  content: "";
+  width: calc(100% / 3);
+  height: 0.3rem;
+  position: absolute;
+  top: 50%;
+  left: 0;
+  margin-top: -0.2rem;
+  background: #858585;
+  transition: all 0.35s cubic-bezier(0.000, 1.000, 0.535, 1.110);
+}
+
+#firsttime-view[data-steps="4"] .step-state:before {
+  width: calc(100% / 4);
+}
+
+/* STATES */
+#firsttime-view.step-1 .step-state:before {
+  transform: translateX(0);
+}
+
+#firsttime-view.step-2 .step-state:before {
+  transform: translateX(100%);
+}
+
+#firsttime-view.step-3 .step-state:before {
+  transform: translateX(200%);
+}
+
+#firsttime-view.step-4 .step-state:before {
+  transform: translateX(300%);
+}
+
+/* Content */
+#firsttime-view .content {
+  padding: 0 1.5rem 0;
+  margin-top: 3.5rem;
+  list-style: none;
+}
+
+/* Wrapper with scroll */
+#firsttime-view section.content {
+  -moz-box-sizing: border-box;
+  max-height: calc(100% - 5rem - 3.5rem - 6.8rem); /* window height - header height - steps progress - menu height  */
+  overflow-x: auto;
+}
+
+#firsttime-view .content h2 {
+  font-size: 1.9rem;
+  margin-bottom: 1.6rem;
+}
+
+#firsttime-view .content p {
+  font-size: 1.6rem;
+}
+
+/* General menu */
+#firsttime-view .step menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-top: solid 0.1rem #e7e7e7;
+  padding: 1.5rem;
+  /* Legacy unstable BB */
+  background: transparent;
+}
+
+#firsttime-view .step menu button {
+  text-align: right;
+  margin: 0 0 0 1rem;
+}
+
+#firsttime-view .step menu button:first-child {
+  margin-left: 0;
+}
+
+#firsttime-view .step menu[data-items="2"] button {
+  width: calc(50% - 0.75rem);
+}
+
+#firsttime-view .step menu button.recommend {
+  text-align: left;
+}
+
+#firsttime-view .step menu button span:first-child {
+  float: left;
+  width: 1.3rem;
+  height: 2.5rem;
+  margin: 0.7rem -0.5rem 0;
+  background: url(../images/app/icons/prev.png) no-repeat center center / 1.3rem;
+}
+
+#firsttime-view .step menu button.recommend span:first-child {
+  float: right;
+  background: url(../images/app/icons/next.png) no-repeat center center / 1.3rem;
+}
+
+/* Choices */
+#firsttime-view .choices li {
+  margin: 0;
+  list-style: none;
+  border-bottom: 0.1rem solid #E7E7E7;
+  position: relative;
+  color: #000;
+  height: 6rem;
+  padding-left: 1.5rem;
+}
+
+#firsttime-view .choices li label {
+  width: 100%;
+  height: 100%;
+  font-size: 1.9rem;
+  font-weight: normal;
+}
+
+#firsttime-view .choices li label > input ~ span {
+  line-height: 6rem;
+}
+
+#firsttime-view .choices li label > input ~ span:after {
+  left: auto;
+  right: 0;
+}
+
+
+/* Settings */
+#firsttime-view .settings li {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.step-hint {
+  color: #999;
+  font-size: 1.6rem;
+  font-weight: bold;
+  margin: 2rem;
+  text-shadow: 0 0.2rem 0 #FFF;
+}

@@ -1,46 +1,19 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
+/* -*- Mode: js; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+
+/*global ActivityWindowManager, SecureWindowFactory,
+         SecureWindowManager, HomescreenLauncher,
+         FtuLauncher, SourceView, ScreenManager, Places, Activities,
+         DialerAgent, DevtoolsView, RemoteDebugger, HomeGesture,
+         SettingsURL, SettingsListener, VisibilityManager, Storage,
+         TelephonySettings, SuspendingAppPriorityManager, TTLView,
+         MediaRecording, AppWindowFactory, SystemDialogManager,
+         applications, Rocketbar, LayoutManager, PermissionManager,
+         HomeSearchbar, SoftwareButtonManager, Accessibility,
+         InternetSharing */
 
 'use strict';
 
-function startup() {
-  ScreenManager.init();
-  LockScreen.init();
-  PinLock.init();
-  StatusBar.init();
-  SoundManager.init();
-  SleepMenu.init();
-  SourceView.init();
-  Shortcuts.init();
-
-  // This is code copied from
-  // http://dl.dropbox.com/u/8727858/physical-events/index.html
-  // It appears to workaround the Nexus S bug where we're not
-  // getting orientation data.  See:
-  // https://bugzilla.mozilla.org/show_bug.cgi?id=753245
-  function dumbListener2(event) {}
-  window.addEventListener('devicemotion', dumbListener2);
-
-  window.setTimeout(function() {
-    window.removeEventListener('devicemotion', dumbListener2);
-  }, 2000);
-}
-
-// XXX: homescreen should be an app launched and managed by window manager,
-// instead of living in it's own frame.
-(function homescreenLauncher() {
-  if (document.location.protocol === 'file:') {
-    var paths = document.location.pathname.split('/');
-    paths.pop();
-    paths.pop();
-    var src = 'file://' + paths.join('/') + '/homescreen/index.html';
-  } else {
-    var host = document.location.host;
-    var domain = host.replace(/(^[\w\d]+\.)?([\w\d]+\.[a-z]+)/, '$2');
-    var src = 'http://homescreen.' + domain;
-  }
-  document.getElementById('homescreen').src = src;
-}());
 
 /* === Shortcuts === */
 /* For hardware key handling that doesn't belong to anywhere */
@@ -50,86 +23,192 @@ var Shortcuts = {
   },
 
   handleEvent: function rm_handleEvent(evt) {
-    if (!ScreenManager.screenEnabled || evt.keyCode !== evt.DOM_VK_F6)
+    if (!ScreenManager.screenEnabled || evt.keyCode !== evt.DOM_VK_F6) {
       return;
+    }
 
     document.location.reload();
   }
 };
 
-// XXX This crap should live in webapi.js for compatibility
-var Mouse2Touch = {
-  'mousedown': 'touchstart',
-  'mousemove': 'touchmove',
-  'mouseup': 'touchend'
-};
+window.addEventListener('load', function startup() {
 
-var Touch2Mouse = {
-  'touchstart': 'mousedown',
-  'touchmove': 'mousemove',
-  'touchend': 'mouseup'
-};
+  /**
+   * Register global instances and constructors here.
+   */
+  function registerGlobalEntries() {
+    /** @global */
+    window.appWindowFactory = new AppWindowFactory();
+    window.appWindowFactory.start();
+    window.activityWindowManager = new ActivityWindowManager();
+    window.activityWindowManager.start();
+    /** @global */
+    window.secureWindowManager = window.secureWindowManager ||
+      new SecureWindowManager();
+    /** @global */
+    window.secureWindowFactory = new SecureWindowFactory();
+    /** @global */
+    if (window.SuspendingAppPriorityManager) {
+      window.suspendingAppPriorityManager = new SuspendingAppPriorityManager();
+    }
+    /** @global */
+    window.systemDialogManager = window.systemDialogManager ||
+      new SystemDialogManager();
 
-var ForceOnWindow = {
-  'touchmove': true,
-  'touchend': true
-};
-
-function AddEventHandlers(target, listener, eventNames) {
-  for (var n = 0; n < eventNames.length; ++n) {
-    var name = eventNames[n];
-    target = ForceOnWindow[name] ? window : target;
-    name = Touch2Mouse[name] || name;
-    target.addEventListener(name, {
-      handleEvent: function(e) {
-        if (Mouse2Touch[e.type]) {
-          var original = e;
-          e = {
-            type: Mouse2Touch[original.type],
-            target: original.target,
-            touches: [original],
-            preventDefault: function() {
-              original.preventDefault();
-            }
-          };
-          e.changedTouches = e.touches;
-        }
-        return listener.handleEvent(e);
-      }
-    }, true);
+    /** @global */
+    window.lockScreenWindowManager = new window.LockScreenWindowManager();
   }
-}
 
-function RemoveEventHandlers(target, listener, eventNames) {
-  for (var n = 0; n < eventNames.length; ++n) {
-    var name = eventNames[n];
-    target = ForceOnWindow[name] ? window : target;
-    name = Touch2Mouse[name] || name;
-    target.removeEventListener(name, listener);
+  function safelyLaunchFTU() {
+    window.addEventListener('homescreen-ready', function onHomescreenReady() {
+      window.removeEventListener('homescreen-ready', onHomescreenReady);
+      FtuLauncher.retrieve();
+    });
+    /** @global */
+    window.homescreenLauncher = new HomescreenLauncher().start();
   }
-}
 
-window.addEventListener('mozfullscreenchange', function onfullscreen(e) {
-  var classes = document.getElementById('screen').classList;
-  document.mozFullScreen ?
-    classes.add('fullscreen') : classes.remove('fullscreen');
+  if (applications.ready) {
+    registerGlobalEntries();
+    safelyLaunchFTU();
+  } else {
+    window.addEventListener('applicationready', function appListReady(event) {
+      window.removeEventListener('applicationready', appListReady);
+      registerGlobalEntries();
+      safelyLaunchFTU();
+    });
+  }
+
+  /**
+   * Enable checkForUpdate after FTU is either done or skipped.
+   */
+  function doneWithFTU() {
+    window.removeEventListener('ftudone', doneWithFTU);
+    window.removeEventListener('ftuskip', doneWithFTU);
+    var lock = window.navigator.mozSettings.createLock();
+    lock.set({
+      'gaia.system.checkForUpdates': true
+    });
+  }
+
+  window.addEventListener('ftudone', doneWithFTU);
+  // Enable checkForUpdate as well if booted without FTU
+  window.addEventListener('ftuskip', doneWithFTU);
+
+  Shortcuts.init();
+  ScreenManager.turnScreenOn();
+
+  // Please sort it alphabetically
+  window.activities = new Activities();
+  window.accessibility = new Accessibility();
+  window.accessibility.start();
+  window.devtoolsView = new DevtoolsView();
+  window.dialerAgent = new DialerAgent().start();
+  window.homeGesture = new HomeGesture().start();
+  window.homeSearchbar = new HomeSearchbar();
+  window.internetSharing = new InternetSharing();
+  window.internetSharing.start();
+  window.layoutManager = new LayoutManager().start();
+  window.permissionManager = new PermissionManager();
+  window.permissionManager.start();
+  window.places = new Places();
+  window.places.start();
+  window.remoteDebugger = new RemoteDebugger();
+  window.rocketbar = new Rocketbar();
+  window.softwareButtonManager = new SoftwareButtonManager().start();
+  window.sourceView = new SourceView();
+  window.telephonySettings = new TelephonySettings();
+  window.telephonySettings.start();
+  window.ttlView = new TTLView();
+  window.visibilityManager = new VisibilityManager().start();
+
+  navigator.mozL10n.ready(function l10n_ready() {
+    window.mediaRecording = new MediaRecording().start();
+  });
+
+  // We need to be sure to get the focus in order to wake up the screen
+  // if the phone goes to sleep before any user interaction.
+  // Apparently it works because no other window has the focus at this point.
+  window.focus();
+
+  // With all important event handlers in place, we can now notify
+  // Gecko that we're ready for certain system services to send us
+  // messages (e.g. the radio).
+  // Note that shell.js starts listen for the mozContentEvent event at
+  // mozbrowserloadstart, which sometimes does not happen till window.onload.
+  var evt = new CustomEvent('mozContentEvent',
+      { bubbles: true, cancelable: false,
+        detail: { type: 'system-message-listener-ready' } });
+  window.dispatchEvent(evt);
 });
 
-try {
-  window.navigator.mozKeyboard.onfocuschange = function onfocuschange(evt) {
-    switch (evt.detail.type) {
-      case 'blur':
-        var event = document.createEvent('CustomEvent');
-        event.initCustomEvent('hideime', true, true, {});
-        window.dispatchEvent(event);
-        break;
+window.storage = new Storage();
 
-      default:
-        var event = document.createEvent('CustomEvent');
-        event.initCustomEvent('showime', true, true, evt.detail);
-        window.dispatchEvent(event);
-        break;
+/* === Localization === */
+/* set the 'lang' and 'dir' attributes to <html> when the page is translated */
+window.addEventListener('localized', function onlocalized() {
+  document.documentElement.lang = navigator.mozL10n.language.code;
+  document.documentElement.dir = navigator.mozL10n.language.direction;
+});
+
+var wallpaperURL = new SettingsURL();
+
+// Define the default background to use for all homescreens
+SettingsListener.observe(
+  'wallpaper.image',
+  'resources/images/backgrounds/default.png',
+  function setWallpaper(value) {
+    document.getElementById('screen').style.backgroundImage =
+      'url(' + wallpaperURL.set(value) + ')';
+  }
+);
+
+// Use a setting in order to be "called" by settings app
+navigator.mozSettings.addObserver(
+  'clear.remote-windows.data',
+  function clearRemoteWindowsData(setting) {
+    var shouldClear = setting.settingValue;
+    if (!shouldClear) {
+      return;
     }
-  };
-} catch (e) {}
 
+    // Delete all storage and cookies from our content processes
+    var request = navigator.mozApps.getSelf();
+    request.onsuccess = function() {
+      request.result.clearBrowserData();
+    };
+
+    // Reset the setting value to false
+    var lock = navigator.mozSettings.createLock();
+    lock.set({'clear.remote-windows.data': false});
+  });
+
+/* === XXX Bug 900512 === */
+// On some devices touching the hardware home button triggers
+// touch events at position 0,0. In order to make sure those does
+// not trigger unexpected behaviors those are captured here.
+function cancelHomeTouchstart(e) {
+  if (e.touches[0].pageX === 0 && e.touches[0].pageY === 0) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  }
+}
+
+function cancelHomeTouchend(e) {
+  if (e.changedTouches[0].pageX === 0 && e.changedTouches[0].pageY === 0) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  }
+}
+
+function cancelHomeClick(e) {
+  if (e.pageX === 0 && e.pageY === 0) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  }
+}
+
+window.addEventListener('touchstart', cancelHomeTouchstart, true);
+window.addEventListener('touchend', cancelHomeTouchend, true);
+window.addEventListener('mousedown', cancelHomeClick, true);
+window.addEventListener('mouseup', cancelHomeClick, true);

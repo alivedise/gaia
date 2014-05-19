@@ -1,69 +1,278 @@
-
-#sleep {
+#sleep-menu {
+  display: none;
   position: absolute;
   top: 0;
+  right: 0;
+  bottom: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  /* Show it above fullscreen - see https://mxr.mozilla.org/mozilla-central/source/layout/style/ua.css#218 */
-  z-index: 2147483647;
-  background-color: rgba(0,0,0,0.4);
-  -moz-transition: opacity 0.5s ease;
-  display: none;
+  padding: 0 0 7rem;
+  color: #fff;
+  background: url(/shared/style/value_selector/images/ui/pattern.png) repeat left top,
+              url(/shared/style/value_selector/images/ui/gradient.png) no-repeat left top / 100% 100%;
+  overflow: hidden;
+  z-index: 100;
 }
 
-#sleep.visible {
+#sleep-menu-container {
+  -moz-box-sizing: padding-box;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+}
+
+#sleep-menu-container:before {
+  content: "";
+  position: absolute;
+  display: block;
+  pointer-events: none;
+  top: 4.8rem;
+  left: 0;
+  right: 0;
+  bottom: 6.9rem;
+  background: url(/shared/style/value_selector/images/ui/shadow.png) repeat-x left top,
+              url(/shared/style/value_selector/images/ui/shadow-invert.png) repeat-x left bottom;
+}
+
+#sleep-menu.visible {
   display: block;
 }
 
-.sleep-menu {
+#sleep-menu-container h1 {
+  -moz-box-sizing: border-box;
+  height: 4.8rem;
+  margin: 0 -1.5rem;
+  padding: 0 3rem 1rem;
+  font-weight: 400;
+  font-size: 1.9rem;
+  line-height: 4.8rem;
+  color: #fff;
+  border-bottom: 0.1rem solid #616262;
+  background-color: rgba(0,0,0, .2);
+}
+
+#sleep-menu-container ul {
+  position: relative;
+  padding: 0;
+  margin: 0;
+  max-height: calc(100% - 5rem);
+  overflow: auto;
+  border-top: solid 0.1rem #222323;
+}
+
+#sleep-menu-container li {
+  margin: 0;
+  padding: 1rem 3rem;
+  height: auto;
+  list-style: none;
+  position: relative;
+  font-weight: lighter;
+  font-size: 2.2rem;
+  line-height: 3.9rem;
+  color: #fff;
+  transition: background-color 0.2s ease;
+}
+
+#sleep-menu-container li:before,
+#sleep-menu-container li:after {
+  content: "";
   position: absolute;
-  top: 20%;
-  left: 50%;
-  width: 320px;
-  height: 300px;
-  margin: 0 0 0 -160px;
-  background: -moz-linear-gradient(center top , rgb(244, 244, 244), rgb(234, 234, 234)) repeat scroll 0% 0% white;
-  border-radius: 8px;
-  border: 1px solid hsla(0,0%,0%,0);
+  left: 1.5rem;
+  right: 1.5rem;
+  height: 0.1rem;
 }
 
-.sleep-menu div {
-  height: 73px;
-  line-height: 73px;
-  font-size: 26px;
-  color: #778;
-  padding: 0 20px 0 100px;
-  border-top: 1px solid hsla(0, 0%, 100%,0.2);
-  border-bottom: 1px solid hsla(0, 0%, 0%,0.4);
+#sleep-menu-container li:before {
+  top: 0;
+  background-color: #666;
 }
 
-.sleep-menu div[data-value="power"] {
-  background: url(./images/power-off.png) no-repeat 0 50%;
+#sleep-menu-container li:after {
+  bottom: 0;
+  background-color: #000;
 }
 
-.sleep-menu div[data-value="restart"] {
-  background: url(./images/restart.png) no-repeat 0 50%;
+#sleep-menu-container li:active {
+  background: #00ABCC;
+  color: #fff!important;
 }
 
-.sleep-menu div[data-value="airplane"] {
-  background: url(./images/airplane.png) no-repeat 0 50%;
+#sleep-menu-container li:active:before,
+#sleep-menu-container li:first-child:before,
+#sleep-menu-container li:active:after,
+#sleep-menu-container li:last-child:after {
+  background-color: transparent;
 }
 
-.sleep-menu div[data-value="normal"] {
-  background: url(./images/normal.png) no-repeat 0 50%;
+#sleep-menu-container li:active + li:before {
+  background-color: #000;
 }
 
-.sleep-menu div[data-value="silent"] {
-  background: url(./images/vibration.png) no-repeat 0 50%;
+#sleep-menu menu {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  margin: 0;
+  padding: 1.5rem;
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  background-color: #2D2D2D;
+  background-image: url("../themes/default/images/ui/pattern.png");
+  border-top: 0.1rem solid rgba(255, 255, 255, 0.1);
 }
 
-.sleep-menu div:first-child {
-  border-radius: 9px 9px 0 0;
-  border-top-color: transparent;
+#sleep-menu menu button::-moz-focus-inner {
+  border: medium none;
+  outline: medium none;
 }
 
-.sleep-menu div:last-child {
-  border-radius: 0 0 9px 9px;
-  border-bottom-color: transparent;
+#sleep-menu menu button {
+  -moz-box-sizing: border-box;
+  background: url("../themes/default/images/ui/default.png") repeat-x 0 100% #FAFAFA;
+  border: 0.1rem solid #9F9F9F;
+  border-radius: 0.3rem 0.3rem 0.3rem 0.3rem;
+  color: #333;
+  display: inline-block;
+  font-size: 1.6rem;
+  font-weight: 600;
+  height: 3.8rem;
+  line-height: 3.8rem;
+  margin: 0;
+  outline: medium none;
+  overflow: hidden;
+  padding: 0 1.5rem;
+  text-align: center;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  text-shadow: 0.1rem 0.1rem 0 rgba(255, 255, 255, 0.3);
+  vertical-align: middle;
+  white-space: nowrap;
+  width: 100%;
+}
+
+#sleep-menu menu button:active {
+  background: none repeat scroll 0 0 #008AAA;
+  border-color: #008AAA;
+  color: #333;
+}
+
+@media (min-width: 768px) {
+  #sleep-menu {
+    -moz-box-sizing: border-box;
+    background-color: rgba(0,0,0,0.6);
+    background: url(../themes/default/images/ui/menu_bg.png) no-repeat;
+  }
+
+  #sleep-menu-container:before {
+    background: none;
+  }
+
+  #sleep-menu-container {
+    position: absolute;
+    top: calc(50% - 24rem);
+    left: calc(50% - 34rem);
+    width: 68rem;
+    height: 39rem;
+    padding: 0 6rem;
+    font-size: 2.2rem;
+    background-color: #333333;
+    box-shadow: 0 0 1rem #222222;
+    border: 0.1rem solid #282828;
+  }
+
+  #sleep-menu-container h1 {
+    background-color: #333333;
+    border-bottom: none;
+    font-size: 2.2rem;
+    line-height: 2.2rem;
+    height: 7rem;
+    padding: 2.4rem 0;
+    margin: 0;
+  }
+
+  #sleep-menu-container ul {
+    border-top: 0.1rem solid #898989;
+    max-height: 32rem;
+  }
+
+  #sleep-menu-container li {
+    -moz-box-sizing: border-box;
+    border: 0.1rem #a8a8a8;
+    background: none no-repeat 1rem 50%;
+    background-color: #898989;
+    height: 4.7rem;
+    font-size: 2.3rem;
+    line-height: 3rem;
+    font-weight: 400;
+    margin-top: 2.4rem;
+    padding: 1rem 6rem;
+  }
+
+  #sleep-menu-container li:before {
+    background-color: transparent;
+  }
+
+  #sleep-menu-container li:after {
+    background-color: transparent;
+  }
+
+  #sleep-menu-container li:first-child {
+    margin-top: 3rem;
+  }
+
+  #sleep-menu-container li:active {
+    background-position: 1rem;
+  }
+
+  #sleep-menu-container li:active + li:before {
+    background-color: transparent;
+  }
+
+  #sleep-menu-container ul [data-value="airplane"],
+  #sleep-menu-container ul [data-value="airplaneOff"] {
+    background-image: url(/style/sleep_menu/images/airplane.png);
+    background-size: 4rem;
+    background-repeat: no-repeat;
+  }
+
+  #sleep-menu-container ul [data-value="silentOff"],
+  #sleep-menu-container ul [data-value="silent"] {
+    background-image: url(/style/sleep_menu/images/vibration.png);
+    background-size: 4rem;
+    background-repeat: no-repeat;
+  }
+
+  #sleep-menu-container ul [data-value="restart"] {
+    background-image: url(/style/sleep_menu/images/restart.png);
+    background-size: 4rem;
+    background-repeat: no-repeat;
+  }
+
+  #sleep-menu-container ul [data-value="power"] {
+    background-image: url(/style/sleep_menu/images/power-off.png);
+    background-size: 4rem;
+    background-repeat: no-repeat;
+  }
+
+  #sleep-menu menu {
+    position: absolute;
+    top: calc(50% - 24rem + 39rem);
+    left: calc(50% - 34rem);
+    width: 68rem;
+    padding: 0.1rem;
+    height: 7rem;
+    background-color: #2D2D2D;
+    background-image: none;
+    box-shadow: 0 0 1rem #222222;
+  }
+
+  #sleep-menu menu button {
+    margin-left: calc(50% - 9rem);
+    margin-top: 1.5rem;
+    font-size: 2.3rem;
+    font-weight: 400;
+    width: 18rem;
+    height: 4rem;
+  }
 }

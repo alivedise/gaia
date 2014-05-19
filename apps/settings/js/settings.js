@@ -1,193 +1,355 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-
+/* global PerformanceTestingHelper, TelephonySettingHelper,
+   getSupportedLanguages */
 'use strict';
 
-var Settings = {
-  init: function settings_init() {
-    this.loadGaiaCommit();
+/**
+ * Debug note: to test this app in a desktop browser, you'll have to set
+ * the `dom.mozSettings.enabled' preference to false in order to avoid an
+ * `uncaught exception: 2147500033' message (= 0x80004001).
+ */
 
-    var settings = window.navigator.mozSettings;
-    var transaction = settings.getLock();
+/**
+ * Handle root panel functionality
+ */
+define('Root', function() {
+  var LazyLoader = require('shared/lazy_loader');
 
-    var checkboxes = document.querySelectorAll('input[type="checkbox"]');
-    for (var i = 0; i < checkboxes.length; i++) {
-      (function(checkbox) {
-        var key = checkbox.name;
-        if (!key)
-          return;
+  var Root = function() {};
 
-        var request = transaction.get(key);
-        request.onsuccess = function() {
-          if (request.result[key] != undefined)
-            checkbox.checked = !!request.result[key];
-        };
-      })(checkboxes[i]);
-    }
+  Root.prototype = {
+    init: function root_init() {
+      // hide telephony panels
+      if (!navigator.mozTelephony) {
+        var elements = ['call-settings',
+                        'data-connectivity',
+                        'messaging-settings',
+                        'simSecurity-settings'];
+        elements.forEach(function(el) {
+          document.getElementById(el).hidden = true;
+        });
+      }
 
-    var radios = document.querySelectorAll('input[type="radio"]');
-    for (var i = 0; i < radios.length; i++) {
-      (function(radio) {
-        var key = radio.name;
-        if (!key)
-          return;
-
-        var request = transaction.get(key);
-        request.onsuccess = function() {
-          if (request.result[key] != undefined)
-            radio.checked = (request.result[key] === radio.value);
-        };
-      })(radios[i]);
-    }
-
-    var texts = document.querySelectorAll('input[type="text"]');
-    for (var i = 0; i < texts.length; i++) {
-      (function(text) {
-        var key = text.name;
-        if (!key)
-          return;
-
-        var request = transaction.get(key);
-        request.onsuccess = function() {
-          if (request.result[key] != undefined)
-            text.value = request.result[key];
-        };
-      })(texts[i]);
-    }
-
-    var progresses = document.querySelectorAll('progress');
-    for (var i = 0; i < progresses.length; i++) {
-      (function(progress) {
-        var key = progress.dataset.name;
-        if (!key)
-          return;
-
-        var request = transaction.get(key);
-        request.onsuccess = function() {
-          if (request.result[key] != undefined)
-            progress.value = parseFloat(request.result[key]) * 10;
-        };
-      })(progresses[i]);
-    }
-  },
-  handleEvent: function(evt) {
-    var input = evt.target;
-    var key = input.name || input.dataset.name;
-    if (!key)
-      return;
-
-    switch (evt.type) {
-      case 'change':
-        var value;
-        if (input.type === 'checkbox') {
-          value = input.checked;
-        } else if ((input.type == 'radio') ||
-                   (input.type == 'text') ||
-                   (input.type == 'password')) {
-          value = input.value;
-        }
-        var cset = { }; cset[key] = value;
-        window.navigator.mozSettings.getLock().set(cset);
-        break;
-
-      case 'click':
-        if (input.tagName.toLowerCase() != 'progress')
-          return;
-        var rect = input.getBoundingClientRect();
-        var position = Math.ceil((evt.clientX - rect.left) / (rect.width / 10));
-
-        var value = position / input.max;
-        input.value = position;
-
-        var cset = { }; cset[key] = value;
-        window.navigator.mozSettings.getLock().set(cset);
-        break;
-    }
-  },
-  loadGaiaCommit: function() {
-    function dateToUTC(d) {
-      var arr = [];
-      [
-        d.getUTCFullYear(), (d.getUTCMonth() + 1), d.getUTCDate(),
-        d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds()
-      ].forEach(function(n) {
-        arr.push((n >= 10) ? n : '0' + n);
-      });
-      return arr.splice(0, 3).join('-') + ' ' + arr.join(':');
-    }
-    var req = new XMLHttpRequest();
-    req.onreadystatechange = (function(e) {
-      if (req.readyState === 4) {
-        if (req.status === 200) {
-          var data = req.responseText.split('\n');
-          var dispDate = document.getElementById('gaia-commit-date');
-          var disp = document.getElementById('gaia-commit-hash');
-          // XXX it would be great to pop a link to the github page
-          // showing the commit but there doesn't seem to be any way
-          // to tell the browser to do it.
-          var d = new Date(parseInt(data[1] + '000', 10));
-          dispDate.textContent = dateToUTC(d);
-          disp.textContent = data[0];
-        } else {
-          console.error('Failed to fetch gaia commit: ', req.statusText);
+      // hide unused panel
+      if (navigator.mozMobileConnections) {
+        if (navigator.mozMobileConnections.length == 1) { // single sim
+          document.getElementById('simCardManager-settings').hidden = true;
+        } else { // dsds
+          document.getElementById('simSecurity-settings').hidden = true;
         }
       }
-    }).bind(this);
-    req.open('GET', 'gaia-commit.txt', true/*async*/);
-    req.responseType = 'text';
-    req.send();
-  }
-};
 
-// apply user changes to 'Settings'
-window.addEventListener('load', function loadSettings(evt) {
-  window.removeEventListener('load', loadSettings);
-  window.addEventListener('change', Settings);
-  window.addEventListener('click', Settings);
-  Settings.init();
+      setTimeout((function nextTick() {
+        LazyLoader.load(['js/utils.js'], function() {
+          this.initLocale();
+        }.bind(this));
+
+        /**
+         * Enable or disable the menu items related to the ICC card
+         * relying on the card and radio state.
+         */
+        LazyLoader.load([
+          'shared/js/wifi_helper.js',
+          'js/firefox_accounts/menu_loader.js',
+          'shared/js/airplane_mode_helper.js',
+          'js/airplane_mode.js',
+          'js/battery.js',
+          'shared/js/async_storage.js',
+          'js/storage.js',
+          'js/try_show_homescreen_section.js',
+          'shared/js/mobile_operator.js',
+          'shared/js/icc_helper.js',
+          'shared/js/settings_listener.js',
+          'shared/js/toaster.js',
+          'js/connectivity.js',
+          'js/security_privacy.js',
+          'js/icc_menu.js',
+          'js/nfc.js',
+          'js/dsds_settings.js',
+          'js/telephony_settings.js',
+          'js/telephony_items_handler.js',
+          'js/screen_lock.js'
+        ], function() {
+          TelephonySettingHelper.init();
+        });
+      }).bind(this));
+    },
+
+    // startup & language switching
+    initLocale: function root_initLocale() {
+      navigator.mozL10n.ready(function onLocaleChange() {
+        // display the current locale in the main panel
+        getSupportedLanguages(function displayLang(languages) {
+          document.getElementById('language-desc').textContent =
+            languages[navigator.mozL10n.language.code];
+        });
+      });
+    }
+  };
+
+  return function ctor_root() {
+    return new Root();
+  };
 });
 
-// back button = close dialog || back to the root page
-window.addEventListener('keyup', function goBack(event) {
-  if (document.location.hash != '#root' &&
-      event.keyCode === event.DOM_VK_ESCAPE) {
-    event.preventDefault();
-    event.stopPropagation();
+/**
+ * Main entrance of Settings App
+ */
+var Settings = {
+  get mozSettings() {
+    // return navigator.mozSettings when properly supported, null otherwise
+    // (e.g. when debugging on a browser...)
+    var settings = window.navigator.mozSettings;
+    return (settings && typeof(settings.createLock) == 'function') ?
+        settings : null;
+  },
 
-    var dialog = document.querySelector('#dialogs .active');
-    if (dialog) {
-      dialog.classList.remove('active');
-      document.body.classList.remove('dialog');
+  isTabletAndLandscape: function is_tablet_and_landscape() {
+    return this.ScreenLayout.getCurrentLayout('tabletAndLandscaped');
+  },
+
+  _isTabletAndLandscapeLastTime: null,
+
+  rotate: function rotate(evt) {
+    var isTabletAndLandscapeThisTime = Settings.isTabletAndLandscape();
+    var panelsWithCurrentClass;
+    if (Settings._isTabletAndLandscapeLastTime !==
+        isTabletAndLandscapeThisTime) {
+      panelsWithCurrentClass = document.querySelectorAll(
+        'section[role="region"].current');
+      // in two column style if we have only 'root' panel displayed,
+      // (left: root panel, right: blank)
+      // then show default panel too
+      if (panelsWithCurrentClass.length === 1 &&
+        panelsWithCurrentClass[0].id === 'root') {
+        // go to default panel
+        Settings.currentPanel = Settings.defaultPanelForTablet;
+      }
+    }
+    Settings._isTabletAndLandscapeLastTime = isTabletAndLandscapeThisTime;
+  },
+
+  defaultPanelForTablet: '#wifi',
+
+  _currentPanel: null,
+
+  _currentActivity: null,
+
+  get currentPanel() {
+    return this._currentPanel;
+  },
+
+  set currentPanel(hash) {
+    if (!hash.startsWith('#')) {
+      hash = '#' + hash;
+    }
+
+    if (hash == this._currentPanel) {
+      return;
+    }
+
+    // If we're handling an activity and the 'back' button is hit,
+    // close the activity if the activity section is different than root panel.
+    // XXX this assumes the 'back' button of the activity panel
+    //     points to the root panel.
+    if (this._currentActivity !== null &&
+          (hash === '#home' ||
+          (hash === '#root' && Settings._currentActivitySection !== 'root'))) {
+      Settings.finishActivityRequest();
+      return;
+    }
+
+    if (hash === '#wifi') {
+      PerformanceTestingHelper.dispatch('start');
+    }
+
+    var panelID = hash;
+    if (panelID.startsWith('#')) {
+      panelID = panelID.substring(1);
+    }
+
+    this._currentPanel = hash;
+    this.SettingsService.navigate(panelID, null, function() {
+      switch (hash) {
+        case 'about-licensing':
+          // Workaround for bug 825622, remove when fixed
+          var iframe = document.getElementById('os-license');
+          iframe.src = iframe.dataset.src;
+          break;
+        case 'wifi':
+          PerformanceTestingHelper.dispatch('settings-panel-wifi-visible');
+          break;
+      }
+    });
+  },
+
+  _initialized: false,
+
+  init: function settings_init(options) {
+    this._initialized = true;
+
+    if (!this.mozSettings || !navigator.mozSetMessageHandler) {
+      return;
+    }
+
+    this.SettingsService = options.SettingsService;
+    this.PageTransitions = options.PageTransitions;
+    this.LazyLoader = options.LazyLoader;
+    this.ScreenLayout = options.ScreenLayout;
+
+    // register web activity handler
+    navigator.mozSetMessageHandler('activity', this.webActivityHandler);
+
+    // open root panel
+    require(['Root'], function(Root) {
+      var root = Root();
+      root.init();
+    });
+
+    this.currentPanel = 'root';
+
+    // make operations not block the load time
+    setTimeout((function nextTick() {
+      // With async pan zoom enable, the page starts with a viewport
+      // of 980px before beeing resize to device-width. So let's delay
+      // the rotation listener to make sure it is not triggered by fake
+      // positive.
+      this.ScreenLayout.watch(
+        'tabletAndLandscaped',
+        '(min-width: 768px) and (orientation: landscape)');
+      window.addEventListener('screenlayoutchange', this.rotate);
+
+      // display of default panel(#wifi) must wait for
+      // lazy-loaded script - wifi_helper.js - loaded
+      if (this.isTabletAndLandscape()) {
+        var self = this;
+        this.LazyLoader.load([
+          'shared/js/wifi_helper.js'
+          ], function() {
+            self.currentPanel = self.defaultPanelForTablet;
+        });
+      }
+
+      window.addEventListener('keydown', this.handleSpecialKeys);
+    }).bind(this));
+
+  },
+
+  // An activity can be closed either by pressing the 'X' button
+  // or by a visibility change (i.e. home button or app switch).
+  finishActivityRequest: function settings_finishActivityRequest() {
+    // Remove the dialog mark to restore settings status
+    // once the animation from the activity finish.
+    // If we finish the activity pressing home, we will have a
+    // different animation and will be hidden before the animation
+    // ends.
+    if (document.hidden) {
+      this.restoreDOMFromActivty();
     } else {
-      document.location.hash = 'root';
+      var self = this;
+      document.addEventListener('visibilitychange', function restore(evt) {
+        if (document.hidden) {
+          document.removeEventListener('visibilitychange', restore);
+          self.restoreDOMFromActivty();
+        }
+      });
+    }
+
+    // Send a result to finish this activity
+    if (Settings._currentActivity !== null) {
+      Settings._currentActivity.postResult(null);
+      Settings._currentActivity = null;
+    }
+
+    Settings._currentActivitySection = null;
+  },
+
+  // When we finish an activity we need to leave the DOM
+  // as it was before handling the activity.
+  restoreDOMFromActivty: function settings_restoreDOMFromActivity() {
+    var currentPanel = document.querySelector('[data-dialog]');
+    if (currentPanel !== null) {
+      delete currentPanel.dataset.dialog;
+    }
+    delete document.body.dataset.filterBy;
+  },
+
+  visibilityHandler: function settings_visibilityHandler(evt) {
+    if (document.hidden) {
+      Settings.finishActivityRequest();
+      document.removeEventListener('visibilitychange',
+        Settings.visibilityHandler);
+    }
+  },
+
+  webActivityHandler: function settings_handleActivity(activityRequest) {
+    var name = activityRequest.source.name;
+    var section = 'root';
+    Settings._currentActivity = activityRequest;
+    switch (name) {
+      case 'configure':
+        section = Settings._currentActivitySection =
+                  activityRequest.source.data.section;
+
+        if (!section) {
+          // If there isn't a section specified,
+          // simply show ourselve without making ourselves a dialog.
+          Settings._currentActivity = null;
+        }
+
+        // Validate if the section exists
+        var sectionElement = document.getElementById(section);
+        if (!sectionElement || sectionElement.tagName !== 'SECTION') {
+          var msg = 'Trying to open an non-existent section: ' + section;
+          console.warn(msg);
+          activityRequest.postError(msg);
+          return;
+        } else if (section === 'root') {
+          var filterBy = activityRequest.source.data.filterBy;
+          if (filterBy) {
+            document.body.dataset.filterBy = filterBy;
+          }
+        }
+
+        // Go to that section
+        setTimeout(function settings_goToSection() {
+          Settings.currentPanel = section;
+        });
+        break;
+      default:
+        Settings._currentActivity = Settings._currentActivitySection = null;
+        break;
+    }
+
+    // Mark the desired panel as a dialog
+    if (Settings._currentActivity !== null) {
+      var domSection = document.getElementById(section);
+      domSection.dataset.dialog = true;
+      document.addEventListener('visibilitychange',
+        Settings.visibilityHandler);
+    }
+  },
+
+  /**
+   * back button = close dialog || back to the root page
+   * + prevent the [Return] key to validate forms
+   */
+  handleSpecialKeys: function settings_handleSpecialKeys(event) {
+    if (Settings.currentPanel != '#root' &&
+        event.keyCode === event.DOM_VK_ESCAPE) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      var dialog = document.querySelector('#dialogs .active');
+      if (dialog) {
+        dialog.classList.remove('active');
+        document.body.classList.remove('dialog');
+      } else {
+        Settings.currentPanel = '#root';
+      }
+    } else if (event.keyCode === event.DOM_VK_RETURN) {
+      event.target.blur();
+      event.stopPropagation();
+      event.preventDefault();
     }
   }
-});
-
-// set the 'lang' and 'dir' attributes to <html> when the page is translated
-window.addEventListener('localized', function showPanel() {
-  document.documentElement.lang = document.mozL10n.language.code;
-  document.documentElement.dir = document.mozL10n.language.direction;
-
-  // <body> children are hidden until the UI is translated
-  if (document.body.classList.contains('hidden')) {
-    // first run: show main page
-    document.location.hash = 'root';
-    document.body.classList.remove('hidden');
-  } else {
-    // we were in #languages and selected another locale:
-    // reset the hash to prevent weird focus bugs when switching LTR/RTL
-    window.setTimeout(function() {
-      document.location.hash = 'languages';
-    });
-  }
-});
-
-// translate Settings UI if a new locale is selected
-if ('mozSettings' in navigator && navigator.mozSettings) {
-  navigator.mozSettings.onsettingchange = function(event) {
-    if (event.settingName == 'language.current')
-      document.mozL10n.language.code = event.settingValue;
-  };
-}
-
+};

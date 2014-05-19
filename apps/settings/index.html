@@ -1,630 +1,549 @@
 <!DOCTYPE html>
-<html manifest="manifest.appcache">
+<html>
   <head>
-    <meta charset="utf-8"/>
-    <meta http-equiv="pragma" content="no-cache">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
+    <meta charset="utf-8">
     <title>Settings</title>
-    <link rel="stylesheet" type="text/css" media="screen" href="style/ui.css"/>
-    <link rel="stylesheet" type="text/css" media="screen" href="style/dialogs.css"/>
-    <link rel="stylesheet" type="text/css" media="screen" href="style/settings.css"/>
-    <link rel="resource" type="application/l10n" href="locale/settings.properties"/>
-    <!-- Compatibility -->
-    <script>
-      if (document.location.protocol === 'file:') {
-        var paths = document.location.pathname.split('/');
-        paths.pop();
-        paths.pop();
-        paths.pop();
-        var src = 'file://' + paths.join('/') + '/webapi.js';
-      } else {
-        var host = document.location.host;
-        var domain = host.replace(/(^[\w\d]+\.)?([\w\d]+\.[a-z]+)/, '$2');
-        var src = 'http://' + domain + '/webapi.js';
-      }
-      document.write('<script src="' + src + '"><\/script>');
-    </script>
-    <script type="text/javascript" src="js/settings.js"></script>
-    <script type="text/javascript" src="js/wifi.js"></script>
+
+    <!-- Debug/DUMP method support -->
+    <script defer="" src="/shared/js/dump.js"></script>
+    <script defer="" src="/shared/js/settings_url.js"></script>
+
+    <!-- Common style -->
+    <link rel="stylesheet" type="text/css" href="shared/style/headers.css">
+    <link rel="stylesheet" type="text/css" href="shared/style/switches.css">
+    <link rel="stylesheet" type="text/css" href="shared/style/status.css">
+
+    <!-- Specific style -->
+    <link rel="stylesheet" type="text/css" href="style/lists.css">
+    <link rel="stylesheet" type="text/css" href="style/icons.css">
+    <link rel="stylesheet" type="text/css" href="style/settings.css">
+    <link rel="stylesheet" type="text/css" href="style/settings_large.css">
+    <!-- Panel Stylesheets
+    <link rel="stylesheet" type="text/css" href="shared/style/action_menu.css"/>
+    <link rel="stylesheet" type="text/css" href="shared/style_unstable/buttons.css"/>
+    <link rel="stylesheet" type="text/css" href="shared/style/confirm.css"/>
+    <link rel="stylesheet" type="text/css" href="shared/style_unstable/input_areas.css"/>
+    <link rel="stylesheet" type="text/css" href="shared/style/progress_activity.css"/>
+    <link rel="stylesheet" type="text/css" href="style/apps.css"/>
+    <link rel="stylesheet" type="text/css" href="style/screen_lock.css"/>
+    <link rel="stylesheet" type="text/css" href="style/simcard.css"/>
+    <link rel="stylesheet" type="text/css" href="style/updates.css"/>
+    <link rel="stylesheet" type="text/css" href="style/downloads.css"/>
+    -->
+
+    <!-- Shared resources
+    <link rel="resource" type="application/json" href="shared/resources/tz.json"/>
+    <link rel="resource" type="application/json" href="shared/resources/apn.json"/>
+    <link rel="resource" type="application/json" href="shared/resources/apn_tz.json"/>
+    <link rel="resource" type="application/json" href="shared/resources/languages.json"/>
+    <link rel="resource" type="application/json" href="shared/resources/media/ringtones/"/>
+    <link rel="resource" type="application/json" href="shared/resources/media/notifications/"/>
+    <link rel="resource" type="application/json" href="shared/resources/keyboard_layouts.json"/>
+    <link rel="resource" type="image/png" href="shared/resources/branding/privacy_sprite.png"/>
+    -->
+
+    <!-- Localization -->
+    <link rel="resource" type="application/l10n" href="shared/locales/download.ini">
+    <link rel="resource" type="application/l10n" href="shared/locales/branding.ini">
+    <link rel="resource" type="application/l10n" href="shared/locales/date.ini">
+    <link rel="resource" type="application/l10n" href="shared/locales/permissions.ini">
+    <link rel="resource" type="application/l10n" href="shared/locales/tz.ini">
+    <link rel="resource" type="application/l10n" href="locales/locales.ini">
+    <script defer="" src="shared/js/l10n.js"></script>
+    <script defer="" src="shared/js/l10n_date.js"></script>
+
+    <!-- For perf-measurement related utilities -->
+    <script defer="" src="/shared/js/performance_testing_helper.js"></script>
+
+    <!-- Lazy loader -->
+    <script defer="" src="/shared/js/lazy_loader.js"></script>
+
+    <!-- Screen layout watcher -->
+    <script defer="" src="/shared/js/screen_layout.js"></script>
+
+    <!-- shared helper library -->
+    <!--<script defer src="shared/js/download/download_store.js"></script>-->
+    <!--<script defer src="shared/js/download/download_helper.js"></script>-->
+    <!--<script defer src="shared/js/download/download_ui.js"></script>-->
+    <!--<script defer src="shared/js/mime_mapper.js"></script>-->
+    <!--<script defer src="shared/js/download/download_formatter.js"></script>-->
+    <!--<script defer src="shared/js/icc_helper.js"></script>-->
+    <!--<script defer src="shared/js/keyboard_helper.js"></script>-->
+    <!--<script defer src="shared/js/mobile_operator.js"></script>-->
+    <!--<script defer src="shared/js/async_storage.js"></script>-->
+    <!--<script defer src="shared/js/wifi_helper.js"></script>-->
+    <!--<script defer src="shared/js/settings_helper.js"></script> -->
+    <!--<script defer src="shared/js/settings_listener.js"></script> -->
+    <!--<script defer src="shared/js/airplane_mode_helper.js"></script> -->
+    <!--<script defer src="shared/js/toaster.js"></script> -->
+    <!--<script defer src="shared/js/lazy_loader.js"></script> -->
+    <!--<script defer src="shared/js/screen_layout.js"></script> -->
+    <!--<script defer src="shared/js/fxa_iac_client.js"></script> -->
+    <!--<script defer src="shared/js/text_normalizer.js"></script> -->
+
+    <!-- all non-#root panels will lazy-load their own scripts -->
+    <link rel="import" href="/elements/wifi_status.html">
+    <link rel="import" href="/elements/wifi_auth.html">
+    <link rel="import" href="/elements/wifi_join_hidden.html">
+    <link rel="import" href="/elements/wifi_wps.html">
+    <link rel="import" href="/elements/wifi_manage_networks.html">
+    <link rel="import" href="/elements/wifi_manage_certificates.html">
+    <link rel="import" href="/elements/wifi_select_certificate_file.html">
+    <link rel="import" href="/elements/wifi_enter_certificate_nickname.html">
+    <link rel="import" href="/elements/wifi.html">
+    <link rel="import" href="/elements/call_cf_not_reachable_settings.html">
+    <link rel="import" href="/elements/call_cf_no_reply_settings.html">
+    <link rel="import" href="/elements/call_cf_mobile_busy_settings.html">
+    <link rel="import" href="/elements/call_cf_unconditional_settings.html">
+    <link rel="import" href="/elements/call_voice_mail_settings.html">
+    <link rel="import" href="/elements/call_pin2_dialog.html">
+    <link rel="import" href="/elements/call_fdn_list_add.html">
+    <link rel="import" href="/elements/call_fdn_list.html">
+    <link rel="import" href="/elements/call_fdn_settings.html">
+    <link rel="import" href="/elements/call_iccs.html">
+    <link rel="import" href="/elements/call.html">
+    <link rel="import" href="/elements/messaging.html">
+    <link rel="import" href="/elements/carrier_operator_settings.html">
+    <link rel="import" href="/elements/carrier_data_settings.html">
+    <link rel="import" href="/elements/carrier_mms_settings.html">
+    <link rel="import" href="/elements/carrier_supl_settings.html">
+    <link rel="import" href="/elements/carrier_dun_settings.html">
+    <link rel="import" href="/elements/carrier_ims_settings.html">
+    <link rel="import" href="/elements/carrier_dc_warning.html">
+    <link rel="import" href="/elements/carrier_dr_warning.html">
+    <link rel="import" href="/elements/carrier_iccs.html">
+    <link rel="import" href="/elements/carrier.html">
+    <link rel="import" href="/elements/bluetooth.html">
+    <link rel="import" href="/elements/hotspot_wifi_settings.html">
+    <link rel="import" href="/elements/hotspot.html">
+    <link rel="import" href="/elements/sound.html">
+    <link rel="import" href="/elements/display.html">
+    <link rel="import" href="/elements/notifications.html">
+    <link rel="import" href="/elements/date_time.html">
+    <link rel="import" href="/elements/languages.html">
+    <link rel="import" href="/elements/sim_manager.html">
+    <link rel="import" href="/elements/homescreen_details.html">
+    <link rel="import" href="/elements/homescreen.html">
+    <link rel="import" href="/elements/keyboard.html">
+    <link rel="import" href="/elements/keyboard_enabled_default.html">
+    <link rel="import" href="/elements/keyboard_selection_add_more.html">
+    <link rel="import" href="/elements/keyboard_selection.html">
+    <link rel="import" href="/elements/screen_lock_passcode.html">
+    <link rel="import" href="/elements/screen_lock.html">
+    <link rel="import" href="/elements/simpin_dialog.html">
+    <link rel="import" href="/elements/simpin.html">
+    <link rel="import" href="/elements/app_permissions_details.html">
+    <link rel="import" href="/elements/app_permissions.html">
+    <link rel="import" href="/elements/do_not_track.html">
+    <link rel="import" href="/elements/about_more_info.html">
+    <link rel="import" href="/elements/about_your_rights.html">
+    <link rel="import" href="/elements/about_your_privacy.html">
+    <link rel="import" href="/elements/about_licensing.html">
+    <link rel="import" href="/elements/about_source_code.html">
+    <link rel="import" href="/elements/about_legal.html">
+    <link rel="import" href="/elements/about.html">
+    <link rel="import" href="/elements/battery.html">
+    <link rel="import" href="/elements/application_storage.html">
+    <link rel="import" href="/elements/media_storage.html">
+    <link rel="import" href="/elements/accessibility.html">
+    <link rel="import" href="/elements/developer_hud.html">
+    <link rel="import" href="/elements/developer.html">
+    <link rel="import" href="/elements/crash_reports.html">
+    <link rel="import" href="/elements/improve_browser_os_send_feedback.html">
+    <link rel="import" href="/elements/improve_browser_os_choose_feedback.html">
+    <link rel="import" href="/elements/improve_browser_os.html">
+    <link rel="import" href="/elements/help.html">
+    <link rel="import" href="/elements/icc.html">
+    <link rel="import" href="/elements/downloads.html">
+    <link rel="import" href="/elements/firefox_accounts.html">
+    <link rel="import" href="/elements/findmydevice.html">
   </head>
-  <body class="hidden">
-    <header>
-      <h1 data-l10n-id="settings">Settings</h1>
-    </header>
+  <body class="skin-organic uninit">
+    <!--
+      - Lazy-Loading: to avoid parsing all settings panels before necessary, the
+      - HTML markup is included in a comment node and applied with `.innerHTML'
+      - when the sub-panel is loaded.
+      -
+      - When a panel includes <script> nodes, these scripts might require all
+      - sub-panels to be loaded to work properly. We rely on the panel ID to get
+      - its dependencies, e.g. the #wifi panel depends on all panels matching
+      - the « section[id^="wifi-"] » selector.
+      -
+      - Long story short: BE VERY CAREFUL WHEN CHANGING A SECTION ID!
+      -
+      - Regarding data-require-sub-panels: This is a temporary declarative way
+      - to say that a panel requires the all subpanels which match the pattern
+      - 'section[id^="' + panel.id + '-"]' to be loaded before loading.
+      - This is to be removed soon in bug 922658.
+      -->
 
-    <div id="root" class="view" data-title="Settings">
-      <ul>
-        <li>
-          <a data-l10n-id="airPlaneMode">Air Plane Mode</a>
-          <label>
-            <input type="checkbox" name="ril.radio.disabled"/>
-            <span></span>
-          </label>
-        </li>
-        <li>
-          <a href="#wifi">
-            <span data-l10n-id="wifi">Wi-Fi</span>
-          </a>
-        </li>
-        <li>
-          <a href="#data">
-            <span data-l10n-id="data">Cellular &amp; Data</span>
-          </a>
-        </li>
-        <li>
-          <a data-l10n-id="doNotTrack">Do Not Track</a>
-          <label>
-            <input type="checkbox" name="dnt.enabled" checked="true" />
-            <span></span>
-          </label>
-        </li>
-      </ul>
-      <h2 data-l10n-id="settings">Settings</h2>
-      <ul>
-        <li>
-          <a href="#languages">
-            <span data-l10n-id="languages">Languages</span>
-          </a>
-        </li>
-        <li>
-          <a href="#wallpapers">
-            <span data-l10n-id="wallpapers">Wallpapers</span>
-          </a>
-        </li>
-        <li>
-          <a href="#display">
-            <span data-l10n-id="display">Display</span>
-          </a>
-        </li>
-        <li>
-          <a href="#keyboard">
-            <span data-l10n-id="keyboard">Keyboard</span>
-          </a>
-        </li>
-        <li>
-          <a href="#sounds">
-            <span data-l10n-id="sounds">Sounds</span>
-          </a>
-        </li>
-        <li>
-          <a href="#phone">
-            <span data-l10n-id="phone">Phone</span>
-          </a>
-        </li>
-        <li>
-          <a href="#storage">
-            <span data-l10n-id="storage">Storage</span>
-          </a>
-        </li>
-        <li>
-          <a href="#accessibility">
-            <span data-l10n-id="accessibility">Accessibility</span>
-          </a>
-        </li>
-        <li>
-          <a href="#about">
-            <span data-l10n-id="about">About</span>
-          </a>
-        </li>
-      </ul>
-    </div>
+    <!--
+      - Note: the panels are stacked in reverse order on purpose - the main
+      - panel always comes last.  With this order, no 'z-index' rule is required
+      - to handle the panel transitions.
+      -->
 
-    <!-- Wi-Fi -->
-    <div id="wifi" class="view" data-title="WiFi">
-      <ul>
-        <li id="status">
-          <span data-l10n-id="wifi">Wi-Fi</span>
-          <small data-l10n-id="disconnected">offline</small>
-          <label>
-            <input type="checkbox" />
-            <span></span>
-          </label>
-        </li>
-        <li id="notification">
-          <span data-l10n-id="networkNotification">Network notification</span>
-          <small data-l10n-id="networkNotification-expl">Notify me when an open network is available</small>
-          <label>
-            <input type="checkbox" name="wifi.notification"/>
-            <span></span>
-          </label>
-        </li>
-      </ul>
-      <h2 data-l10n-id="wifiNetworks"> Wi-Fi networks </h2>
-      <ul id="wifi-networks">
-        <!-- filled by wifi.js -->
-      </ul>
-    </div>
+    <!-- Connectivity :: Wi-Fi :: Network Status -->
+    <section is="wifi-status" role="region" id="wifi-status"></section>
+    <!-- Connectivity :: Wi-Fi :: Network Authentication -->
+    <section is="wifi-auth" role="region" id="wifi-auth"></section>
+    <!-- Connectivity :: Wi-Fi :: Join Hidden Network -->
+    <section is="wifi-joinHidden" role="region" id="wifi-joinHidden"></section>
+    <!-- Connectivity :: Wi-Fi :: WPS -->
+    <section is="wifi-wps" role="region" id="wifi-wps"></section>
+    <!-- Connectivity :: Wi-Fi :: Saved Networks -->
+    <section is="wifi-manageNetworks" role="region" id="wifi-manageNetworks"></section>
+    <!-- Connectivity :: Wi-Fi :: Manage Certificates -->
+    <section is="wifi-manageCertificates" role="region" id="wifi-manageCertificates"></section>
+    <!-- Connectivity :: Wi-Fi :: Select Certificate File -->
+    <section is="wifi-selectCertificateFile" role="region" id="wifi-selectCertificateFile"></section>
+    <!-- Connectivity :: Wi-Fi :: Enter Certificate Nickname -->
+    <section is="wifi-enterCertificateNickname" role="region" id="wifi-enterCertificateNickname"></section>
+    <!-- Connectivity :: Wi-Fi -->
+    <section is="wifi" role="region" id="wifi" data-require-sub-panels="true"></section>
+    <!-- Connectivity :: Call :: Call Forwarding Not Reachable -->
+    <section is="call-cf-notReachableSettings" role="region" id="call-cf-notReachableSettings"></section>
+    <!-- Connectivity :: Call :: Call Forwarding No Reply -->
+    <section is="call-cf-noReplySettings" role="region" id="call-cf-noReplySettings"></section>
+    <!-- Connectivity :: Call :: Call Forwarding Mobile Busy -->
+    <section is="call-cf-mobileBusySettings" role="region" id="call-cf-mobileBusySettings"></section>
+    <!-- Connectivity :: Call :: Call Forwarding Unconditional -->
+    <section is="call-cf-unconditionalSettings" role="region" id="call-cf-unconditionalSettings"></section>
+    <!-- Connectivity :: Call :: Fixed Dialing Numbers (FDN) :: Authorized Numbers :: Add -->
+    <section is="call-fdnList-add" role="region" id="call-fdnList-add"></section>
+    <!-- Connectivity :: Call :: Fixed Dialing Numbers (FDN) :: Authorized Numbers -->
+    <section is="call-fdnList" role="region" id="call-fdnList" data-require-sub-panels="true"></section>
+    <!-- Connectivity :: Call :: Fixed Dialing Numbers (FDN) :: SIM PIN2 Input -->
+    <section is="call-pin2-dialog" role="region" id="call-pin2-dialog"></section>
+    <!-- Connectivity :: Call :: Fixed Dialing Numbers (FDN) -->
+    <section is="call-fdnSettings" role="region" id="call-fdnSettings"></section>
+    <!-- Connectivity :: Call :: Voice Mail -->
+    <section is="call-voiceMailSettings" role="region" id="call-voiceMailSettings"></section>
+    <!-- Connectivity :: Call :: ICCs -->
+    <section is="call-iccs" role="region" id="call-iccs"></section>
+    <!-- Connectivity :: Call -->
+    <section is="call" role="region" id="call" data-require-sub-panels="true"></section>
+    <!-- Connectivity :: Messaging -->
+    <section is="messaging" role="region" id="messaging"></section>
+    <!-- Connectivity :: Cellular & Data :: Network Operator -->
+    <section is="carrier-operatorSettings" role="region" id="carrier-operatorSettings"></section>
+    <!-- Connectivity :: Cellular & Data :: Data Settings -->
+    <section is="carrier-dataSettings" role="region" id="carrier-dataSettings"></section>
+    <!-- Connectivity :: Cellular & Data :: Message Settings -->
+    <section is="carrier-mmsSettings" role="region" id="carrier-mmsSettings"></section>
+    <!-- Connectivity :: Cellular & Data :: A-GPS Settings -->
+    <section is="carrier-suplSettings" role="region" id="carrier-suplSettings"></section>
+    <!-- Connectivity :: Cellular & Data :: DUN Settings -->
+    <section is="carrier-dunSettings" role="region" id="carrier-dunSettings"></section>
+    <!-- Connectivity :: Cellular & Data :: IMS Settings -->
+    <section is="carrier-imsSettings" role="region" id="carrier-imsSettings"></section>
+    <!-- Connectivity :: Cellular & Data :: Data Connection Warnings -->
+    <section is="carrier-dc-warning" role="region" id="carrier-dc-warning"></section>
+    <!-- Connectivity :: Cellular & Data :: Data Roaming Warnings -->
+    <section is="carrier-dr-warning" role="region" id="carrier-dr-warning"></section>
+    <!-- Connectivity :: Cellular & Data :: ICCs -->
+    <section is="carrier-iccs" role="region" id="carrier-iccs"></section>
+    <!-- Connectivity :: Cellular & Data -->
+    <section is="carrier" role="region" id="carrier" data-require-sub-panels="true"></section>
+    <!-- Connectivity :: Bluetooth -->
+    <section is="bluetooth" role="region" id="bluetooth"></section>
+    <!-- Connectivity :: Internet Sharing :: Portable Wi-Fi Hotspot -->
+    <section is="hotspot-wifiSettings" role="region" id="hotspot-wifiSettings"></section>
+    <!-- Connectivity :: Internet Sharing -->
+    <section is="hotspot" role="region" id="hotspot"></section>
 
-    <!-- 3G/data -->
-    <div id="data" class="view" data-title="data">
-      <ul>
-        <li id="dataNetwork">
-          <span data-l10n-id="dataNetwork">Carrier</span>
-          <small></small>
-        </li>
-        <li>
-          <span data-l10n-id="dataConnection">Data Connection</span>
-          <small data-l10n-id="dataConnection-expl"></small>
-          <label>
-            <input type="checkbox" name="ril.data.enabled"/>
-            <span></span>
-          </label>
-        </li>
-        <li>
-          <span data-l10n-id="dataRoaming">Data Roaming</span>
-          <small data-l10n-id="dataRoaming-expl"></small>
-          <label>
-            <input type="checkbox" name="ril.data.roaming.enabled"/>
-            <span></span>
-          </label>
-        </li>
-      </ul>
-      <h2> Advanced Settings </h2>
-      <form action="#">
-        <p data-l10n-id="apn">APN</p>
-        <input type="text" name="ril.data.apn" />
-        <p data-l10n-id="identity">identity</p>
-        <input type="text" name="ril.data.user" />
-        <p data-l10n-id="password">password</p>
-        <input type="text" name="ril.data.passwd" />
-        <p data-l10n-id="mmsproxy">MMS Proxy</p>
-        <input type="text" name="ril.data.mmsproxy" />
-        <p data-l10n-id="mmsport">MMS Port</p>
-        <input type="text" name="ril.data.mmsport" />
-        <p data-l10n-id="mmsc">MMSC</p>
-        <input type="text" name="ril.data.mmsc" />
-      </form>
-    </div>
+    <!-- Personalization :: Sound -->
+    <section is="sound" role="region" id="sound" data-require-sub-panels="true"></section>
+    <!-- Personalization :: Display -->
+    <section is="display" role="region" id="display"></section>
+    <!-- Personalization :: Notifications -->
+    <section is="notifications" role="region" id="notifications"></section>
+    <!-- Personalization :: Date & Time -->
+    <section is="dateTime" role="region" id="dateTime"></section>
+    <!-- Personalization :: Language & Region -->
+    <section is="languages" role="region" id="languages"></section>
+    <!-- Personalization :: SIM card manager -->
+    <section is="sim-manager" role="region" id="sim-manager"></section>
+    <!-- Personalization :: Homescreen :: details -->
+    <section is="homescreen-details" role="region" id="homescreen-details"></section>
+    <!-- Personalization :: Homescreen -->
+    <section is="homescreen" role="region" id="homescreen" data-require-sub-panels="true"></section>
+    <!-- Personalization :: Keyboard :: Select Keyboard :: Add More Keyboards -->
+    <section is="keyboard-selection-addMore" role="region" id="keyboard-selection-addMore"></section>
+    <!-- Personalization :: Keyboard :: Select Keyboard -->
+    <section is="keyboard-selection" role="region" id="keyboard-selection"></section>
+    <!-- Personalization :: Keyboard -->
+    <section is="keyboard" role="region" id="keyboard" data-require-sub-panels="true"></section>
+    <section is="keyboard-enabled-default" role="region" id="keyboard-enabled-default"></section>
 
-    <!-- Phone -->
-    <div id="phone" class="view" data-title="Phone">
-      <ul>
-        <li id="vibrator">
-          <a data-l10n-id="vibrate">Vibrate</a>
-          <label>
-            <input type="checkbox" name="phone.vibration.incoming"/>
-            <span></span>
-          </label>
-        </li>
-        <li id="ring">
-          <a data-l10n-id="ring">Ring</a>
-          <label>
-            <input type="checkbox" name="phone.ring.incoming" checked="true" />
-            <span></span>
-          </label>
-        </li>
-      </ul>
-      <h2 data-l10n-id="messages">Messages</h2>
-      <ul>
-        <li id="vibrator">
-          <a data-l10n-id="vibrate">Vibrate</a>
-          <label>
-            <input type="checkbox" name="sms.vibration.received"/>
-            <span></span>
-          </label>
-        </li>
-        <li id="ring">
-          <a data-l10n-id="ring">Ring</a>
-          <label>
-            <input type="checkbox" name="sms.ring.received" checked="true" />
-            <span></span>
-          </label>
-        </li>
-      </ul>
-    </div>
+    <!-- Accounts :: Find My Device -->
+    <section is="findmydevice" role="region" id="findmydevice"></section>
 
-    <!-- Storage -->
-    <div id="storage" class="view" data-title="Storage">
-      <ul>
-        <li id="ums_enabled">
-          <a data-l10n-id="umsEnabled">USB Mass Storage Enabled</a>
-          <label>
-            <input type="checkbox" name="ums.enabled"/>
-            <span></span>
-          </label>
-        </li>
-      </ul>
-    </div>
+    <!-- Security :: Screen Lock :: PIN Input -->
+    <section is="screenLock-passcode" role="region" id="screenLock-passcode"></section>
+    <!-- Security :: Screen Lock -->
+    <section is="screenLock" role="region" id="screenLock" data-passcode-enabled="false" data-lockscreen-enabled="false" data-require-sub-panels="true"></section>
+    <!-- Security :: SIM Security :: SIM PIN Input -->
+    <section is="simpin-dialog" role="region" id="simpin-dialog"></section>
+    <!-- Security :: SIM Security -->
+    <section is="simpin" role="region" id="simpin" data-require-sub-panels="true"></section>
+    <!-- Security :: Application Permissions :: Details -->
+    <section is="appPermissions-details" role="region" id="appPermissions-details"></section>
+    <!-- Security :: Application Permissions -->
+    <section is="appPermissions" role="region" id="appPermissions" data-require-sub-panels="true"></section>
+    <!-- Security :: Do Not Track -->
+    <section is="doNotTrack" role="region" id="doNotTrack"></section>
 
-    <!-- Accessibility -->
-    <div id="accessibility" class="view" data-title="Accessibility">
-      <ul>
-        <li id="invert">
-          <a data-l10n-id="invertColors">Invert Colors</a>
-          <label>
-            <input type="checkbox" name="accessibility.invert"/>
-            <span></span>
-          </label>
-        </li>
-      </ul>
-    </div>
+    <!-- Device :: Information :: More Information -->
+    <section is="about-moreInfo" role="region" id="about-moreInfo"></section>
+    <!-- Device :: Information :: Your Rights -->
+    <section is="about-yourRights" role="region" id="about-yourRights"></section>
+    <!-- Device :: Information :: Your Privacy -->
+    <section is="about-yourPrivacy" role="region" id="about-yourPrivacy"></section>
+    <!-- Device :: Information :: Legal :: Open Source Notices -->
+    <section is="about-licensing" role="region" id="about-licensing"></section>
+    <!-- Device :: Information :: Legal :: Obtaining Source Code -->
+    <section is="about-source-code" role="region" id="about-source-code"></section>
+    <!-- Device :: Information :: Legal -->
+    <section is="about-legal" role="region" id="about-legal"></section>
+    <!-- Device :: Information -->
+    <section is="about" role="region" id="about"></section>
+    <!-- Device :: Downloads -->
+    <section is="downloads" role="region" id="downloads"></section>
+    <!-- Device :: Battery -->
+    <section is="battery" role="region" id="battery"></section>
+    <!-- Device :: Device Storage -->
+    <section is="applicationStorage" role="region" id="applicationStorage"></section>
+    <!-- Device :: Media Storage -->
+    <section is="mediaStorage" role="region" id="mediaStorage"></section>
+    <!-- Device :: Accessibility -->
+    <section is="accessibility" role="region" id="accessibility"></section>
+    <!-- Device :: Developer :: HUD -->
+    <section is="developer-hud" role="region" id="developer-hud"></section>
+    <!-- Device :: Developer -->
+    <section is="developer" role="region" id="developer"></section>
+    <!-- Device :: Improve Browser OS :: Crash Reports-->
+    <section is="crashReports" role="region" id="crashReports"></section>
+    <!-- Device :: Send Feedback -->
+    <section is="improveBrowserOS-sendFeedback" role="region" id="improveBrowserOS-sendFeedback"></section>
+    <!-- Device :: Send Feedback -->
+    <section is="improveBrowserOS-chooseFeedback" role="region" id="improveBrowserOS-chooseFeedback"></section>
+    <!-- Device :: Improve Browser OS -->
+    <section is="improveBrowserOS" role="region" id="improveBrowserOS" data-require-sub-panels="true"></section>
+    <!-- Device :: Help -->
+    <section is="help" role="region" id="help"></section>
 
-    <!-- Languages -->
-    <div id="languages" class="view" data-title="Languages">
-      <ul>
-        <li id="language-ar">
-          <a>العربية</a>
-          <label class="checkbox">
-            <input type="radio" name="language.current" value="ar"/>
-            <span class="checkbox-inner"></span>
-          </label>
-        </li>
-        <li id="language-de">
-          <a dir="ltr">Deutsch</a>
-          <label>
-            <input type="radio" name="language.current" value="de"/>
-            <span></span>
-          </label>
-        </li>
-        <li id="language-el">
-          <a dir="ltr">Ελληνικά</a>
-          <label>
-            <input type="radio" name="language.current" value="el"/>
-            <span></span>
-          </label>
-        </li>
-        <li id="language-en-us">
-          <a dir="ltr">English (US)</a>
-          <label>
-            <input type="radio" name="language.current" value="en-US" checked="true" />
-            <span></span>
-          </label>
-        </li>
-        <li id="language-es">
-          <a dir="ltr">Español</a>
-          <label>
-            <input type="radio" name="language.current" value="es"/>
-            <span></span>
-          </label>
-        </li>
-        <li id="language-fr">
-          <a dir="ltr">Français</a>
-          <label>
-            <input type="radio" name="language.current" value="fr"/>
-            <span></span>
-          </label>
-        </li>
-        <li id="language-it">
-          <a dir="ltr">Italiano</a>
-          <label>
-            <input type="radio" name="language.current" value="it"/>
-            <span></span>
-          </label>
-        </li>
-        <li id="language-pt-br">
-          <a dir="ltr">Português (do Brasil)</a>
-          <label>
-            <input type="radio" name="language.current" value="pt-BR"/>
-            <span></span>
-          </label>
-        </li>
-        <li id="language-ru">
-          <a dir="ltr">Русский</a>
-          <label>
-            <input type="radio" name="language.current" value="ru"/>
-            <span></span>
-          </label>
-        </li>
-        <li id="language-tr">
-          <a dir="ltr">Türkçe</a>
-          <label>
-            <input type="radio" name="language.current" value="tr"/>
-            <span></span>
-          </label>
-        </li>
-        <li id="language-zh-tw">
-          <a dir="ltr">正體中文</a>
-          <label>
-            <input type="radio" name="language.current" value="zh-TW"/>
-            <span></span>
-          </label>
-        </li>
-      </ul>
-    </div>
+    <!-- SIM Toolkit -->
+    <section is="icc" role="region" id="icc"></section>
 
-    <!-- About -->
-    <div id="about" class="view" data-title="About">
-      <h2 data-l10n-id="gitInfo"> Git commit info </h2>
-      <ul>
-        <li>
-          <span id="gaia-commit-date"></span>
-          <small id="gaia-commit-hash"></small>
-        </li>
-      </ul>
-      <h2 data-l10n-id="debug">Debug</h2>
-      <ul>
-        <li>
-          <a data-l10n-id="grid">Grid</a>
-          <label>
-            <input type="checkbox" name="debug.grid.enabled"/>
-            <span></span>
-          </label>
-        </li>
-      </ul>
-    </div>
+    <!-- Firefox Accounts -->
+    <section is="fxa" role="region" id="fxa"></section>
 
-    <!-- Keyboard -->
-    <div id="keyboard" class="view" data-title="Display">
-      <ul>
-        <li>
-          <a data-l10n-id="vibration">Vibration</a>
-          <label>
-            <input type="checkbox" name="keyboard.vibration"/>
-            <span></span>
-          </label>
-        </li>
-        <li>
-          <a data-l10n-id="clickSound">Click sound</a>
-          <label>
-            <input type="checkbox" name="keyboard.clicksound" checked="true" />
-            <span></span>
-          </label>
-        </li>
-      </ul>
-      <h2>Layouts</h2>
-      <ul>
-        <li>
-          <a data-l10n-id="english">English</a>
-          <label>
-            <input type="checkbox" name="keyboard.layouts.english" checked="true" />
-            <span></span>
-          </label>
-        </li>
-        <li>
-          <a data-l10n-id="dvorak">English (Dvorak)</a>
-          <label>
-            <input type="checkbox" name="keyboard.layouts.dvorak"/>
-            <span></span>
-          </label>
-        </li>
-        <li>
-          <span data-l10n-id="latin">Other Latin scripts</span>
-          <small data-l10n-id="latin-desc">French, German, Norwegian Bokmal, Slovak, Turkish</small>
-          <label>
-            <input type="checkbox" name="keyboard.layouts.otherlatins"/>
-            <span></span>
-          </label>
-        </li>
-        <li>
-          <span data-l10n-id="cyrillic">Cyrillic scripts</span>
-          <small data-l10n-id="cyrillic-desc">Russian, Serbian (Cyrillic)</small>
-          <label>
-            <input type="checkbox" name="keyboard.layouts.cyrillic"/>
-            <span></span>
-          </label>
-        </li>
-        <li>
-          <a data-l10n-id="arabic">Arabic</a>
-          <label>
-            <input type="checkbox" name="keyboard.layouts.arabic"/>
-            <span></span>
-          </label>
-        </li>
-        <li>
-          <a data-l10n-id="hebrew">Hebrew</a>
-          <label>
-            <input type="checkbox" name="keyboard.layouts.hebrew"/>
-            <span></span>
-          </label>
-        </li>
-        <li>
-          <span data-l10n-id="traditionalChinese">Traditional Chinese</span>
-          <small data-l10n-id="traditionalChinese-desc">Zhuyin</small>
-          <label>
-            <input type="checkbox" name="keyboard.layouts.zhuyin"/>
-            <span></span>
-          </label>
-        </li>
-        <li>
-          <span data-l10n-id="simplifiedChinese">Simplified Chinese</span>
-          <small data-l10n-id="simplifiedChinese-desc">Pinyin</small>
-          <label>
-            <input type="checkbox" name="keyboard.layouts.pinyin"/>
-            <span></span>
-          </label>
-        </li>
-        <li>
-          <span data-l10n-id="jp-kanji">Japanese</span>
-          <small data-l10n-id="jp-kanji-desc">Kanji</small>
-          <label>
-            <input type="checkbox" name="keyboard.layouts.japanese"/>
-            <span></span>
-          </label>
-        </li>
-        <li>
-          <a data-l10n-id="greek">Greek</a>
-          <label>
-            <input type="checkbox" name="keyboard.layouts.greek"/>
-            <span></span>
-          </label>
-        </li>
-      </ul>
-    </div>
+    <!-- Main List -->
+    <section role="region" id="root" class="current" data-rendered="true">
+      <header>
+        <menu id="activityDoneButton" type="toolbar">
+          <a href="#home" role="menuitem" data-l10n-id="done">Done</a>
+        </menu>
+        <h1 data-l10n-id="settings"> Settings </h1>
+      </header>
 
-    <!-- Sounds -->
-    <div id="sounds" class="view" data-title="Sounds">
-      <ul>
-        <li id="ring-default">
-          <a data-l10n-id="default">Default</a>
-          <label>
-            <input type="radio" name="homescreen.ring" value="classic.wav" checked="true" />
-            <span></span>
-          </label>
-        </li>
-        <li id="ring-bosscaling">
-          <a data-l10n-id="bosscaling">Bosscaling</a>
-          <label>
-            <input type="radio" name="homescreen.ring" value="bosscaling.wav"/>
-            <span></span>
-          </label>
-        </li>
-        <li id="ring-goodnight">
-          <a data-l10n-id="goodmight">GoodMight</a>
-          <label>
-            <input type="radio" name="homescreen.ring" value="goodnight.wav"/>
-            <span></span>
-          </label>
-        </li>
-      </ul>
-    </div>
-
-    <!-- Display -->
-    <div id="display" class="view" data-title="Display">
-      <ul>
-        <li id="brightness">
-          <a data-l10n-id="brightness">Brightness level</a>
-          <progress id="brightness-level" data-name="screen.brightness" value="5" max="10"></progress>
-        </li>
-        <li id="automatic-brightness">
-          <a data-l10n-id="automatic-brightness">Automatic Brightness</a>
-          <label>
-            <input type="checkbox" name="screen.automatic-brightness" checked="true"/>
-            <span></span>
-          </label>
-        </li>
-        <li>
-          <a data-l10n-id="lockScreen">Lock Screen</a>
-          <label>
-            <input type="checkbox" name="lockscreen.enabled" checked="true"/>
-            <span></span>
-          </label>
-        </li>
-        <li>
-          <a data-l10n-id="passcode-lock">Passcode Lock</a>
-          <small data-l10n-id="passcode-lock-desc">Passcode: 0000</small>
-          <label>
-            <input type="checkbox" name="lockscreen.passcode-lock.enabled" checked="true"/>
-            <span></span>
-          </label>
-        </li>
-      </ul>
-    </div>
-
-    <!-- Wallpapers -->
-    <div id="wallpapers" class="view" data-title="Wallpapers">
-      <ul>
-        <li id="wallpaper-default">
-          <a data-l10n-id="default">Default</a>
-          <label>
-            <input type="radio" name="homescreen.wallpaper" value="default.png" checked="true" />
-            <span></span>
-          </label>
-        </li>
-        <li id="wallpaper-water">
-          <a data-l10n-id="water">Water</a>
-          <label>
-            <input type="radio" name="homescreen.wallpaper" value="water.png"/>
-            <span></span>
-          </label>
-        </li>
-        <li id="wallpaper-leaves">
-          <a data-l10n-id="leaves">Leaves</a>
-          <label>
-            <input type="radio" name="homescreen.wallpaper" value="leaves.png"/>
-            <span></span>
-          </label>
-        </li>
-      </ul>
-    </div>
-
-    <!-- Dialog Boxes -->
-    <div id="dialogs">
       <div>
+        <!-- Main :: Network & Connectivity -->
+        <header data-category="connectivity">
+          <h2 data-l10n-id="networkAndConnectivity">Network &amp; Connectivity</h2>
+        </header>
+        <ul>
+          <li data-category="connectivity">
+            <label class="pack-switch">
+              <input id="airplaneMode-input" class="uninit" type="checkbox" disabled>
+              <span id="menuItem-airplaneMode" class="menu-item" data-l10n-id="airplaneMode">Airplane Mode</span>
+            </label>
+          </li>
+          <li>
+            <label class="pack-switch">
+              <input name="geolocation.enabled" class="uninit" type="checkbox">
+              <span id="menuItem-gps" class="menu-item" data-l10n-id="geolocation">Geolocation</span>
+            </label>
+          </li>
+          <li data-category="connectivity">
+            <small id="wifi-desc" class="menu-item-desc"></small>
+            <a id="menuItem-wifi" class="menu-item" href="#wifi" data-l10n-id="wifi">Wi-Fi</a>
+          </li>
+          <li id="simCardManager-settings" aria-disabled="true">
+            <small id="simmanager-desc" class="menu-item-desc"></small>
+            <a id="menuItem-simManager" class="menu-item" href="#sim-manager" data-l10n-id="simManager">SIM manager</a>
+          </li>
+          <li id="call-settings" aria-disabled="true">
+            <small id="call-desc" class="menu-item-desc"></small>
+            <a id="menuItem-callSettings" class="menu-item" href="#call" data-l10n-id="callSettings">Call Settings</a>
+          </li>
+          <li id="messaging-settings" aria-disabled="true">
+            <small id="messaging-desc" class="menu-item-desc"></small>
+            <a id="menuItem-messagingSettings" class="menu-item" href="#messaging" data-l10n-id="messagingSettings">Messaging Settings</a>
+          </li>
+          <li id="data-connectivity" data-category="connectivity" aria-disabled="true">
+            <small id="data-desc" class="menu-item-desc"></small>
+            <a id="menuItem-cellularAndData" class="menu-item" href="#carrier" data-l10n-id="cellularAndData">Cellular &amp; Data</a>
+          </li>
+          <li>
+            <small id="bluetooth-desc" class="menu-item-desc"></small>
+            <a id="menuItem-bluetooth" class="menu-item" href="#bluetooth" data-l10n-id="bluetooth">Bluetooth</a>
+          </li>
+          <li id="nfc-settings" hidden>
+            <label class="pack-switch">
+              <input id="nfc-input" name="nfc.enabled" class="uninit" type="checkbox">
+              <span id="menuItem-nfc" class="menu-item" data-l10n-id="nfc">NFC</span>
+            </label>
+          </li>
+          <li>
+            <small id="internetSharing-desc" class="menu-item-desc"></small>
+            <a id="menuItem-internetSharing" class="menu-item" href="#hotspot" data-l10n-id="internetSharing">Internet Sharing</a>
+          </li>
+        </ul>
 
-        <!-- network status -->
-        <div id="wifi-status" class="dialog">
-          <header data-ssid>Network</header>
-          <dl>
-            <dt data-l10n-id="security">security:</dt>
-            <dd data-security>WPA-PSK</dd>
-            <dt data-l10n-id="signalStrength">signal strength:</dt>
-            <dd data-signal>good</dd>
-          </dl>
-          <footer>
-            <button data-l10n-id="forget">Forget</button>
-            <button data-l10n-id="cancel">Cancel</button>
-          </footer>
-        </div>
+        <!-- Main :: Personalization -->
+        <header>
+          <h2 data-l10n-id="personalization">Personalization</h2>
+        </header>
+        <ul>
+          <li>
+            <a id="menuItem-sound" class="menu-item" href="#sound" data-l10n-id="sound">Sound</a>
+          </li>
+          <li>
+            <a id="menuItem-display" class="menu-item" href="#display" data-l10n-id="display">Display</a>
+          </li>
+          <li>
+            <a id="menuItem-notifications" class="menu-item" href="#notifications" data-l10n-id="notifications">Notifications</a>
+          </li>
+          <li>
+            <small id="time-desc" class="menu-item-desc"></small>
+            <a id="menuItem-dateAndTime" class="menu-item" href="#dateTime" data-l10n-id="dateAndTime">Date &amp; Time</a>
+          </li>
+          <li>
+            <small id="language-desc" class="menu-item-desc"></small>
+            <!-- The data-l10n-id and title should be changed from language to languageAndRegion in V2. -->
+            <a id="menuItem-languageAndRegion" class="menu-item" href="#languages" data-l10n-id="language">Language</a>
+          </li>
+          <li id="homescreen-section" hidden>
+            <a id="menuItem-homescreen" class="menu-item" href="#homescreen" data-l10n-id="homescreen">Homescreen</a>
+          </li>
+          <li>
+            <small id="keyboard-desc" class="menu-item-desc"></small>
+            <a id="menuItem-keyboard" class="menu-item" href="#keyboard" data-l10n-id="keyboards">Keyboards</a>
+          </li>
+        </ul>
 
-        <!-- WEP authentication -->
-        <div id="wifi-wep" class="dialog">
-          <header data-ssid>Authentication</header>
-          <dl>
-            <dt data-l10n-id="security">security:</dt>
-            <dd data-security>WPA-WEP</dd>
-            <dt data-l10n-id="signalStrength">signal strength:</dt>
-            <dd data-signal>good</dd>
-          </dl>
-          <form action="#">
-            <label>
-              <span data-l10n-id="password">password</span>
-              <input data-wep name="password" type="password" />
-            </label>
-            <label>
-              <input name="show-pwd" type="checkbox" />
-              <span data-l10n-id="showPassword">show password</span>
-            </label>
-          </form>
-          <footer>
-            <button data-l10n-id="ok">OK</button>
-            <button data-l10n-id="cancel">Cancel</button>
-          </footer>
-        </div>
+        <!-- Main :: Accounts -->
+        <header data-show-name="identity.fxaccounts.ui.enabled" hidden>
+          <h2 data-l10n-id="accounts">Accounts</h2>
+        </header>
+        <ul>
+          <li data-show-name="identity.fxaccounts.ui.enabled" hidden>
+            <small id="fxa-desc" class="menu-item-desc"></small>
+            <a id="menuItem-fxa" class="menu-item" href="#fxa" data-l10n-id="fxa-accounts">Firefox Accounts</a>
+          </li>
+          <li data-show-name="findmydevice.ui.enabled" hidden>
+            <small id="findmydevice-desc" class="menu-item-desc"></small>
+            <a id="menuItem-findmydevice" class="menu-item" href="#findmydevice"
+              data-l10n-id="findmydevice">Find My Device</a>
+          </li>
+        </ul>
 
-        <!-- PSK authentication -->
-        <div id="wifi-psk" class="dialog">
-          <header data-ssid>Authentication</header>
-          <dl>
-            <dt data-l10n-id="security">security:</dt>
-            <dd data-security>WPA-PSK</dd>
-            <dt data-l10n-id="signalStrength">signal strength:</dt>
-            <dd data-signal>good</dd>
-          </dl>
-          <form action="#">
-            <label>
-              <span data-l10n-id="password">password</span>
-              <input data-psk name="password" type="password" />
+        <!-- Main :: Security & Privacy -->
+        <header>
+          <h2 data-l10n-id="privacyAndSecurity">Privacy &amp; Security</h2>
+        </header>
+        <ul>
+          <li>
+            <small id="screenLock-desc" class="menu-item-desc"></small>
+            <a id="menuItem-screenLock" class="menu-item" href="#screenLock" data-l10n-id="screenLock">Screen Lock</a>
+          </li>
+          <li id="simSecurity-settings" aria-disabled="true">
+            <small id="simCardLock-desc" class="menu-item-desc"></small>
+            <a id="menuItem-simSecurity" class="menu-item" href="#simpin" data-l10n-id="simSecurity">SIM security</a>
+          </li>
+          <li>
+            <a id="menuItem-appPermissions" class="menu-item" href="#appPermissions" data-l10n-id="appPermissions">App permissions</a>
+          </li>
+          <li>
+            <small id="doNotTrack-desc" class="menu-item-desc"></small>
+            <a id="menuItem-doNotTrack" class="menu-item" href="#doNotTrack" data-l10n-id="doNotTrack">Do Not Track</a>
+          </li>
+        </ul>
+        <!-- Main :: Storage -->
+        <header>
+          <h2 data-l10n-id="storage">Storage</h2>
+        </header>
+        <ul>
+          <li>
+            <label class="pack-switch">
+              <input id="ums-switch-root" data-ignore type="checkbox">
+              <small id="ums-desc-root" class="menu-item-desc">Disabled</small>
+              <span id="menuItem-enableStorage" class="menu-item" data-l10n-id="enableUSBStorage1">USB storage</span>
             </label>
-            <label>
-              <input name="show-pwd" type="checkbox" />
-              <span data-l10n-id="showPassword">show password</span>
-            </label>
-          </form>
-          <footer>
-            <button data-l10n-id="ok">OK</button>
-            <button data-l10n-id="cancel">Cancel</button>
-          </footer>
-        </div>
+          </li>
+          <li>
+            <small id="application-storage-desc" class="menu-item-desc"></small>
+            <a id="menuItem-applicationStorage" class="menu-item" href="#applicationStorage" data-l10n-id="appStorage">Application Storage</a>
+          </li>
+          <li id="media-storage-section">
+            <small id="media-storage-desc" class="menu-item-desc"></small>
+            <a id="menuItem-mediaStorage" class="menu-item" href="#mediaStorage" data-l10n-id="mediaStorage">Media Storage</a>
+          </li>
+        </ul>
 
-        <!-- EAP authentication -->
-        <div id="wifi-eap" class="dialog">
-          <header data-ssid>Authentication</header>
-          <dl>
-            <dt data-l10n-id="security">security:</dt>
-            <dd data-security>WPA-EAP</dd>
-            <dt data-l10n-id="signalStrength">signal strength:</dt>
-            <dd data-signal>good</dd>
-          </dl>
-          <form action="#">
-            <label>
-              <span data-l10n-id="identity">identity</span>
-              <input data-identity name="identity" type="text" />
-            </label>
-            <label>
-              <span data-l10n-id="password">password</span>
-              <input data-password name="password" type="password" />
-            </label>
-            <label>
-              <input name="show-pwd" type="checkbox" />
-              <span data-l10n-id="showPassword">show password</span>
-            </label>
-          </form>
-          <footer>
-            <button data-l10n-id="ok">OK</button>
-            <button data-l10n-id="cancel">Cancel</button>
-          </footer>
-        </div>
+        <!-- Main :: Device -->
+        <header>
+          <h2 data-l10n-id="device">Device</h2>
+        </header>
+        <ul>
+          <li>
+            <a id="menuItem-deviceInfo" class="menu-item" href="#about" data-l10n-id="deviceInfo">Device Information</a>
+          </li>
+          <li>
+            <a id="menuItem-downloads" class="menu-item" href="#downloads" data-l10n-id="downloads">Downloads</a>
+          </li>
+          <li>
+            <small id="battery-desc" class="menu-item-desc" hidden></small>
+            <a id="menuItem-battery" class="menu-item" href="#battery" data-l10n-id="battery">Battery</a>
+          </li>
+          <li data-show-name="accessibility.show-settings" hidden>
+            <a id="menuItem-accessibility" class="menu-item" href="#accessibility" data-l10n-id="accessibility">Accessibility</a>
+          </li>
+          <li data-show-name="developer.menu.enabled" hidden>
+            <a id="menuItem-developer" class="menu-item" href="#developer" data-l10n-id="developer">Developer</a>
+          </li>
+          <li>
+            <a id="menuItem-improveBrowserOS" class="menu-item" href="#improveBrowserOS" data-l10n-id="improveBrowserOS">Improve Browser OS</a>
+          </li>
+          <li>
+            <a id="menuItem-help" class="menu-item" href="#help" data-l10n-id="help">Help</a>
+          </li>
+        </ul>
 
+        <!-- Main :: SIM Toolkit -->
+        <header id="icc-mainheader">
+          <h2 data-l10n-id="operatorServices">Operator Services</h2>
+        </header>
+        <ul id="icc-entries">
+        </ul>
       </div>
-    </div>
+    </section>
+
+    <form role="dialog" data-type="confirm" id="turn-on-ums-dialog" hidden>
+      <section>
+        <h1 data-l10n-id="ums-warning-title">Enable USB storage?</h1>
+        <p data-l10n-id="turn-on-ums-confirm">
+            Turning on Enable USB storage allows another computer or device connected using USB to access files on this phone.
+        </p>
+      </section>
+      <menu>
+        <button data-l10n-id="cancel" id="ums-cancel-option">Cancel</button>
+        <button data-l10n-id="ok" id="ums-confirm-option" class="recommend">OK</button>
+      </menu>
+    </form>
+    <script src="js/startup.js"></script>
   </body>
 </html>

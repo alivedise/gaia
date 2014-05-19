@@ -1,164 +1,262 @@
 .apps {
   width: 100%;
   height: 100%;
-  overflow: hidden;
+	z-index: 1;
 }
 
 /* pages */
+.apps > div:first-child {
+  transform: translateX(0);
+}
+
 .apps > div {
   position: absolute;
   width: 100%;
-  height: 100%;
+  height: calc(100% - 7.6rem);
   text-align: center;
   margin: 0 auto;
+  overflow: hidden;
+
+  transform: translateX(99.99%);
+  will-change: transform;
 }
 
 .apps ol {
-  width: -moz-calc(4 * 8rem);
+  width: 100%;
   padding: 0;
   list-style-type: none;
   display: block;
   margin: 0 auto;
-  margin-top: 2rem;
+	margin-top: .3rem;
+
+  /* collection is opened, homescreen apps are faded out */
+  transition: opacity 200ms linear;
 }
 
 .apps ol > li {
   position: relative;
-  width: 8rem;
+  width: 25%;
   display: inline-block;
   float: left;
   text-align: center;
-  /* It SHOULD be 2.5rem but status bar is 32px instead of 20px */
-  padding-bottom: -moz-calc(2.5rem - 0.3rem);
-  font-family:'Open Sans';
 }
 
-/* Maximum 16 icons for page */
+/* Maximum 16 icons for page by default */
 .apps ol > li:nth-child(17) {
   display: none;
 }
 
-/* Option to delete apps */
-.apps ol > li span.options {
-  position: absolute;
-  top: -10%;
-  left: 0;
-  width: 100%;
-  height: 33%;
-  z-index: 2;
-  background: url(../resources/images/menu.png) no-repeat center top;
+/* Maximum 12 icons for first page by default when ev.me is available */
+body.searchPageEnabled .apps div:first-child ol > li:nth-child(13) {
+  display: none;
 }
 
 /* Container -> icon + label */
 .apps ol > li > div {
+  position: relative;
   height: 100%;
   width: 100%;
+  margin-top: .5rem;
+  margin-bottom: .5rem;
   pointer-events: none; /* NO touchable area */
+  font-size: 0; /* To remove the gap between the icon and the label, which is adjustable by .labelWrapper */
 }
 
-/* icon */
-.apps ol > li > div > img {
-  width: 6rem;
-  height: 6rem;
-  border-radius: .6rem;
+/* Handling the case where the status bar is double size */
+/* XXX remove when the homescreen layout gets more dynamic */
+@media screen and (max-height: 440px) and (orientation: portrait) {
+  .apps ol > li > div {
+    margin-top: .2rem;
+  }
 }
 
 /* label wrapper */
 .apps ol > li > div > span {
   overflow: hidden; /* We cut the text to avoid messing up the grid */
-  text-overflow: ellipsis; /* Ellipsis to represent clipped text */
+  word-wrap: break-word;
+}
+
+.apps ol > li > div > span.mask {
+	mask: url('app_name_mask.svg#fade_right_mask');
+	text-overflow: '';
+}
+
+ol > li.active > div > img {
+  filter: url('app_tapped_filter.svg#blur');
 }
 
 /* text label */
 .apps ol > li > div > span > span {
-  font-size: -moz-calc(6 * 0.226rem); /* 6pt */
-  text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+  font-size: 1.3rem;
+  line-height: 2rem; /* maintain constant line height even if font fallback
+                        gives us different fonts for non-Latin labels */
+  text-shadow: 0 0.1rem 0.2rem rgba(0,0,0,1);
+}
+
+/* These classes detect text overflow from JS code */
+#fake-icon {
+  width: 8rem; /* Like li items */
+  position: fixed;
+  top: 200%; /* Outside viewport */
+  display: block;
+}
+
+#fake-icon-name {
+  font-size: 1.3rem;
+  text-shadow: 0 0.1rem 0.2rem rgba(0,0,0,1);
 }
 
 .labelWrapper {
-  text-transform: capitalize; /* First letter always capitalized */
-  font-weight: bold; /* App label font weight */
   color: #fff; /* App label color */
   white-space: nowrap; /* NO new lines */
   display: block;
   width: 94%; /* At least 6% of margin between labels of different apps */
   position: relative;
-  height: 1.5rem; /* 15px in otoro */
-  margin: 0 auto;
+  height: 2.5rem;
+  margin: 0.1rem auto -0.4rem;
+  font-weight: 500;
 }
 
-.apps .draggable {
-  z-index: 10000;
-  pointer-events: none;
+/* Alternative icons when an app is being installed */
+.loading:after {
+  content: "";
   position: absolute;
-  text-align: center;
-  width: 8rem;
-  -moz-transform: translate(0,0);
+  left: 0;
+  top: 0.6rem;
+  z-index: 30000;
+  width: 100%;
+  height: 6.2rem;
+  background: url('/style/images/loading_spinner.png');
+  background-position: top center;
+  background-repeat: no-repeat;
+  background-size: 6.2rem;
+  animation: rotate 2.25s linear infinite;
 }
 
-.apps .draggable > img {
-  margin-bottom: .5rem;
-  box-shadow: 0 0 5px 5px #666;
-  -moz-transform: scale(1.1);
-  border-radius: 1rem;
-  width: 6rem;
-  height: 6rem;
+.apps .loading:after {
+  top: 0.1rem;
 }
 
-/* label wrapper */
-.apps .draggable > span {
-  /* shift left edge of text to center */
-  left: 50%;
+/* the panels are panning */
+body[data-transitioning] .loading:after {
+  animation-name: none;
 }
 
-/* text label */
-.apps .draggable > span > span {
-  font-size: 2rem;
-  text-shadow: 0 0 5px #666;
-  /* shift left edge of text half distance to left */
-  margin-left: -100%;
+/* the icon is being dragged */
+.draggable .loading:after {
+  animation-name: none;
+  background: none;
 }
 
-@-moz-keyframes shake {
-  0% { -moz-transform: translate(3px, 2px) rotate(0deg); }
-  10% { -moz-transform: translate(-2px, -3px) rotate(-2deg); }
-  20% { -moz-transform: translate(-5px, 0px) rotate(2deg); }
-  30% { -moz-transform: translate(0px, 3px) rotate(0deg); }
-  40% { -moz-transform: translate(2px, -2px) rotate(2deg); }
-  50% { -moz-transform: translate(-2px, 3px) rotate(-2deg); }
-  60% { -moz-transform: translate(-5px, 2px) rotate(0deg); }
-  70% { -moz-transform: translate(3px, 2px) rotate(-2deg); }
-  80% { -moz-transform: translate(-2px, -2px) rotate(2deg); }
-  90% { -moz-transform: translate(3px, 3px) rotate(0deg); }
-  100% { -moz-transform: translate(2px, -3px) rotate(-2deg); }
+@keyframes rotate {
+  from {
+    transform: rotate(1deg)
+  }
+  to {
+    transform: rotate(360deg)
+  }
 }
 
-@-moz-keyframes rotation {
-  0% { -moz-transform: rotate(0deg); }
-  100% { -moz-transform: rotate(360deg); }
+/* if the min device height is 640px -> one row more (5 rows per page) */
+@media (min-device-width: 320px) and (min-device-height: 640px) {
+  /* Maximum 16 icons for first page instead of 12 when ev.me is available */
+  body.searchPageEnabled .apps div:first-child ol > li:nth-child(13) {
+    display: inline-block;
+  }
+
+  body.searchPageEnabled .apps div:first-child ol > li:nth-child(17) {
+    display: none;
+  }
+
+  /* Maximum 20 icons for page for the rest of pages */
+  .apps ol > li:nth-child(17) {
+    display: inline-block;
+  }
+
+  .apps ol > li:nth-child(21) {
+    display: none;
+  }
 }
 
-@-moz-keyframes none {}
+/* For WVGA (800 x 480), adjust the padding to make app icons fit in 4 x 5 grid */
+/* The width here is described as CSS pixel, so it would be 320px while dppx = 1.5 */
+@media (min-device-width: 320px) and (max-device-width: 359px) and (max-aspect-ratio: 4 / 6) {
+  .apps ol > li > div {
+    margin-top: 0;
+  }
 
-/* Image and label have shaking effect */
-.apps[data-mode = 'edit'] ol > li > div {
-  -moz-animation-name: shake;
-  -moz-animation-duration: 2s;
-  -moz-transform-origin:50% 50%;
-  -moz-animation-iteration-count: infinite;
-  -moz-animation-timing-function: linear;
-  opacity: .8;
+  .labelWrapper {
+    margin-top: 0.2rem;
+    height: 1.9rem;
+  }
+
+  /* Maximum 16 icons for first page instead of 12 when ev.me is available */
+  body.searchPageEnabled .apps div:first-child ol > li:nth-child(13) {
+    display: inline-block;
+  }
+
+  body.searchPageEnabled .apps div:first-child ol > li:nth-child(17) {
+    display: none;
+  }
+
+  /* Maximum 20 icons for page for the rest of pages */
+  .apps ol > li:nth-child(17) {
+    display: inline-block;
+  }
+
+  .apps ol > li:nth-child(21) {
+    display: none;
+  }
 }
 
-.apps[data-transitioning] ol > li > div > img, .apps[data-transitioning] ol > li > div {
-  -moz-animation-name: none;
+/* For tablet+ Device */
+@media (min-width: 768px) {
+  .apps > div {
+    height: calc(100% - 16.9rem);
+  }
+
+  .apps ol {
+    -moz-box-sizing: border-box;
+    padding: 3.5rem 7rem 6.5rem 7rem;
+  }
+
+  .labelWrapper {
+    margin-top: 1rem;
+    font-size: 1.6rem;
+    line-height: 1.6rem;
+    font-weight: bold;
+  }
+
+  /* text label */
+  .apps ol > li > div > span > span {
+    font-size: 1.6rem;
+    text-shadow: 0 0 0.5rem rgba(0,0,0,0.5);
+  }
+
+  /* Maximum 12 icons for first page when searchPageEnabled */
+  body.searchPageEnabled .apps div:first-child ol > li:nth-child(13) {
+    display: none;
+  }
 }
 
-.apps[data-mode = 'normal'] ol > li span.options {
-  display: none;
-}
+@media (min-width: 768px) and (orientation: landscape) {
+  .apps ol > li {
+    width: calc(100% / 6); /* six a line */
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+  }
 
-.apps ol > li[data-dragging] {
-  opacity: 0;
-}
+  .apps ol {
+    -moz-box-sizing: border-box;
+    padding: 3.5rem 11rem 6.5rem 11rem;
+  }
 
+  /* Maximum 18 icons for page */
+  .apps ol > li:nth-child(19) {
+    display: none;
+  }
+
+  .apps ol {
+    margin-top: 0;
+  }
+}

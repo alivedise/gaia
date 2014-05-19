@@ -1,0 +1,404 @@
+
+/**
+ * Controls
+ *
+ * The main camera control bar.
+ *
+ * 1. Must be stacked above viewfinder view
+ */
+
+.controls {
+  display: flex;
+  position: absolute;
+  bottom: 0; left: 0;
+  z-index: 1; /* 1 */
+  width: 100%;
+  padding-bottom: 1rem;
+  overflow: hidden;
+  transition: opacity 100ms;
+}
+
+/**
+ * disabled
+ */
+
+.controls.disabled {
+  pointer-events: none;
+}
+
+/**
+ * faded
+ */
+
+.controls.faded {
+  opacity: 0.7;
+}
+
+/** Left and Right
+ ---------------------------------------------------------*/
+
+.controls-left,
+.controls-right {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  -moz-user-select: none;
+}
+
+/** Left
+ ---------------------------------------------------------*/
+
+.controls-left {
+  justify-content: flex-end;
+  opacity: 1;
+  transition: opacity 200ms ease-in-out;
+}
+
+/**
+ * recording=true
+ */
+
+.controls.recording .controls-left {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/** Right
+ ---------------------------------------------------------*/
+
+.controls-right {
+  justify-content: flex-start;
+}
+
+/** Controls Button
+ ---------------------------------------------------------*/
+
+.controls-button {
+  position: relative;
+  display: block;
+  height: 5.4rem;
+  width: 5.4rem;
+  font-size: 3rem;
+  line-height: 5.4rem;
+  text-align: center;
+  border-radius: 50%;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-color: rgba(0,0,0,0.4);
+  background-clip: padding-box;
+  border: solid 1.8rem transparent;
+  box-sizing: content-box;
+  color: #fff;
+}
+
+/**
+ * :active
+ */
+
+.controls-button:active {
+  background-color: #00b9df;
+}
+
+/** Thumbnail Button
+ ---------------------------------------------------------*/
+
+.controls-thumbnail-button {
+  display: none;
+}
+
+.controls.thumbnail .controls-thumbnail-button {
+  display: block;
+}
+
+.controls-thumbnail-button > img:active {
+  border-color:#008EAB;
+  background-color:#008EAB;
+}
+
+.controls-thumbnail-button > img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  border: solid 2px #ffffff;
+  border-radius: 50%;
+  animation: thumbnail-fade-in 300ms;
+}
+
+/** Thumbnail Animation
+ ---------------------------------------------------------*/
+
+@keyframes thumbnail-fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/** Cancel Pick Button
+ ---------------------------------------------------------*/
+
+.controls-cancel-pick-button {
+  display: none;
+}
+
+/**
+ * @cancel
+ */
+
+.controls.cancel .controls-cancel-pick-button {
+  display: block;
+}
+
+/** Mode Switch
+ ---------------------------------------------------------*/
+
+/**
+ * 1. Hidden by default
+ */
+
+.mode-switch {
+  position: relative;
+  display: block;
+  font-size: 2.4rem;
+  width: 7.6rem;
+  background: rgba(0,0,0,0.4);
+  border-radius: 3rem;
+  padding: 0.2rem;
+  margin-left: 1.8rem;
+  overflow: hidden;
+  visibility: hidden; /* 1 */
+  box-sizing: content-box;
+}
+
+/**
+ * switchable=true
+ */
+
+.controls.switchable .mode-switch {
+  visibility: visible;
+}
+
+.controls.recording .mode-switch {
+  visibility: hidden;
+}
+
+/** Mode Icon
+ ---------------------------------------------------------*/
+
+.mode-switch .mode-icon {
+  position: absolute;
+  width: 2.4rem;
+  right: 1rem;
+  line-height: 3.6rem;
+}
+
+.mode-switch .mode-icon:before {
+  content: "\e602";
+  font-size: 2.1rem;
+  color: #C7C7C7;
+}
+
+/**
+ * mode=video
+ */
+
+.controls.mode-video .mode-switch .mode-icon {
+  left: 1.1rem;
+}
+
+.controls.mode-video .mode-switch .mode-icon:before {
+  content: "\e60f";
+}
+
+/** Selected Mode
+ ---------------------------------------------------------*/
+
+/**
+ * 1. Disabled `will-change` due to performance
+ *    issues on Hamachi. Leaving in place so that
+ *    we can re-introduce as a later date to improve
+ *    frame-rate on more capable devices.
+ */
+
+.mode-switch .selected-mode {
+  position: relative;
+  width: 3.6rem;
+  height: 3.6rem;
+  border-radius: 50%;
+  background: #EEE;
+  /*will-change: transform;*/ /* 1 */
+  transition: transform 140ms;
+}
+
+/**
+ * mode=video
+ */
+
+.controls.mode-video .mode-switch .selected-mode {
+  transform: translateX(4rem);
+}
+
+/** Selected Mode Icon
+ ---------------------------------------------------------*/
+
+.mode-switch .selected-mode-icon:before {
+  content: "\e60f";
+  display: block;
+  text-align: center;
+  font-size: 2.1rem;
+  line-height: 3.6rem;
+  color: #00CAF2;
+}
+
+/**
+ * mode=video
+ */
+
+.controls.mode-video .mode-switch .selected-mode-icon:before {
+  content: "\e602";
+  color: #D92E2E;
+}
+
+/** Capture Button
+ ---------------------------------------------------------*/
+
+.capture-button {
+  position: relative;
+  top: calc(50% - 5.1rem);
+  width: 10.2rem;
+  height: 10.2rem;
+  -moz-user-select: none;
+}
+
+/** Circle
+ ---------------------------------------------------------*/
+
+.capture-button .circle {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+/** Outer Circle
+ ---------------------------------------------------------*/
+
+.outer-circle {
+  background: #C3F5FF;
+  opacity: 0.35;
+}
+
+.controls.mode-video .outer-circle {
+  background: #D92E2E;
+}
+
+/** Inner Circle
+ ---------------------------------------------------------*/
+
+/**
+ * 1. Disabled `will-change` due to performance
+ *    issues on Hamachi. Leaving in place so that
+ *    we can re-introduce as a later date to improve
+ *    frame-rate on more capable devices.
+ */
+
+.capture-button .inner-circle {
+  background-color: white;
+  /*will-change: transform;*/ /* 1 */
+  transform: scale(0.76);
+  transition: transform 150ms ease-in;
+}
+
+/**
+ * :active,
+ * recording=true,
+ * capture-active=true & mode=picture
+ */
+
+.capture-button:active .inner-circle,
+.recording .capture-button .inner-circle,
+.capture-active .capture-button .inner-circle {
+  background-color: #00caf2;
+  color: white;
+  transform: scale(1.0);
+}
+
+/**
+ * mode=video
+ */
+
+.controls.mode-video .inner-circle {
+  position: relative;
+}
+
+/**
+ * mode=video & :active,
+ * mode=video & capture-active=true,
+ * mode=vide & recording=true
+ */
+
+.controls.mode-video .capture-button:active .inner-circle,
+.controls.mode-video.capture-active .capture-button .inner-circle,
+.controls.mode-video.recording .capture-button .inner-circle {
+  background-color: #D92E2E;
+}
+
+/** Icon
+ ---------------------------------------------------------*/
+
+.capture-button .center:before {
+  display: block;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  font-size: 4rem;
+  line-height: 10.2rem;
+  text-align: center;
+  color: #81ACB6;
+  content: "\e60f";
+}
+
+/**
+ * :active,
+ * recording,
+ * capture-active && mode-picture
+ */
+
+.capture-button:active .center:before,
+.recording .capture-button .center:before,
+.capture-active .capture-button .center:before {
+  color: white;
+}
+
+/**
+ * mode-video
+ *
+ * 1. (bug 1008488): Pixel rounding issues sometimes
+ *    means that this circle looks 'chopped'. Using a
+ *    more precise height fixes this, although
+ *    technically this is a platform issue.
+ */
+
+.controls.mode-video .capture-button .center:before {
+  content: '';
+  top: calc(50% - 1rem);
+  left: calc(50% - 1rem);
+  width: 2.001rem; /* 1 */
+  height: 2.001rem; /* 1 */
+  border-radius: 50%;
+  background-color: #D92E2E;
+  color: white;
+}
+
+/**
+ * mode-video & :active,
+ * mode-video & recording,
+ * mode-video & capture-active
+ */
+
+.controls.mode-video .capture-button:active .center:before,
+.controls.mode-video.recording .capture-button .center:before,
+.controls.mode-video.capture-active .capture-button .center:before {
+  border-radius: 3px;
+  background-color: white;
+}

@@ -1,50 +1,49 @@
 (function(window) {
-  if (typeof(Calendar.Templates) === 'undefined') {
-    Calendar.Templates = {};
-  }
+  'use strict';
 
   var Month = Calendar.Template.create({
-    busy: '<span class="busy-{value}">&nbsp;</span>',
+    busy: function() {
+      return '<span class="' +
+                'busytime-' + this.h('_id') +
+                ' busy-length-' + this.h('length') +
+                ' busy-' + this.h('start') +
+                ' calendar-id-' + this.h('calendarId') +
+                ' calendar-color calendar-display' +
+              '">' +
+              '&nbsp;' +
+            '</span>';
+    },
 
-    currentMonth: [
-      '<span class="month">{month}</span>',
-      '<span class="year">{year}</span>'
-    ].join(''),
+    weekDaysHeader: function() {
+      return '<header id="month-days">' +
+          '<ol role="row">' +
+            this.s('value') +
+          '</ol>' +
+        '</header>';
+    },
 
-    weekDaysHeader: [
-      '<header id="month-days" role="row">',
-        '<ol role="row">',
-          '{value|s}',
-        '</ol>',
-      '</header>'
-    ].join(''),
+    weekDaysHeaderDay: function() {
+      return '<li data-l10n-id="weekday-' + this.h('day') + '-short">' +
+          this.h('dayName') +
+        '</li>';
+    },
 
-    weekDaysHeaderDay: [
-      '<li role="column">',
-        '{value}',
-      '</li>'
-    ].join(''),
+    week: function() {
+      return '<ol role="row">' +
+          this.s('value') +
+        '</ol>';
+    },
 
-    month: [
-      '<section id="{id}" class="month">',
-        '{content|s}',
-      '</section>'
-    ].join(''),
-
-    week: [
-      '<ol role="row">',
-        '{value|s}',
-      '</ol>'
-    ].join(''),
-
-    day: [
-      '<li id="{id|s}" data-date="{dateString|s}" class="{state|s}">',
-        '<span class="day">{date}</span>',
-        '<div class="busy-indicator">{busy|s}</div>',
-      '</li>'
-    ].join('')
+    day: function() {
+      return '<li id="' + this.s('id') +
+                  '" data-date="' + this.s('dateString') +
+                  '" class="' + this.s('state') + '">' +
+          '<span class="day">' + this.h('date') + '</span>' +
+          '<div class="busy-indicator"></div>' +
+        '</li>';
+    }
   });
 
-  Calendar.Templates.Month = Month;
+  Calendar.ns('Templates').Month = Month;
 
 }(this));

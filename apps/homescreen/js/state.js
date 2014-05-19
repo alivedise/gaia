@@ -2,11 +2,30 @@
 'use strict';
 
 const HomeState = (function() {
-  const DB_NAME = 'HomeScreen';
-  const STORE_NAME = 'HomeScreen';
-  const VERSION = 1;
+  var DB_NAME = 'homescreen';
+  var GRID_STORE_NAME = 'grid';
+  var SV_APP_STORE_NAME = 'svAppsInstalled';
+  var DB_VERSION = 2;
 
   var database = null;
+  var initQueue = [];
+
+  function loadInitialState(iterator, success, error) {
+    var grid = Configurator.getSection('grid') || [];
+
+    // add the actual grid pages from the configurator
+    for (var i = 0; i < grid.length; i++) {
+      grid[i] = {
+        index: i,
+        icons: grid[i]
+      };
+    }
+
+    HomeState.saveGrid(grid, function onSaveGrid() {
+      grid.forEach(iterator);
+      success();
+    }, error);
+  }
 
   function openDB(success, error) {
     try {
@@ -22,30 +41,53 @@ const HomeState = (function() {
       return;
     }
 
+    var request;
+    var emptyDB = false;
+
     try {
-      var request = indexedDB.open(DB_NAME, VERSION);
-      request.onsuccess = function(event) {
-        database = event.target.result;
-        success();
-      };
-
-      request.onerror = function(event) {
-        error('Database error: ' + event.target.errorCode);
-      };
-
-      request.onupgradeneeded = function(event) {
-        var db = event.target.result;
-        var objectStore = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-        objectStore.createIndex('byPage', 'id', { unique: true });
-      };
+      request = indexedDB.open(DB_NAME, DB_VERSION);
     } catch (ex) {
       error(ex.message);
+      return;
     }
+
+    request.onsuccess = function(event) {
+      database = event.target.result;
+      success(emptyDB);
+    };
+
+    request.onerror = function(event) {
+      error('Database error: ' + event.target.errorCode);
+    };
+
+    request.onupgradeneeded = function(event) {
+      var db = event.target.result;
+      var oldVersion = event.oldVersion || 0;
+      switch (oldVersion) {
+        case 0:
+          emptyDB = true;
+          db.createObjectStore(GRID_STORE_NAME, { keyPath: 'index' });
+          /* falls through */
+        case 1:
+          // This works as we're just adding a new object store.
+          // Please take into accout that in case we were altering the schema
+          // this wouldn't be enough
+          if (!db.objectStoreNames.contains(SV_APP_STORE_NAME)) {
+            db.createObjectStore(SV_APP_STORE_NAME, { keyPath: 'manifest' });
+          }
+      }
+    };
   }
 
-  function newTxn(txn_type, callback, successCb, failureCb) {
-    var txn = database.transaction([STORE_NAME], txn_type);
-    var store = txn.objectStore(STORE_NAME);
+  function newTxn(storeName, txn_type, callback, successCb, failureCb) {
+    if (!database) {
+      initQueue.push(newTxn.bind(null, storeName, txn_type, callback,
+                                 successCb, failureCb));
+      return;
+    }
+
+    var txn = database.transaction([storeName], txn_type);
+    var store = txn.objectStore(storeName);
 
     txn.oncomplete = function(event) {
       if (successCb) {
@@ -65,59 +107,76 @@ const HomeState = (function() {
     callback(txn, store);
   }
 
+  function saveTable(table, objectsArr, success, error) {
+    if (!database) {
+      if (error) {
+        error('Database is not available');
+      }
+      return;
+    }
+
+    newTxn(table, 'readwrite', function(txn, store) {
+      store.clear();
+      var len = objectsArr.length;
+      for (var i = 0; i < len; i++) {
+        store.put(objectsArr[i]);
+      }
+      if (success) {
+        success();
+      }
+    });
+  }
+
+  function loadTable(table, iterator, success, error) {
+    if (!database) {
+      if (error) {
+        error('Database is not available');
+      }
+      return;
+    }
+
+    newTxn(table, 'readonly', function(txn, store) {
+      store.openCursor().onsuccess = function onsuccess(event) {
+        var cursor = event.target.result;
+        if (!cursor)
+          return;
+        iterator(cursor.value);
+        cursor.continue();
+      };
+    }, function() { success && success(); }, error);
+  }
+
   return {
-    init: function(success, error) {
-      openDB(success, error);
+    /**
+     * Initialize the database and return the homescreen state to the
+     * success callback.
+     */
+    init: function st_init(iteratorGrid, success, error, iteratorSVApps) {
+      openDB(function(emptyDB) {
+        if (emptyDB) {
+          loadInitialState(iteratorGrid, success, error);
+          return;
+        }
+        HomeState.getGrid(iteratorGrid, success, error);
+        HomeState.getSVApps(iteratorSVApps);
+      }, error);
     },
 
-    save: function(pages, success, error) {
-      if (!database) {
-        if (error) {
-          error('Database is not available');
-        }
-        return;
-      }
-
-      newTxn('readwrite', function(txn, store) {
-        if (Object.prototype.toString.call(pages) === '[object Array]') {
-          store.clear();
-          var len = pages.length;
-          for (var i = 0; i < len; i++) {
-            var page = pages[i];
-            store.put({
-              id: i,
-              apps: page.getAppsList()
-            });
-          }
-        } else {
-          // Only one page
-          store.put(pages);
-        }
-      }, success, error);
+    saveGrid: function st_saveGrid(pages, success, error) {
+      saveTable(GRID_STORE_NAME, pages, success, error);
     },
 
-    getAppsByPage: function(iteratee, success, error) {
-      if (!database) {
-        if (error) {
-          error('Database is not available');
-        }
-        return;
-      }
+    saveSVInstalledApps: function st_saveSVInstalledApps(svApps, success,
+                                                         error) {
+      saveTable(SV_APP_STORE_NAME, svApps, success, error);
+    },
 
-      var results = 0;
-      newTxn('readonly', function(txn, store) {
-       var index = store.index('byPage');
-        var request = index.openCursor();
-        request.onsuccess = function(event) {
-          var cursor = event.target.result;
-          if (cursor) {
-            iteratee(cursor.value.apps);
-            results++;
-            cursor.continue();
-          }
-        };
-      }, function() { success(results) }, error);
+    getGrid: function st_getGrid(iterator, success, error) {
+      loadTable(GRID_STORE_NAME, iterator, success, error);
+    },
+
+    getSVApps: function st_getSVApps(iterator, success, error) {
+      loadTable(SV_APP_STORE_NAME, iterator, success, error);
     }
   };
 })();
-
