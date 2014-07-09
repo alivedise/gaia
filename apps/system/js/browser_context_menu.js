@@ -1,4 +1,4 @@
-/* global MozActivity, AppWindow */
+/* global MozActivity */
 
 (function(window) {
   'use strict';
@@ -16,7 +16,6 @@
   var BrowserContextMenu = window.BrowserContextMenu = function(app) {
     this.app = app;
     this.containerElement = app.element;
-    this.event = null;
     // One to one mapping.
     this.instanceID = _id++;
     this._injected = false;
@@ -37,12 +36,11 @@
   };
 
   BrowserContextMenu.prototype.handleEvent = function bcm_handleEvent(evt) {
-    this.event = evt;
-    if (!this._injected) {
-      this.render();
+    switch (evt.type) {
+      case 'mozbrowsercontextmenu':
+        this.show(evt);
+        break;
     }
-    this.show();
-    this._injected = true;
   };
 
   BrowserContextMenu.prototype._fetchElements = function bcm__fetchElements() {
@@ -63,6 +61,7 @@
         this.element.querySelector('.' + this.ELEMENT_PREFIX + name);
     }, this);
     var cancel = document.createElement('button');
+    cancel.id = 'ctx-cancel-button';
     cancel.dataset.action = 'cancel';
     cancel.dataset.l10nId = 'cancel';
     this.elements.cancel = cancel;
@@ -85,8 +84,7 @@
     this.containerElement.removeChild(this.element);
   };
 
-  BrowserContextMenu.prototype.show = function() {
-    var evt = this.event;
+  BrowserContextMenu.prototype.show = function(evt) {
     var detail = evt.detail;
 
     var hasContextMenu = detail.contextmenu &&
@@ -94,24 +92,39 @@
     var hasSystemTargets = detail.systemTargets &&
       detail.systemTargets.length > 0;
 
-    // systemTargets are currently disabled for non browsing contexts
-    // https://bugzilla.mozilla.org/show_bug.cgi?id=1010160
-    if (!(hasContextMenu || (hasSystemTargets && this.app.isBrowser()))) {
+    // Nothing to show
+    if (!hasSystemTargets && !hasContextMenu) {
+      return;
+    }
+
+    // context menus in certified apps that only have system targets are
+    // currently disabled. https://bugzilla.mozilla.org/show_bug.cgi?id=1010160
+    // is tracking reenabling
+    if (!hasContextMenu && hasSystemTargets && this.app.isCertified()) {
       return;
     }
 
     // Notify the embedder we are handling the context menu
     evt.preventDefault();
 
-    this.buildMenu(this._listItems(detail));
-    this.element.classList.add('visible');
+    this.showMenu(this._listItems(detail));
   };
+
+  BrowserContextMenu.prototype.showMenu = function(menu) {
+    if (!this._injected) {
+      this.render();
+    }
+    this._injected = true;
+    this.buildMenu(menu);
+    this.element.classList.add('visible');
+  },
 
   BrowserContextMenu.prototype.buildMenu = function(items) {
     var self = this;
     this.elements.list.innerHTML = '';
     items.forEach(function traveseItems(item) {
       var action = document.createElement('button');
+      action.dataset.id = item.id;
       action.dataset.value = item.value;
       action.textContent = item.label;
 
@@ -162,9 +175,14 @@
   };
 
   BrowserContextMenu.prototype.hide = function(evt) {
+    if (!this.element) {
+      return;
+    }
+
     if (evt) {
       evt.preventDefault();
     }
+
     this.element.blur();
     this.element.classList.remove('visible');
     if (this.app) {
@@ -173,54 +191,106 @@
   };
 
   BrowserContextMenu.prototype.openUrl = function(url) {
-    // We dont use an activity as that will open the url
-    // in this frame, we want to ensure a new window is opened
-    var app = new AppWindow({
-      oop: true,
-      useAsyncPanZoom: true,
-      url: url
+    /*jshint -W031 */
+    new MozActivity({
+      name: 'view',
+      data: {
+        type: 'url',
+        url: url
+      }
     });
-    app.requestOpen();
   };
 
   BrowserContextMenu.prototype.shareUrl = function(url) {
-    var activity = new MozActivity({
+    /*jshint -W031 */
+    new MozActivity({
       name: 'share',
-      data: {type: 'url', url: url}
+      data: {
+        type: 'url',
+        url: url
+      }
     });
-    activity.onsuccess = function() {};
   };
 
-  BrowserContextMenu.prototype.bookmarkUrl = function(url) {
-    var activity = new MozActivity({
+  BrowserContextMenu.prototype.bookmarkUrl = function(url, name, icon) {
+    /*jshint -W031 */
+    var data = {
+      type: 'url',
+      url: url,
+      name: name
+    };
+    if (icon) {
+      data.icon = icon;
+    }
+    console.log(JSON.stringify(data));
+    new MozActivity({
       name: 'save-bookmark',
-      data: {type: 'url', url: url}
+      data: data
     });
-    activity.onsuccess = function() {};
   };
 
   BrowserContextMenu.prototype.generateSystemMenuItem = function(item) {
-    switch (item.nodeName) {
+
+    var nodeName = item.nodeName;
+    var uri = item.data.uri;
+
+    switch (nodeName) {
       case 'A':
         return [{
           id: 'open-in-new-tab',
           label: _('open-in-new-tab'),
-          callback: this.openUrl.bind(this, item.data.uri)
+          callback: this.openUrl.bind(this, uri)
         }, {
         // TODO: requires the text description from the link
         // https://bugzilla.mozilla.org/show_bug.cgi?id=1009351
         //
         //   id: 'bookmark-link',
-        //   label: _('add-to-home-screen'),
+        //   label: _('add-link-to-home-screen'),
         //   callback: this.bookmarkUrl.bind(this, [item.data.uri])
         // }, {
           id: 'share-link',
           label: _('share-link'),
-          callback: this.shareUrl.bind(this, item.data.uri)
+          callback: this.shareUrl.bind(this, uri)
         }];
+
+      case 'IMG':
+      case 'VIDEO':
+      case 'AUDIO':
+        var typeMap = {
+          'IMG': 'image',
+          'VIDEO': 'video',
+          'AUDIO': 'audio'
+        };
+        var type = typeMap[nodeName];
+        if (nodeName === 'VIDEO' && !item.data.hasVideo) {
+          type = 'audio';
+        }
+
+        return [{
+          id: 'save-' + type,
+          label: _('save-' + type),
+          callback: this.app.browser.element.download.bind(this, uri)
+        }, {
+          id: 'share-' + type,
+          label: _('share-' + type),
+          callback: this.shareUrl.bind(this, uri)
+        }];
+
       default:
         return [];
     }
+  };
+
+  BrowserContextMenu.prototype.showDefaultMenu = function() {
+    var config = this.app.config;
+    var icon = ('favicon' in config) ? config.favicon.href : null;
+    this.showMenu([{
+      label: _('add-to-home-screen'),
+      callback: this.bookmarkUrl.bind(this, config.url, this.app.title, icon)
+    }, {
+      label: _('share'),
+      callback: this.shareUrl.bind(this, config.url)
+    }]);
   };
 
 }(this));

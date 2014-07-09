@@ -1,7 +1,20 @@
 /*global requireApp suite test assert setup teardown IMERender sinon */
 requireApp('keyboard/js/render.js');
 
+mocha.globals(['perfTimer']);
+
 suite('Renderer', function() {
+  suiteSetup(function() {
+    window.perfTimer = {
+      printTime: function() {},
+      startTimer: function() {}
+    };
+  });
+
+  suiteTeardown(function() {
+    window.perfTimer = null;
+  });
+
   function makeDescriptor(val) {
     return {
       configurable: true,
@@ -471,7 +484,7 @@ suite('Renderer', function() {
         var layout = {
           width: 1,
           keys: [],
-          keyboardName: 'ar',
+          layoutName: 'ar',
           specificCssRule: true
         };
         IMERender.draw(layout);
@@ -482,7 +495,7 @@ suite('Renderer', function() {
         var layout = {
           width: 1,
           keys: [],
-          keyboardName: 'ar',
+          layoutName: 'ar',
           specificCssRule: false
         };
         IMERender.draw(layout);
@@ -595,7 +608,7 @@ suite('Renderer', function() {
         var layout = {
           width: (Math.random() * 8 | 0) + 2,
           keys: [],
-          keyboardName: 'test'
+          layoutName: 'test'
         };
 
         for (var ri = 0; ri < rows.length; ri++) {

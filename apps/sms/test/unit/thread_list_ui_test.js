@@ -1,7 +1,7 @@
 /*global mocha, MocksHelper, loadBodyHTML, MockL10n, ThreadListUI,
          MessageManager, WaitingScreen, Threads, Template, MockMessages,
          MockThreadList, MockTimeHeaders, Draft, Drafts, Thread, ThreadUI,
-         MockOptionMenu, Utils, Contacts, MockContact
+         MockOptionMenu, Utils, Contacts, MockContact, Navigation, MockDialog
          */
 
 'use strict';
@@ -24,6 +24,7 @@ requireApp('sms/test/unit/mock_l10n.js');
 requireApp('sms/test/unit/mock_message_manager.js');
 requireApp('sms/test/unit/mock_messages.js');
 requireApp('sms/test/unit/mock_utils.js');
+requireApp('sms/test/unit/mock_dialog.js');
 requireApp('sms/test/unit/mock_waiting_screen.js');
 require('/shared/test/unit/mocks/mock_contact_photo_helper.js');
 require('/test/unit/thread_list_mockup.js');
@@ -32,48 +33,65 @@ requireApp('sms/test/unit/mock_thread_ui.js');
 requireApp('sms/test/unit/mock_action_menu.js');
 require('/shared/test/unit/mocks/mock_performance_testing_helper.js');
 require('/shared/test/unit/mocks/mock_sticky_header.js');
+require('/test/unit/mock_navigation.js');
 
 var mocksHelperForThreadListUI = new MocksHelper([
   'asyncStorage',
   'Contacts',
   'MessageManager',
   'Utils',
+  'Dialog',
   'WaitingScreen',
   'TimeHeaders',
   'ThreadUI',
   'ContactPhotoHelper',
   'OptionMenu',
   'PerformanceTestingHelper',
-  'StickyHeader'
+  'StickyHeader',
+  'Navigation'
 ]).init();
 
 suite('thread_list_ui', function() {
   var nativeMozL10n = navigator.mozL10n;
   var draftSavedBanner;
+  var mainWrapper;
 
   mocksHelperForThreadListUI.attachTestHelpers();
-  suiteSetup(function() {
+  setup(function() {
     loadBodyHTML('/index.html');
     navigator.mozL10n = MockL10n;
     draftSavedBanner = document.getElementById('threads-draft-saved-banner');
+    mainWrapper = document.getElementById('main-wrapper');
     ThreadListUI.init();
 
     // Clear drafts as leftovers in the profile might break the tests
     Drafts.clear();
   });
 
-  suiteTeardown(function() {
+  teardown(function() {
     navigator.mozL10n = nativeMozL10n;
+    document.body.textContent = '';
   });
 
   function insertMockMarkup(someDate) {
     someDate = +someDate;
     var markup =
       '<header></header>' +
-      '<ul id="threadsContainer_' + someDate + '">' +
-        '<li id="thread-1" data-time="' + someDate + '"></li>' +
-        '<li id="thread-2" data-time="' + someDate + '"></li>' +
-      '</ul>';
+      '<ul id="threadsContainer_' + someDate + '">';
+
+    for (var i = 1; i < 3; i++) {
+      markup +=
+        '<li id="thread-' + i + '" class="threadlist-item" ' +
+            'data-time="' + someDate + '" ' +
+            'data-thread-id="' + i + '">' +
+          '<label>' +
+            '<input type="checkbox" data-mode="threads" value="' + i + '"/>' +
+          '</label>' +
+          '<a href="#thread=' + i + '"</a>' +
+        '</li>';
+    }
+
+    markup += '</ul>';
 
     ThreadListUI.container.innerHTML = markup;
   }
@@ -171,16 +189,20 @@ suite('thread_list_ui', function() {
     setup(function() {
       ThreadListUI.container.innerHTML = '<h2 id="header-1"></h2>' +
         '<ul id="list-1"><li id="thread-1"></li>' +
-        '<li id="thread-2"></li></ul>' +
+        '<li id="thread-2" data-photo-url="blob"></li></ul>' +
         '<h2 id="header-2"></h2>' +
         '<ul id="list-2"><li id="thread-3"></li></ul>';
 
       this.sinon.stub(ThreadListUI.sticky, 'refresh');
+      this.sinon.stub(window.URL, 'revokeObjectURL');
     });
 
     suite('remove last thread in header', function() {
       setup(function() {
         ThreadListUI.removeThread(3);
+      });
+      test('no need to revoke if photoUrl not exist', function() {
+        sinon.assert.notCalled(window.URL.revokeObjectURL);
       });
       test('calls StickyHeader.refresh', function() {
         sinon.assert.called(ThreadListUI.sticky.refresh);
@@ -204,6 +226,9 @@ suite('thread_list_ui', function() {
       setup(function() {
         ThreadListUI.removeThread(2);
       });
+      test('need to revoke if photoUrl exist', function() {
+        sinon.assert.called(window.URL.revokeObjectURL);
+      });
       test('no StickyHeader.refresh when not removing a header', function() {
         sinon.assert.notCalled(ThreadListUI.sticky.refresh);
       });
@@ -221,6 +246,7 @@ suite('thread_list_ui', function() {
         assert.ok(ThreadListUI.container.querySelector('#list-1'));
       });
     });
+
     suite('remove all threads', function() {
       setup(function() {
         this.sinon.stub(ThreadListUI, 'setEmpty');
@@ -560,29 +586,29 @@ suite('thread_list_ui', function() {
       }.bind(this));
       this.sinon.stub(MessageManager, 'getMessages');
     });
-    suite('confirm false', function() {
-      setup(function() {
-        this.sinon.stub(window, 'confirm').returns(false);
-        ThreadListUI.delete();
-      });
-      test('called confirm with proper message', function() {
-        assert.deepEqual(window.confirm.args[0],
-          ['deleteThreads-confirmation2']);
-      });
-    });
+
     suite('confirm true', function() {
       setup(function() {
         this.sinon.stub(WaitingScreen, 'show');
         this.sinon.stub(WaitingScreen, 'hide');
-        this.sinon.stub(window, 'confirm').returns(true);
         ThreadListUI.delete();
+        MockDialog.triggers.confirm();
+      });
+      test('called dialog with proper message', function() {
+        assert.isTrue(MockDialog.prototype.show.called);
+        assert.equal(MockDialog.calls[0].body.l10nId,
+                        'deleteThreads-confirmation2');
+        assert.equal(MockDialog.calls[0].options.confirm.text.l10nId,
+                        'delete', 'right text on button');
+        assert.equal(MockDialog.calls[0].options.confirm.className,
+                        'danger', 'right styling on button');
+      });
+      test('dialog confirmed', function() {
+        assert.ok(MockDialog.triggers.confirm.called);
+        assert.isFalse(MockDialog.triggers.cancel.called);
       });
       test('shows WaitingScreen', function() {
         assert.ok(WaitingScreen.show.called);
-      });
-      test('called confirm with proper message', function() {
-        assert.deepEqual(window.confirm.args[0],
-          ['deleteThreads-confirmation2']);
       });
       test('called MessageManager.getMessages twice', function() {
         assert.equal(MessageManager.getMessages.args.length, 2);
@@ -1108,6 +1134,7 @@ suite('thread_list_ui', function() {
       var photo = node.querySelector('span[data-type=img]');
       assert.include(photo.style.backgroundImage, 'blob:');
       assert.isFalse(pictureContainer.classList.contains('empty'));
+      assert.include(node.dataset.photoUrl, 'blob:');
     });
 
 
@@ -1118,6 +1145,44 @@ suite('thread_list_ui', function() {
       var photo = node.querySelector('span[data-type=img]');
       assert.isFalse(photo.style.backgroundImage.contains('blob:'));
       assert.isTrue(pictureContainer.classList.contains('empty'));
+    });
+  });
+
+  suite('beforeLeave()', function() {
+    setup(function() {
+
+      this.sinon.stub(Navigation, 'isCurrentPanel').returns(false);
+      Navigation.isCurrentPanel.withArgs('thread-list').returns(true);
+      ThreadListUI.startEdit();
+    });
+
+    test('Exit edit mode (Thread or Message) ', function() {
+      ThreadListUI.beforeLeave();
+      assert.isFalse(mainWrapper.classList.contains('edit'));
+    });
+  });
+
+  suite('click handling,', function() {
+    var thread1, thread2;
+    setup(function() {
+      this.sinon.stub(Navigation, 'toPanel');
+      insertMockMarkup(new Date(2013, 1, 1));
+
+      thread1 = document.getElementById('thread-1');
+      thread2 = document.getElementById('thread-2');
+    });
+
+    test('clicking on a list item', function() {
+      thread1.querySelector('a').click();
+
+      sinon.assert.calledWith(Navigation.toPanel, 'thread', { id: 1 });
+    });
+
+    test('clicking on a list item in edit mode', function() {
+      thread1.querySelector('label').click();
+
+      sinon.assert.notCalled(Navigation.toPanel);
+      assert.ok(thread1.querySelector('input').checked);
     });
   });
 });

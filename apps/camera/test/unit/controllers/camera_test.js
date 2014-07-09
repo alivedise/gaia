@@ -11,18 +11,16 @@ suite('controllers/camera', function() {
       'app',
       'controllers/camera',
       'lib/camera/camera',
-      'lib/activity',
       'views/viewfinder',
       'lib/settings',
       'lib/setting',
       'lib/geo-location'
     ], function(
-      App, CameraController, Camera, Activity,
-      ViewfinderView, Settings, Setting, GeoLocation) {
+      App, CameraController, Camera, ViewfinderView,
+      Settings, Setting, GeoLocation) {
       self.CameraController = CameraController.CameraController;
       self.ViewfinderView = ViewfinderView;
       self.GeoLocation = GeoLocation;
-      self.Activity = Activity;
       self.Settings = Settings;
       self.Setting = Setting;
       self.Camera = Camera;
@@ -38,7 +36,7 @@ suite('controllers/camera', function() {
     this.app.geolocation = sinon.createStubInstance(this.GeoLocation);
 
     // Activity
-    this.app.activity = new this.Activity();
+    this.app.activity = {};
 
     // Views
     this.app.views = {
@@ -156,6 +154,28 @@ suite('controllers/camera', function() {
 
   suite('CameraController#onSettingsConfigured()', function() {
     setup(function() {
+
+      // Mock object that mimicks
+      // mozSettings get API. Inside
+      // tests set this.mozSettingsGetResult
+      // define the result of the mock call.
+      navigator.mozSettings = {
+        createLock: function() { return this; },
+        get: function(key) {
+          var mozSettings = this;
+          setTimeout(function() {
+            var result = {};
+            result[key] = 'the-result';
+            mozSettings.onsuccess({
+              target: {
+                result: result
+              }
+            });
+          });
+          return this;
+        }
+      };
+
       this.app.settings.flashModes.selected.returns('on');
       this.app.settings.isoModes.get = sinon.spy();
       this.app.settings.isoModes.selected.returns({key: 'auto'});
@@ -189,21 +209,6 @@ suite('controllers/camera', function() {
 
       assert.ok(arg.width === 480);
       assert.ok(arg.height === 640);
-    });
-  });
-
-  suite('CameraController#onFlashModeChange()', function() {
-    test('Should set HDR \'off\' when flash is set to \'on\'', function() {
-      this.app.settings.hdr.selected.withArgs('key').returns('on');
-      this.controller.onFlashModeChange();
-      assert.ok(this.controller.app.settings.hdr.select.calledWith('off'));
-    });
-
-    test('Should not do anything if `hdrDisabed`', function() {
-      this.controller.hdrDisabled = true;
-      this.app.settings.hdr.selected.withArgs('key').returns('on');
-      this.controller.onFlashModeChange();
-      assert.ok(!this.controller.app.settings.hdr.select.called);
     });
   });
 
@@ -328,6 +333,54 @@ suite('controllers/camera', function() {
       this.controller.hdrDisabled = true;
       this.controller.setHDR();
       sinon.assert.notCalled(this.camera.setHDR);
+    });
+  });
+
+  suite('CameraController#onFlashModeChange()', function() {
+    setup(function() {
+      this.settings.hdr.selected
+        .withArgs('key')
+        .returns('on');
+    });
+
+    test('Should change hdr to off if flash is on', function() {
+      this.controller.hdrDisabled = false;
+      this.controller.onFlashModeChange('on');
+      assert.ok(this.settings.hdr.select.calledWith('off'));
+    });
+
+    test('Should not change HDR if flash is off', function() {
+      this.controller.hdrDisabled = false;
+      this.controller.onFlashModeChange('off');
+      assert.ok(!this.settings.hdr.select.called);
+    });
+
+    test('Should not change HDR if HDR is off', function() {
+      this.settings.hdr.selected.withArgs('key').returns('off');
+      this.controller.hdrDisabled = true;
+      this.controller.onFlashModeChange('auto');
+      assert.ok(!this.settings.hdr.select.called);
+    });
+
+    test('Should not change HDR if HDR is disabled', function() {
+      this.controller.hdrDisabled = true;
+      this.controller.onFlashModeChange('auto');
+      assert.ok(!this.settings.hdr.select.called);
+    });
+  });
+
+  suite('CameraController#onPreviewGalleryOpened()', function() {
+    test('Should configure zoom and stop focus', function() {
+      this.controller.onPreviewGalleryOpened();
+      assert.ok(this.camera.configureZoom.called);
+      assert.ok(this.camera.stopFocus.called);
+    });
+  });
+
+  suite('CameraController#onPreviewGalleryClosed()', function() {
+    test('Should resume focus', function() {
+      this.controller.onPreviewGalleryClosed();
+      assert.ok(this.camera.resumeFocus.called);
     });
   });
 

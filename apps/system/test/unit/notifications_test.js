@@ -1,5 +1,4 @@
 /* global
-  mocha,
   MocksHelper,
   MockStatusBar,
   NotificationScreen,
@@ -8,8 +7,6 @@
  */
 
 'use strict';
-
-mocha.globals(['ScreenManager']);
 
 require('/js/notifications.js');
 require('/test/unit/mock_screen_manager.js');
@@ -20,6 +17,7 @@ require('/shared/test/unit/mocks/mock_gesture_detector.js');
 require('/shared/test/unit/mocks/mock_navigator_moz_settings.js');
 require('/shared/test/unit/mocks/mock_settings_url.js');
 require('/shared/test/unit/mocks/mock_settings_listener.js');
+requireApp('system/test/unit/mock_system.js');
 
 var mocksForNotificationScreen = new MocksHelper([
   'StatusBar',
@@ -30,6 +28,7 @@ var mocksForNotificationScreen = new MocksHelper([
   'SettingsListener',
   'SettingsURL',
   'UtilityTray',
+  'System'
 ]).init();
 
 suite('system/NotificationScreen >', function() {

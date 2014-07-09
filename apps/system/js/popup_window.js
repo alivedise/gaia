@@ -28,7 +28,7 @@
    * @borrows AppWindow.prototype as PopupWindow.prototype
    * @memberof PopupWindow
    */
-  PopupWindow.prototype.__proto__ = AppWindow.prototype;
+  PopupWindow.prototype = Object.create(AppWindow.prototype);
 
   PopupWindow.REGISTERED_EVENTS =
     ['mozbrowserclose', 'mozbrowsererror', 'mozbrowservisibilitychange',
@@ -58,7 +58,7 @@
    * @type String
    * @memberof PopupWindow
    */
-  PopupWindow.prototype.openAnimation = 'slideup';
+  PopupWindow.prototype.openAnimation = 'slidefromdown';
 
   /**
    * Default closing animation.
@@ -66,7 +66,7 @@
    * @type String
    * @memberof PopupWindow
    */
-  PopupWindow.prototype.closeAnimation = 'slidedown';
+  PopupWindow.prototype.closeAnimation = 'slidetodown';
 
   PopupWindow.prototype.CLASS_LIST = 'appWindow popupWindow';
 

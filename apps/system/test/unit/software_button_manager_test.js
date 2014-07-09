@@ -7,8 +7,6 @@
 /* global ScreenLayout */
 /* global SoftwareButtonManager */
 
-mocha.globals(['SoftwareButtonManager']);
-
 requireApp('system/test/unit/mock_applications.js');
 requireApp('system/shared/test/unit/mocks/mock_settings_listener.js');
 requireApp('system/shared/test/unit/mocks/mock_navigator_moz_settings.js');
@@ -187,14 +185,14 @@ suite('enable/disable software home button', function() {
     subject = new SoftwareButtonManager();
     subject.start();
     subject.element.
-      addEventListener('softwareButtonEvent', function getMouseDown(evt) {
+      addEventListener('softwareButtonEvent', function getTouchStart(evt) {
         subject.element.removeEventListener(
-          'softwareButtonEvent', getMouseDown);
+          'softwareButtonEvent', getTouchStart);
         if (evt.detail.type === 'home-button-press') {
           ready = true;
         }
       });
-    subject.handleEvent({type: 'mousedown'});
+    subject.handleEvent({type: 'touchstart'});
     assert.isTrue(ready);
   });
 
@@ -208,14 +206,14 @@ suite('enable/disable software home button', function() {
     subject = new SoftwareButtonManager();
     subject.start();
     subject.element.
-      addEventListener('softwareButtonEvent', function getMouseDown(evt) {
+      addEventListener('softwareButtonEvent', function getTouchEnd(evt) {
         subject.element.removeEventListener(
-          'softwareButtonEvent', getMouseDown);
+          'softwareButtonEvent', getTouchEnd);
         if (evt.detail.type === 'home-button-release') {
           ready = true;
         }
       });
-    subject.handleEvent({type: 'mouseup'});
+    subject.handleEvent({type: 'touchend'});
     assert.isTrue(ready);
   });
 

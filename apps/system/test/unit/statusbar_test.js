@@ -7,15 +7,7 @@ requireApp('system/shared/test/unit/mocks/mock_icc_helper.js');
 requireApp('system/shared/test/unit/mocks/mock_navigator_moz_telephony.js');
 requireApp('system/shared/test/unit/mocks/mock_app_window_manager.js');
 requireApp('system/test/unit/mock_l10n.js');
-requireApp('system/test/unit/mock_lock_screen.js', function() {
-
-  // Because we can't see it while we attach helpers,
-  // which may not be loaded yet.
-  //
-  // And it can't be used as helper because the name
-  // can't be "MocklockScreen".
-  window.lockScreen = MockLockScreen;
-});
+requireApp('system/test/unit/mock_system.js');
 requireApp('system/js/mock_simslot.js');
 requireApp('system/js/mock_simslot_manager.js');
 requireApp('system/test/unit/mock_app_window_manager.js');
@@ -31,7 +23,6 @@ var mocksForStatusBar = new MocksHelper([
   'TouchForwarder'
 ]).init();
 
-mocha.globals(['Clock', 'StatusBar', 'lockScreen', 'System']);
 suite('system/Statusbar', function() {
   var mobileConnectionCount = 2;
   var fakeStatusBarNode, fakeTopPanel, fakeStatusBarBackground,
@@ -41,9 +32,7 @@ suite('system/Statusbar', function() {
 
   mocksForStatusBar.attachTestHelpers();
   suiteSetup(function(done) {
-    window.lockScreen = MockLockScreen;
-    originalLocked = window.lockScreen.locked;
-    window.lockScreen.locked = false;
+    window.System = MockSystem;
     realMozL10n = navigator.mozL10n;
     navigator.mozL10n = MockL10n;
     realMozMobileConnections = navigator.mozMobileConnections;
@@ -55,7 +44,7 @@ suite('system/Statusbar', function() {
   });
 
   suiteTeardown(function() {
-    window.lockScreen.locked = originalLocked;
+    System.locked = false;
     navigator.mozL10n = realMozL10n;
     navigator.mozMobileConnections = realMozMobileConnections;
     navigator.mozTelephony = realMozTelephony;
@@ -202,39 +191,37 @@ suite('system/Statusbar', function() {
       StatusBar.screen = null;
     });
     test('first launch', function() {
-      MockLockScreen.locked = true;
+      System.locked = true;
       StatusBar.init();
       assert.equal(StatusBar.clock.timeoutID, null);
       assert.equal(StatusBar.icons.time.hidden, true);
     });
     test('lock', function() {
-      MockLockScreen.locked = true;
-      var evt = new CustomEvent('lock');
+      System.locked = true;
+      var evt = new CustomEvent('lockscreen-appopened');
       StatusBar.handleEvent(evt);
       assert.equal(StatusBar.clock.timeoutID, null);
       assert.equal(StatusBar.icons.time.hidden, true);
     });
     test('unlock', function() {
-      var evt = new CustomEvent('unlock');
+      var evt = new CustomEvent('lockscreen-appclosed');
       StatusBar.handleEvent(evt);
       assert.notEqual(StatusBar.clock.timeoutID, null);
       assert.equal(StatusBar.icons.time.hidden, false);
     });
-    test('attentionscreen show', function() {
-      var evt = new CustomEvent('attentionscreenshow');
+    test('attention opening', function() {
+      var evt = new CustomEvent('attentionopening');
       StatusBar.handleEvent(evt);
       assert.notEqual(StatusBar.clock.timeoutID, null);
       assert.equal(StatusBar.icons.time.hidden, false);
     });
     test('attentionsceen hide', function() {
       // Test this when lockscreen is off.
-      var originalLocked = window.lockScreen.locked;
-      window.lockScreen.locked = false;
-      var evt = new CustomEvent('attentionscreenhide');
+      System.locked = false;
+      var evt = new CustomEvent('attentionclosed');
       StatusBar.handleEvent(evt);
       assert.notEqual(StatusBar.clock.timeoutID, null);
       assert.equal(StatusBar.icons.time.hidden, false);
-      window.lockScreen.locked = originalLocked;
     });
     test('emergency call when locked', function() {
       var evt = new CustomEvent('lockpanelchange', {
@@ -248,13 +235,11 @@ suite('system/Statusbar', function() {
       assert.equal(StatusBar.icons.time.hidden, false);
     });
     test('moztime change while lockscreen is unlocked', function() {
-      var originalLocked = window.lockScreen.locked;
-      window.lockScreen.locked = false;
+      System.locked = false;
       var evt = new CustomEvent('moztimechange');
       StatusBar.handleEvent(evt);
       assert.notEqual(StatusBar.clock.timeoutID, null);
       assert.equal(StatusBar.icons.time.hidden, false);
-      window.lockScreen.locked = originalLocked;
     });
     test('screen enable but screen is unlocked', function() {
       var evt = new CustomEvent('screenchange', {
@@ -262,7 +247,7 @@ suite('system/Statusbar', function() {
           screenEnabled: true
         }
       });
-      MockLockScreen.locked = false;
+      System.locked = false;
       StatusBar.handleEvent(evt);
       assert.notEqual(StatusBar.clock.timeoutID, null);
       assert.equal(StatusBar.icons.time.hidden, false);
@@ -273,7 +258,7 @@ suite('system/Statusbar', function() {
           screenEnabled: true
         }
       });
-      MockLockScreen.locked = true;
+      System.locked = true;
       StatusBar.handleEvent(evt);
       assert.equal(StatusBar.clock.timeoutID, null);
       assert.equal(StatusBar.icons.time.hidden, true);
@@ -454,7 +439,8 @@ suite('system/Statusbar', function() {
             sinon.stub(mockSimSlots[slotIndex], 'isLocked').returns(true);
 
             MockNavigatorMozTelephony.active = {
-              state: 'connected'
+              state: 'connected',
+              serviceId: slotIndex
             };
 
             StatusBar.update.signal.call(StatusBar);
@@ -480,7 +466,8 @@ suite('system/Statusbar', function() {
             sinon.stub(mockSimSlots[slotIndex], 'isLocked').returns(true);
 
             MockNavigatorMozTelephony.active = {
-              state: 'dialing'
+              state: 'dialing',
+              serviceId: slotIndex
             };
 
             StatusBar.update.signal.call(StatusBar);
@@ -508,7 +495,8 @@ suite('system/Statusbar', function() {
             StatusBar.update.signal.call(StatusBar);
 
             var activeCall = {
-              state: 'dialing'
+              state: 'dialing',
+              serviceId: slotIndex
             };
 
             MockNavigatorMozTelephony.active = activeCall;
@@ -1252,9 +1240,23 @@ suite('system/Statusbar', function() {
         return e;
     }
 
+    function forgeMouseEvent(type, x, y) {
+      var e = document.createEvent('MouseEvent');
+
+      e.initMouseEvent(type, true, true, window, 1, x, y, x, y,
+                       false, false, false, false, 0, null);
+
+      return e;
+    }
+
     function fakeDispatch(type, x, y) {
-      var e = forgeTouchEvent(type, x, y);
-      StatusBar.panelTouchHandler(e);
+      var e;
+      if (type.startsWith('mouse')) {
+        e = forgeMouseEvent(type, x, y);
+      } else {
+        e = forgeTouchEvent(type, x, y);
+      }
+      StatusBar.panelHandler(e);
 
       return e;
     }
@@ -1308,26 +1310,48 @@ suite('system/Statusbar', function() {
       assert.isFalse(StatusBar.element.classList.contains('invisible'));
     });
 
-    test('the status bar should show when attentionscreen is showing',
+    test('the status bar should show when attention window is opening',
     function() {
       this.sinon.stub(app, 'isFullScreen').returns(true);
       StatusBar.hide();
 
-      var evt = new CustomEvent('attentionscreenshow');
+      var evt = new CustomEvent('attentionopening');
       StatusBar.handleEvent(evt);
 
       assert.isFalse(StatusBar.element.classList.contains('invisible'));
     });
 
-    test('the status bar should be hidden when attentionscreen is hidden',
+    test('the status bar should be hidden when attention window is closed',
     function() {
       this.sinon.stub(app, 'isFullScreen').returns(true);
       StatusBar.show();
 
-      var evt = new CustomEvent('attentionscreenhide');
+      var evt = new CustomEvent('attentionclosed');
       StatusBar.handleEvent(evt);
 
       assert.isTrue(StatusBar.element.classList.contains('invisible'));
+    });
+
+    test('the status bar should be hidden when app is opening in fullscreen',
+    function() {
+      this.sinon.stub(app, 'isFullScreen').returns(true);
+      StatusBar.show();
+
+      var evt = new CustomEvent('appopened', { detail: app });
+      StatusBar.handleEvent(evt);
+
+      assert.isTrue(StatusBar.element.classList.contains('invisible'));
+    });
+
+    test('the status bar should show when app is opening not in fullscreen',
+    function() {
+      this.sinon.stub(app, 'isFullScreen').returns(false);
+      StatusBar.show();
+
+      var evt = new CustomEvent('appopened', { detail: app });
+      StatusBar.handleEvent(evt);
+
+      assert.isFalse(StatusBar.element.classList.contains('invisible'));
     });
 
     suite('Revealing the StatusBar >', function() {
@@ -1434,6 +1458,17 @@ suite('system/Statusbar', function() {
       });
     });
 
+    test('it should prevent default on mouse events keep the focus on the app',
+    function() {
+      var mousedown = fakeDispatch('mousedown', 100, 0);
+      var mousemove = fakeDispatch('mousemove', 100, 2);
+      var mouseup = fakeDispatch('mouseup', 100, 2);
+
+      assert.isTrue(mousedown.defaultPrevented);
+      assert.isTrue(mousemove.defaultPrevented);
+      assert.isTrue(mouseup.defaultPrevented);
+    });
+
     suite('Touch forwarding >', function() {
       var forwardSpy;
 
@@ -1441,7 +1476,7 @@ suite('system/Statusbar', function() {
         forwardSpy = this.sinon.spy(MockTouchForwarder.prototype, 'forward');
       });
 
-      test('it should prevent default on all touch events to prevent relows',
+      test('it should prevent default on all touch events to prevent reflows',
       function() {
         var touchstart = fakeDispatch('touchstart', 100, 0);
         var touchmove = fakeDispatch('touchmove', 100, 2);
@@ -1517,12 +1552,12 @@ suite('system/Statusbar', function() {
       StatusBar.screen = document.createElement('div');
     });
 
-    test('the status bar should not be hidden when attentionscreen is hidden',
+    test('the status bar should not be hidden when attention window is closed',
     function() {
       this.sinon.stub(app, 'isFullScreen').returns(false);
       StatusBar.show();
 
-      var evt = new CustomEvent('attentionscreenhide');
+      var evt = new CustomEvent('attentionclosed');
       StatusBar.handleEvent(evt);
 
       assert.isFalse(StatusBar.element.classList.contains('invisible'));

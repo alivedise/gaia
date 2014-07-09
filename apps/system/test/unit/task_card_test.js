@@ -1,9 +1,6 @@
 /* global AppWindow, MocksHelper, TaskCard */
 'use strict';
 
-mocha.globals(['AppWindow', 'System', 'BaseUI', 'Card', 'CardsHelper',
-               'TaskCard']);
-
 requireApp('system/test/unit/mock_app_window.js');
 requireApp('system/test/unit/mock_trusted_ui_manager.js');
 
@@ -38,7 +35,6 @@ suite('system/TaskCard', function() {
 
   mocksForCard.attachTestHelpers();
   var mockManager = {
-    attentionScreenApps: [],
     useAppScreenshotPreviews: true,
     cardsList: document.getElementById('cards-list')
   };

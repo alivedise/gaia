@@ -1,7 +1,5 @@
 'use strict';
 
-mocha.globals(['SIMSlot']);
-
 suite('SIMSlot', function() {
   suiteSetup(function() {
   });
@@ -42,6 +40,15 @@ suite('SIMSlot', function() {
 
     var slot2 = new SIMSlot(null, 0);
     assert.isTrue(slot2.isAbsent());
+  });
+
+  ['permanentBlocked'].forEach(function(absentType) {
+    test('isAbsent: ' + absentType, function() {
+      var card = document.createElement('div');
+      card.cardState = absentType;
+      var slot = new SIMSlot(null, 0, card);
+      assert.isTrue(slot.isAbsent());
+    });
   });
 
   ['unknown', 'illegal', 'absent', 'ready', null].forEach(function(lockType) {

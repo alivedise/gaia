@@ -2,6 +2,16 @@
   'use strict';
 
   /* jshint validthis:true */
+  function L10nError(message, id, loc) {
+    this.name = 'L10nError';
+    this.message = message;
+    this.id = id;
+    this.loc = loc;
+  }
+  L10nError.prototype = Object.create(Error.prototype);
+  L10nError.prototype.constructor = L10nError;
+
+
   /* jshint browser:true */
 
   var io = {
@@ -18,7 +28,7 @@
         if (e.target.status === 200 || e.target.status === 0) {
           callback(null, e.target.responseText);
         } else {
-          callback(new Error('Not found: ' + url));
+          callback(new L10nError('Not found: ' + url));
         }
       });
       xhr.addEventListener('error', callback);
@@ -28,7 +38,7 @@
       try {
         xhr.send(null);
       } catch (e) {
-        callback(new Error('Not found: ' + url));
+        callback(new L10nError('Not found: ' + url));
       }
     },
 
@@ -46,7 +56,7 @@
         if (e.target.status === 200 || e.target.status === 0) {
           callback(null, e.target.response);
         } else {
-          callback(new Error('Not found: ' + url));
+          callback(new L10nError('Not found: ' + url));
         }
       });
       xhr.addEventListener('error', callback);
@@ -56,7 +66,7 @@
       try {
         xhr.send(null);
       } catch (e) {
-        callback(new Error('Not found: ' + url));
+        callback(new L10nError('Not found: ' + url));
       }
     }
   };
@@ -284,7 +294,7 @@
       return list.indexOf(n) !== -1;
     }
     function isBetween(n, start, end) {
-      return start <= n && n <= end;
+      return typeof n === typeof start && start <= n && n <= end;
     }
 
     // list of all plural rules methods:
@@ -559,7 +569,6 @@
 
 
 
-  var nestedProps = ['style', 'dataset'];
 
   var parsePatterns;
 
@@ -648,33 +657,15 @@
 
     var nameElements = name.split('.');
 
+    if (nameElements.length > 2) {
+      throw new Error('Error in ID: "' + name + '".' +
+                      ' Nested attributes are not supported.');
+    }
+
     var attr;
     if (nameElements.length > 1) {
-      var attrElements = [];
-      attrElements.push(nameElements.pop());
-      if (nameElements.length > 1) {
-        // Usually the last dot separates an attribute from an id
-        //
-        // In case when there are more than one dot in the id
-        // and the second to last item is "style" or "dataset" then the last two
-        // items are becoming the attribute.
-        //
-        // ex.
-        // id.style.color = foo =>
-        //
-        // id:
-        //   style.color: foo
-        //
-        // id.other.color = foo =>
-        //
-        // id.other:
-        //   color: foo
-        if (nestedProps.indexOf(nameElements[nameElements.length - 1]) !== -1) {
-          attrElements.push(nameElements.pop());
-        }
-      }
-      name = nameElements.join('.');
-      attr = attrElements.reverse().join('.');
+      name = nameElements[0];
+      attr = nameElements[1];
     } else {
       attr = null;
     }
@@ -702,10 +693,11 @@
   function parseMacro(str) {
     var match = str.match(parsePatterns.macro);
     if (!match) {
-      throw new Error('Malformed macro');
+      throw new L10nError('Malformed macro');
     }
     return [match[1], match[2]];
   }
+
 
 
   var MAX_PLACEABLE_LENGTH = 2500;
@@ -795,8 +787,9 @@
       if (typeof value === 'string') {
         // prevent Billion Laughs attacks
         if (value.length >= MAX_PLACEABLE_LENGTH) {
-          throw new Error('Too many characters in placeable (' + value.length +
-                          ', max allowed is ' + MAX_PLACEABLE_LENGTH + ')');
+          throw new L10nError('Too many characters in placeable (' +
+                              value.length + ', max allowed is ' +
+                              MAX_PLACEABLE_LENGTH + ')');
         }
         return value;
       }
@@ -809,8 +802,8 @@
     var value = str.replace(rePlaceables, function(match, id) {
       // prevent Quadratic Blowup attacks
       if (placeablesCount++ >= MAX_PLACEABLES) {
-        throw new Error('Too many placeables (' + placeablesCount +
-                        ', max allowed is ' + MAX_PLACEABLES + ')');
+        throw new L10nError('Too many placeables (' + placeablesCount +
+                            ', max allowed is ' + MAX_PLACEABLES + ')');
       }
       return subPlaceable(ctxdata, env, match, id);
     });
@@ -989,7 +982,7 @@
       /* jshint -W084 */
 
       if (!this.isReady) {
-        throw new ContextError('Context not ready');
+        throw new L10nError('Context not ready');
       }
 
       var cur = 0;
@@ -1004,14 +997,14 @@
         var entry = locale.getEntry(id);
         if (entry === undefined) {
           cur++;
-          warning.call(this, new ContextError(id + ' not found in ' + loc, id,
-                                              loc));
+          warning.call(this, new L10nError(id + ' not found in ' + loc, id,
+                                           loc));
           continue;
         }
         return entry;
       }
 
-      error.call(this, new ContextError(id + ' not found', id));
+      error.call(this, new L10nError(id + ' not found', id));
       return null;
     }
 
@@ -1076,7 +1069,7 @@
 
     this.requestLocales = function requestLocales() {
       if (this.isLoading && !this.isReady) {
-        throw new ContextError('Context not ready');
+        throw new L10nError('Context not ready');
       }
 
       this.isLoading = true;
@@ -1132,23 +1125,20 @@
     }
   }
 
-  Context.Error = ContextError;
 
-  function ContextError(message, id, loc) {
-    this.name = 'ContextError';
-    this.message = message;
-    this.id = id;
-    this.loc = loc;
-  }
-  ContextError.prototype = Object.create(Error.prototype);
-  ContextError.prototype.constructor = ContextError;
-
-
-  /* jshint -W104 */
 
   var DEBUG = false;
   var isPretranslated = false;
-  var rtlList = ['ar', 'he', 'fa', 'ps', 'ur'];
+  var rtlList = ['ar', 'he', 'fa', 'ps', 'qps-plocm', 'ur'];
+  var nodeObserver = false;
+
+  var moConfig = {
+    attributes: true,
+    characterData: false,
+    childList: true,
+    subtree: true,
+    attributeFilter: ['data-l10n-id', 'data-l10n-args']
+  };
 
   // Public API
 
@@ -1160,9 +1150,14 @@
     localize: function localize(element, id, args) {
       return localizeElement.call(navigator.mozL10n, element, id, args);
     },
-    translate: function translate(element) {
-      return translateFragment.call(navigator.mozL10n, element);
+    translate: function () {
+      // XXX: Remove after removing obsolete calls. Bugs 992473 and 1020136
     },
+    translateFragment: function (fragment) {
+      return translateFragment.call(navigator.mozL10n, fragment);
+    },
+    setAttributes: setL10nAttributes,
+    getAttributes: getL10nAttributes,
     ready: function ready(callback) {
       return navigator.mozL10n.ctx.ready(callback);
     },
@@ -1185,12 +1180,14 @@
     },
     _getInternalAPI: function() {
       return {
+        Error: L10nError,
         Context: Context,
         Locale: Locale,
+        Entity: Entity,
         getPluralRule: getPluralRule,
         rePlaceables: rePlaceables,
         getTranslatableChildren:  getTranslatableChildren,
-        getL10nAttributes: getL10nAttributes,
+        translateDocument: translateDocument,
         loadINI: loadINI,
         fireLocalizedEvent: fireLocalizedEvent,
         parse: parse,
@@ -1287,7 +1284,8 @@
         direction: getDirection(locale.id)
       }
     };
-    translateFragment.call(l10n);
+    translateDocument.call(l10n);
+
     // the visible DOM is now pretranslated
     isPretranslated = true;
     return true;
@@ -1297,9 +1295,8 @@
     var resLinks = document.head
                            .querySelectorAll('link[type="application/l10n"]');
     var iniLinks = [];
-    var i;
 
-    for (i = 0; i < resLinks.length; i++) {
+    for (var i = 0; i < resLinks.length; i++) {
       var link = resLinks[i];
       var url = link.getAttribute('href');
       var type = url.substr(url.lastIndexOf('.') + 1);
@@ -1331,19 +1328,56 @@
 
   function initLocale() {
     this.ctx.requestLocales(navigator.language);
-    // mozSettings won't be required here when https://bugzil.la/780953 lands
-    if (navigator.mozSettings) {
-      navigator.mozSettings.addObserver('language.current', function(event) {
-        navigator.mozL10n.language.code = event.settingValue;
-      });
+    window.addEventListener('languagechange', function l10n_langchange() {
+      navigator.mozL10n.language.code = navigator.language;
+    });
+  }
+
+  function localizeMutations(mutations) {
+    var mutation;
+
+    for (var i = 0; i < mutations.length; i++) {
+      mutation = mutations[i];
+      if (mutation.type === 'childList') {
+        var addedNode;
+
+        for (var j = 0; j < mutation.addedNodes.length; j++) {
+          addedNode = mutation.addedNodes[j];
+
+          if (addedNode.nodeType !== Node.ELEMENT_NODE) {
+            continue;
+          }
+
+          if (addedNode.childElementCount) {
+            translateFragment.call(this, addedNode);
+          } else if (addedNode.hasAttribute('data-l10n-id')) {
+            translateElement.call(this, addedNode);
+          }
+        }
+      }
+
+      if (mutation.type === 'attributes') {
+        translateElement.call(this, mutation.target);
+      }
     }
+  }
+
+  function onMutations(mutations, self) {
+    self.disconnect();
+    localizeMutations.call(this, mutations);
+    self.observe(document, moConfig);
   }
 
   function onReady() {
     if (!isPretranslated) {
-      this.translate();
+      translateDocument.call(this);
     }
     isPretranslated = false;
+
+    if (!nodeObserver) {
+      nodeObserver = new MutationObserver(onMutations.bind(this));
+      nodeObserver.observe(document, moConfig);
+    }
 
     fireLocalizedEvent.call(this);
   }
@@ -1438,13 +1472,16 @@
 
   /* jshint -W104 */
 
+  function translateDocument() {
+    document.documentElement.lang = this.language.code;
+    document.documentElement.dir = this.language.direction;
+    translateFragment.call(this, document.documentElement);
+  }
+
   function translateFragment(element) {
-    if (!element) {
-      element = document.documentElement;
-      document.documentElement.lang = this.language.code;
-      document.documentElement.dir = this.language.direction;
+    if (element.hasAttribute('data-l10n-id')) {
+      translateElement.call(this, element);
     }
-    translateElement.call(this, element);
 
     var nodes = getTranslatableChildren(element);
     for (var i = 0; i < nodes.length; i++ ) {
@@ -1452,15 +1489,25 @@
     }
   }
 
+  function setL10nAttributes(element, id, args) {
+    element.setAttribute('data-l10n-id', id);
+    if (args) {
+      element.setAttribute('data-l10n-args', JSON.stringify(args));
+    }
+  }
+
+  function getL10nAttributes(element) {
+    return {
+      id: element.getAttribute('data-l10n-id'),
+      args: JSON.parse(element.getAttribute('data-l10n-args'))
+    };
+  }
+
   function getTranslatableChildren(element) {
     return element ? element.querySelectorAll('*[data-l10n-id]') : [];
   }
 
   function localizeElement(element, id, args) {
-    if (!element) {
-      return;
-    }
-
     if (!id) {
       element.removeAttribute('data-l10n-id');
       element.removeAttribute('data-l10n-args');
@@ -1474,38 +1521,19 @@
     } else {
       element.removeAttribute('data-l10n-args');
     }
-
-    if (this.ctx.isReady) {
-      translateElement.call(this, element);
-    }
   }
-
-  function getL10nAttributes(element) {
-    if (!element) {
-      return {};
-    }
-
-    var l10nId = element.getAttribute('data-l10n-id');
-    var l10nArgs = element.getAttribute('data-l10n-args');
-
-    var args = l10nArgs ? JSON.parse(l10nArgs) : null;
-
-    return {id: l10nId, args: args};
-  }
-
-
 
   function translateElement(element) {
     var l10n = getL10nAttributes(element);
 
     if (!l10n.id) {
-      return;
+      return false;
     }
 
     var entity = this.ctx.getEntity(l10n.id, l10n.args);
 
     if (!entity) {
-      return;
+      return false;
     }
 
     if (typeof entity === 'string') {
@@ -1520,13 +1548,13 @@
     for (var key in entity.attributes) {
       if (entity.attributes.hasOwnProperty(key)) {
         var attr = entity.attributes[key];
-        var pos = key.indexOf('.');
-        if (pos !== -1) {
-          element[key.substr(0, pos)][key.substr(pos + 1)] = attr;
-        } else if (key === 'ariaLabel') {
+        if (key === 'ariaLabel') {
           element.setAttribute('aria-label', attr);
+        } else if (key === 'innerHTML') {
+          // XXX: to be removed once bug 994357 lands
+          element.innerHTML = attr;
         } else {
-          element[key] = attr;
+          element.setAttribute(key, attr);
         }
       }
     }

@@ -4,10 +4,6 @@
 /* global MocksHelper, MockApplications, MockAppWindowManager,
           AppWindow, HomescreenLauncher, AppWindowFactory, appWindowFactory */
 
-mocha.globals(['AppWindowManager', 'applications',
-      'ManifestHelper', 'AppWindow', 'System', 'AppWindowFactory',
-      'BrowserConfigHelper', 'homescreenLauncher', 'appWindowFactory']);
-
 requireApp('system/shared/test/unit/mocks/mock_manifest_helper.js');
 requireApp('system/test/unit/mock_applications.js');
 requireApp('system/test/unit/mock_app_window_manager.js');
@@ -177,7 +173,7 @@ suite('system/AppWindowFactory', function() {
     });
 
     test('opening a first activity', function() {
-      var stubDispatchEvent = this.sinon.stub(window, 'dispatchEvent');
+      var stubDispatchEvent = this.sinon.stub(document.body, 'dispatchEvent');
       appWindowFactory.handleEvent({
         type: 'open-app',
         detail: fakeLaunchConfig4

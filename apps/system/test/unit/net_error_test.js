@@ -2,8 +2,6 @@
 
 /* global MockNavigatormozApps, mockMozActivityInstance */
 
-mocha.globals(['NetError']);
-
 require('/shared/test/unit/mocks/mock_lazy_loader.js');
 require('/shared/test/unit/load_body_html_helper.js');
 require('/shared/test/unit/mocks/mock_navigator_moz_apps.js');
@@ -198,9 +196,11 @@ suite('Net errors', function() {
   function ensureDnsNotFound(type) {
     suite('DnsNotFound - Type frame: ' + type, function() {
       var reloadStub;
+      var url = 'http://invalid.mozilla.org';
 
       suiteSetup(function() {
-        document.documentURI = 'about:neterror?e=dnsNotFound&f=' + type;
+        document.documentURI = 'about:neterror?e=dnsNotFound&f=' + type +
+                               '&u=' + url;
         reloadStub = sinon.stub(window.NetError, 'reload');
       });
 
@@ -221,6 +221,8 @@ suite('Net errors', function() {
                     'server-not-found');
         assert.isTrue(document.getElementById('error-message').textContent.
                       startsWith('server-not-found-error'));
+        assert.isTrue(document.getElementById('error-message').textContent.
+                      contains(url));
       });
 
       test('Retry action was executed ', function() {

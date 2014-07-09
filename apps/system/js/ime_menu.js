@@ -51,7 +51,7 @@
       this.container.addEventListener('submit', this);
       this.container.addEventListener('click', this);
 
-      window.addEventListener('attentionscreenshow', this, true);
+      window.addEventListener('attentionopening', this, true);
       window.addEventListener('screenchange', this, true);
       window.addEventListener('home', this);
       window.addEventListener('holdhome', this);
@@ -66,7 +66,7 @@
     stop: function() {
       document.getElementById('screen').removeChild(this.container);
 
-      window.removeEventListener('attentionscreenshow', this, true);
+      window.removeEventListener('attentionopening', this, true);
       window.removeEventListener('screenchange', this, true);
       window.removeEventListener('home', this);
       window.removeEventListener('holdhome', this);
@@ -84,7 +84,8 @@
 
       items.forEach(function traveseItems(item) {
         this.menu.innerHTML += itemTemplate.interpolate({
-          layoutName: item.label,
+          layoutName: item.layoutName,
+          appName: item.appName,
           layoutId: item.value.toString(),
           selected: item.selected ? 'true' : 'false'
         });
@@ -163,7 +164,7 @@
           this.oncancel();
           break;
 
-        case 'attentionscreenshow':
+        case 'attentionopening':
           this.hide();
           break;
       }

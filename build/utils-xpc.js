@@ -46,8 +46,14 @@ function getOsType() {
 }
 
 function isExternalApp(webapp) {
-  if (!webapp.metaData ||
-    (webapp.metaData && webapp.metaData.external === false)) {
+  if (webapp.metaData && webapp.metaData.external === undefined) {
+    throw new Error('"external" property in metadata.json is required since ' +
+      'Firefox OS 2.1, please add it into metadata.json and update ' +
+      'preload.py if you use this script to perload your apps. If you ' +
+      'created metadata.json for non-external apps, please set "external" to ' +
+      'false. your metadata.json is in ' + webapp.sourceDirectoryFile.path);
+  }
+  if (!webapp.metaData || webapp.metaData.external === false) {
     return false
   } else {
     return true;
@@ -82,16 +88,21 @@ function getFileContent(file) {
 
 // Write content to file, if the file doesn't exist, the it will auto create one
 function writeContent(file, content) {
-  var fileStream = Cc['@mozilla.org/network/file-output-stream;1']
-                     .createInstance(Ci.nsIFileOutputStream);
-  fileStream.init(file, 0x02 | 0x08 | 0x20, 0666, 0);
+  try {
+    var fileStream = Cc['@mozilla.org/network/file-output-stream;1']
+                       .createInstance(Ci.nsIFileOutputStream);
+    fileStream.init(file, 0x02 | 0x08 | 0x20, 0666, 0);
 
-  let converterStream = Cc['@mozilla.org/intl/converter-output-stream;1']
-                          .createInstance(Ci.nsIConverterOutputStream);
+    let converterStream = Cc['@mozilla.org/intl/converter-output-stream;1']
+                            .createInstance(Ci.nsIConverterOutputStream);
 
-  converterStream.init(fileStream, 'utf-8', 0, 0);
-  converterStream.writeString(content);
-  converterStream.close();
+    converterStream.init(fileStream, 'utf-8', 0, 0);
+    converterStream.writeString(content);
+    converterStream.close();
+  } catch (e) {
+    dump('writeContent error, file.path: ' + file.path + '\n');
+    throw(e);
+  }
 }
 
 // Return an nsIFile by joining paths given as arguments
@@ -229,7 +240,7 @@ function getWebapp(app, domain, scheme, port, stageDir) {
     manifest: getJSON(manifest),
     manifestFile: manifest,
     buildManifestFile: manifest,
-    url: scheme + appDomain + (port ? port : ''),
+    url: scheme + appDomain,
     domain: appDomain,
     sourceDirectoryFile: manifestFile.parent,
     buildDirectoryFile: manifestFile.parent,
@@ -318,6 +329,15 @@ var gaia = {
 function getLocaleBasedir(original) {
   return (getOsType().indexOf('WIN') !== -1) ?
     original.replace('/', '\\', 'g') : original;
+}
+
+function existsInAppDirs(appDirs, appName) {
+  var apps = appDirs.split(' ');
+  var exists = apps.some(function (appPath) {
+    let appFile = getFile(appPath);
+    return (appName === appFile.leafName);
+  });
+  return exists;
 }
 
 function getDistributionFileContent(name, defaultContent, distDir) {
@@ -527,11 +547,11 @@ function writeContentToFile(path, content) {
  */
 function processEvents(exitResultFunc) {
   let thread = Services.tm.currentThread;
-  let exitResult;
-  do {
-    exitResult = exitResultFunc();
+  let exitResult = exitResultFunc();
+  while (thread.hasPendingEvents() || exitResult.wait) {
     thread.processNextEvent(true);
-  } while (thread.hasPendingEvents() || exitResult.wait);
+    exitResult = exitResultFunc();
+  }
   if (exitResult.error) {
     throw exitResult.error;
   }
@@ -844,6 +864,15 @@ function createZip() {
   return zip;
 }
 
+function removeFiles(dir, filenames) {
+  filenames.forEach(function(fn) {
+    var file = getFile(dir.path, fn);
+    if (file.exists()) {
+      file.remove(file.isDirectory());
+    }
+  });
+}
+
 exports.Q = Promise;
 exports.ls = ls;
 exports.getFileContent = getFileContent;
@@ -897,3 +926,5 @@ exports.dirname = dirname;
 exports.basename = basename;
 exports.addEntryContentWithTime = addEntryContentWithTime;
 exports.getCompression = getCompression;
+exports.existsInAppDirs = existsInAppDirs;
+exports.removeFiles = removeFiles;

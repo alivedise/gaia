@@ -51,6 +51,12 @@ if (typeof TestUrlResolver === 'undefined') {
   });
 }
 
+// Tell audio channel manager that we want to adjust the notification
+// channel if the user press the volumeup/volumedown buttons in Email.
+if (navigator.mozAudioChannelManager) {
+  navigator.mozAudioChannelManager.volumeControlChannel = 'notification';
+}
+
 // Named module, so it is the same before and after build, and referenced
 // in the require at the end of this file.
 define('mail_app', function(require, exports, module) {
@@ -63,9 +69,12 @@ var appMessages = require('app_messages'),
     model = require('model'),
     headerCursor = require('header_cursor').cursor,
     Cards = common.Cards,
+    slice = Array.prototype.slice,
     waitingForCreateAccountPrompt = false,
     activityCallback = null;
 
+require('shared/js/font_size_utils');
+require('metrics');
 require('sync');
 require('wake_locks');
 
@@ -139,22 +148,29 @@ var finalCardStateCallback,
     cachedNode = Cards._cardsNode.children[0],
     startCardId = cachedNode && cachedNode.getAttribute('data-type');
 
-var startCardArgs = {
-  'setup_account_info': [
-    'setup_account_info', 'default', 'immediate',
-    {
-      onPushed: function(impl) {
-        htmlCache.delayedSaveFromNode(impl.domNode.cloneNode(true));
+function getStartCardArgs(id) {
+  // Use a function that returns fresh arrays for each call so that object
+  // in that last array position is fresh for each call and does not have other
+  // properties mixed in to it by multiple reuse of the same object
+  // (bug 1031588).
+  if (id === 'setup_account_info') {
+    return [
+      'setup_account_info', 'default', 'immediate',
+      {
+        onPushed: function(impl) {
+          htmlCache.delayedSaveFromNode(impl.domNode.cloneNode(true));
+        }
       }
-    }
-  ],
-  'message_list': [
-    'message_list', 'nonsearch', 'immediate', {}
-  ]
-};
+    ];
+  } else if (id === 'message_list') {
+    return [
+      'message_list', 'nonsearch', 'immediate', {}
+    ];
+  }
+}
 
 function pushStartCard(id, addedArgs) {
-  var args = startCardArgs[id];
+  var args = getStartCardArgs(id);
   if (!args) {
     throw new Error('Invalid start card: ' + id);
   }
@@ -189,6 +205,10 @@ if (appMessages.hasPending('alarm')) {
 
 // If still have a cached node, then show it.
 if (cachedNode) {
+  // l10n may not see this as it was injected before l10n.js was loaded,
+  // so let it know it needs to translate it.
+  mozL10n.translateFragment(cachedNode);
+
   // Wire up a card implementation to the cached node.
   if (startCardId) {
     pushStartCard(startCardId);
@@ -207,7 +227,7 @@ if (cachedNode) {
 function resetCards(cardId, args) {
   cachedNode = null;
 
-  var startArgs = startCardArgs[cardId],
+  var startArgs = getStartCardArgs(cardId),
       query = [startArgs[0], startArgs[1]];
 
   if (!Cards.hasCard(query)) {
@@ -349,21 +369,32 @@ model.on('acctsSlice', function() {
   }
 });
 
-var lastActivityTime = 0;
-appMessages.on('activity', function(type, data, rawActivity) {
-  // Rate limit rapid fire activity triggers, like an accidental
-  // double tap. While the card code adjusts for the taps, in
-  // the case of configured account, user can end up with multiple
-  // compose cards in the stack, which is probably confusing,
-  // and the rapid tapping is likely just an accident, or an
-  // incorrect user belief that double taps are needed for
-  // activation.
-  var activityTime = Date.now();
-  if (activityTime < lastActivityTime + 1000) {
-    return;
-  }
-  lastActivityTime = activityTime;
+// Rate limit rapid fire entries, like an accidental double tap. While the card
+// code adjusts for the taps, in the case of configured account, user can end up
+// with multiple compose or reader cards in the stack, which is probably
+// confusing, and the rapid tapping is likely just an accident, or an incorrect
+// user belief that double taps are needed for activation.
+// Using one entry time tracker across all gate entries since ideally we do not
+// want to handle a second fast action regardless of source. We want the first
+// one to have a chance of getting a bit further along. If this becomes an issue
+// though, the closure created inside getEntry could track a unique time for
+// each gateEntry use.
+var lastEntryTime = 0;
+function gateEntry(fn) {
+  return function() {
+    var entryTime = Date.now();
+    // Only one entry per second.
+    if (entryTime < lastEntryTime + 1000) {
+      console.log('email entry gate blocked fast repeated action');
+      return;
+    }
+    lastEntryTime = entryTime;
 
+    return fn.apply(null, slice.call(arguments));
+  };
+}
+
+appMessages.on('activity', gateEntry(function(type, data, rawActivity) {
   function initComposer() {
     Cards.pushCard('compose', 'default', 'immediate', {
       activity: rawActivity,
@@ -458,9 +489,9 @@ appMessages.on('activity', function(type, data, rawActivity) {
       }
     });
   }
-});
+}));
 
-appMessages.on('notification', function(data) {
+appMessages.on('notification', gateEntry(function(data) {
   var type = data ? data.type : '';
 
   model.latestOnce('foldersSlice', function latestFolderSlice() {
@@ -517,7 +548,7 @@ appMessages.on('notification', function(data) {
       }
     }
   });
-});
+}));
 
 model.init();
 });

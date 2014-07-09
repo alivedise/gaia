@@ -8,6 +8,7 @@ var MockUtils = {
   // Utils.js
   camelCase: Utils.camelCase,
   date: Utils.date,
+  extend: Utils.extend,
   getFontSize: function() {
     return 12;
   },
@@ -22,12 +23,16 @@ var MockUtils = {
   getContactDetails: Utils.getContactDetails,
   getResizedImgBlob: Utils.getResizedImgBlob,
   getDownsamplingSrcUrl: Utils.getDownsamplingSrcUrl,
-  getCarrierTag: Utils.getCarrierTag,
+  getPhoneDetails: Utils.getPhoneDetails,
   removeNonDialables: Utils.removeNonDialables,
   multiRecipientMatch: Utils.multiRecipientMatch,
   probablyMatches: Utils.probablyMatches,
   getDisplayObject: Utils.getDisplayObject,
   basicContact: Utils.basicContact,
   asyncLoadRevokeURL: Utils.asyncLoadRevokeURL,
-  closeNotificationsForThread: Utils.closeNotificationsForThread
+  isEmailAddress: Utils.isEmailAddress,
+  closeNotificationsForThread: Utils.closeNotificationsForThread,
+  imageToDataUrl: Utils.imageToDataUrl,
+  imageUrlToDataUrl: Utils.imageUrlToDataUrl,
+  Promise: Utils.Promise
 };

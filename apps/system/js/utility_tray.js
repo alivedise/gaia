@@ -29,7 +29,7 @@ var UtilityTray = {
     window.addEventListener('screenchange', this);
     window.addEventListener('emergencyalert', this);
     window.addEventListener('home', this);
-    window.addEventListener('attentionscreenshow', this);
+    window.addEventListener('attentionopening', this);
     window.addEventListener('launchapp', this);
     window.addEventListener('displayapp', this);
     window.addEventListener('appopening', this);
@@ -44,10 +44,16 @@ var UtilityTray = {
     window.addEventListener('keyboardchanged', this);
     window.addEventListener('keyboardchangecanceled', this);
 
+    // Firing when user swipes down with a screen reader when focused on
+    // status bar.
+    window.addEventListener('statusbarwheel', this);
+    // Firing when user swipes up with a screen reader when focused on grippy.
+    this.grippy.addEventListener('wheel', this);
+
     this.overlay.addEventListener('transitionend', this);
 
     if (window.navigator.mozMobileConnections) {
-      LazyLoader.load('js/cost_control.js');
+      window.LazyLoader.load('js/cost_control.js');
     }
   },
 
@@ -60,13 +66,13 @@ var UtilityTray = {
     var target = evt.target;
 
     switch (evt.type) {
+      case 'attentionopening':
       case 'home':
         if (this.shown) {
           this.hide();
           evt.stopImmediatePropagation();
         }
         break;
-      case 'attentionscreenshow':
       case 'emergencyalert':
       case 'displayapp':
       case 'keyboardchanged':
@@ -82,19 +88,23 @@ var UtilityTray = {
       // When IME switcher shows, prevent the keyboard's focus getting changed.
       case 'keyboardimeswitchershow':
         this.overlay.addEventListener('mousedown', this._pdIMESwitcherShow);
+        this.statusbar.addEventListener('mousedown', this._pdIMESwitcherShow);
         break;
 
       case 'keyboardimeswitcherhide':
         this.overlay.removeEventListener('mousedown', this._pdIMESwitcherShow);
+        this.statusbar.removeEventListener('mousedown',
+                                           this._pdIMESwitcherShow);
         break;
 
       case 'screenchange':
-        if (this.shown && !evt.detail.screenEnabled)
+        if (this.shown && !evt.detail.screenEnabled) {
           this.hide(true);
+        }
         break;
 
       case 'touchstart':
-        if (lockScreen.locked) {
+        if (window.System.locked) {
           return;
         }
 
@@ -126,17 +136,29 @@ var UtilityTray = {
         evt.stopImmediatePropagation();
         var touch = evt.changedTouches[0];
 
-        if (!this.active)
+        if (!this.active) {
           return;
+        }
 
         this.active = false;
 
         this.onTouchEnd(touch);
         break;
 
+      case 'statusbarwheel':
+        this.show();
+        break;
+      case 'wheel':
+        if (evt.deltaMode === evt.DOM_DELTA_PAGE && evt.deltaY &&
+          evt.deltaY > 0) {
+          this.hide();
+        }
+        break;
+
       case 'transitionend':
-        if (!this.shown)
+        if (!this.shown) {
           this.screen.classList.remove('utility-tray');
+        }
         break;
     }
   },
@@ -147,6 +169,18 @@ var UtilityTray = {
     this.screenWidth = screenRect.width;
     this.active = true;
     this.startY = touch.pageY;
+    if (!this.screen.classList.contains('utility-tray')) {
+      // If the active app was tracking touches it won't get any more events
+      // because of the pointer-events:none we're adding.
+      // Sending a touchcancel accordingly.
+      var app = AppWindowManager.getActiveApp();
+      if (app && app.config && app.config.oop) {
+        app.iframe.sendTouchEvent('touchcancel', [touch.identifier],
+                                  [touch.pageX], [touch.pageY],
+                                  [touch.radiusX], [touch.radiusY],
+                                  [touch.rotationAngle], [touch.force], 1);
+      }
+    }
     this.screen.classList.add('utility-tray');
   },
 
@@ -174,7 +208,7 @@ var UtilityTray = {
 
   onTouchEnd: function ut_onTouchEnd(touch) {
     // Prevent utility tray shows while the screen got black out.
-    if (window.lockScreen && window.lockScreen.locked) {
+    if (window.System.locked) {
       this.hide(true);
     } else {
       var significant = (Math.abs(this.lastDelta) > (this.screenHeight / 5));
@@ -196,9 +230,10 @@ var UtilityTray = {
 
     // If the transition has not started yet there won't be any transitionend
     // event so let's not wait in order to remove the utility-tray class.
-    if (instant || style.MozTransform == '') {
+    if (instant || style.MozTransform === '') {
       this.screen.classList.remove('utility-tray');
     }
+    window.dispatchEvent(new CustomEvent('utility-tray-overlayclosed'));
 
     if (!alreadyHidden) {
       var evt = document.createEvent('CustomEvent');
@@ -214,6 +249,7 @@ var UtilityTray = {
     style.MozTransform = 'translateY(100%)';
     this.shown = true;
     this.screen.classList.add('utility-tray');
+    window.dispatchEvent(new CustomEvent('utility-tray-overlayopened'));
 
     if (!alreadyShown) {
       var evt = document.createEvent('CustomEvent');
@@ -223,7 +259,9 @@ var UtilityTray = {
   },
 
   _pdIMESwitcherShow: function ut_pdIMESwitcherShow(evt) {
+    if (evt.target.id !== 'rocketbar-input') {
       evt.preventDefault();
+    }
   }
 };
 

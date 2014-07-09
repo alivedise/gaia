@@ -4,8 +4,8 @@
 'use strict';
 
 /*global Utils, ActivityHandler, ThreadUI, ThreadListUI, MessageManager,
-         Settings, LazyLoader, TimeHeaders, Information,
-         PerformanceTestingHelper, App */
+         Settings, LazyLoader, TimeHeaders, Information, SilentSms,
+         PerformanceTestingHelper, App, Navigation */
 
 navigator.mozL10n.ready(function localized() {
   // This will be called during startup, and any time the languange is changed
@@ -16,7 +16,7 @@ navigator.mozL10n.ready(function localized() {
       var doc = iframe.contentDocument;
       doc.documentElement.lang = navigator.mozL10n.language.code;
       doc.documentElement.dir = navigator.mozL10n.language.direction;
-      navigator.mozL10n.translate(doc.body);
+      navigator.mozL10n.translateFragment(doc.body);
     }
   );
 
@@ -61,7 +61,9 @@ navigator.mozL10n.ready(function localized() {
 window.addEventListener('load', function() {
   PerformanceTestingHelper.dispatch('load');
   function initUIApp() {
+    Navigation.init();
     TimeHeaders.init();
+    SilentSms.init();
     ActivityHandler.init();
 
     // Init UI Managers

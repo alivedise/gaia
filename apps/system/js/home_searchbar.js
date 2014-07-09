@@ -48,14 +48,19 @@
       window.addEventListener('appforeground', this);
       window.addEventListener('apptitlechange', this);
       window.addEventListener('home', this);
+      window.addEventListener('lockscreen-appopened', this);
       window.addEventListener('appopened', this);
+      window.addEventListener('launchactivity', this, true);
       window.addEventListener('searchcrashed', this);
+      window.addEventListener('permissiondialoghide', this);
+      window.addEventListener('attentionopening', this);
 
       // Listen for events from Rocketbar
       this.input.addEventListener('focus', this);
       this.input.addEventListener('blur', this);
       this.input.addEventListener('input', this);
       this.cancel.addEventListener('click', this);
+      this.clearBtn.addEventListener('click', this);
       this.form.addEventListener('submit', this);
       this.backdrop.addEventListener('click', this);
 
@@ -76,6 +81,7 @@
         case 'apploading':
         case 'appforeground':
         case 'appopened':
+        case 'attentionopening':
           this.rocketbar.classList.remove('expanded');
           this.screen.classList.remove('rocketbar-expanded');
           this.exitHome();
@@ -84,6 +90,9 @@
           break;
         case 'home':
           this.handleHome(e);
+          break;
+        case 'lockscreen-appopened':
+          this.handleLock(e);
           break;
         case 'focus':
           this.handleFocus(e);
@@ -97,9 +106,14 @@
         case 'click':
           if (e.target == this.cancel) {
             this.handleCancel(e);
+          } else if (e.target == this.clearBtn) {
+            this.clear();
           } else if (e.target == this.backdrop) {
             this.deactivate();
           }
+          break;
+        case 'launchactivity':
+          this.handleActivity(e);
           break;
         case 'searchcrashed':
           this.handleSearchCrashed(e);
@@ -110,9 +124,18 @@
         case 'iac-search-results':
           this.handleSearchMessage(e);
           break;
+        case 'permissiondialoghide':
+          if (this.active) {
+            this.focus();
+          }
+          break;
       }
-    }
+    },
 
+    // Preventing the RocketBar implementation from triggering a background
+    // scale change before getting stuck because of the lack of transitionend.
+    enterHome: function() {
+    }
   };
 
   exports.HomeSearchbar = HomeSearchbar;

@@ -1,17 +1,18 @@
 /* global MocksHelper, LayoutManager, MockKeyboardManager,
-          MockStatusBar, MocksoftwareButtonManager, MockLockScreen */
+          MockStatusBar, MocksoftwareButtonManager, MockLockScreen,
+          MockAttentionWindowManager */
 'use strict';
 
-mocha.globals(['OrientationManager', 'lockScreen']);
 requireApp('system/js/layout_manager.js');
 requireApp('system/test/unit/mock_lock_screen.js');
 requireApp('system/test/unit/mock_keyboard_manager.js');
 requireApp('system/test/unit/mock_software_button_manager.js');
 requireApp('system/test/unit/mock_statusbar.js');
+requireApp('system/test/unit/mock_attention_window_manager.js');
 
 var mocksForLayoutManager = new MocksHelper([
   'KeyboardManager', 'softwareButtonManager', 'StatusBar',
-  'LockScreen'
+  'LockScreen', 'AttentionWindowManager'
 ]).init();
 
 suite('system/LayoutManager >', function() {
@@ -20,6 +21,7 @@ suite('system/LayoutManager >', function() {
   var layoutManager;
   setup(function() {
     window.lockScreen = MockLockScreen;
+    window.attentionWindowManager = MockAttentionWindowManager;
     layoutManager = new LayoutManager().start();
   });
 
@@ -30,6 +32,7 @@ suite('system/LayoutManager >', function() {
         type: 'resize'
       });
       assert.isTrue(stubPublish.calledWith('system-resize'));
+      assert.isTrue(stubPublish.calledWith('orientationchange'));
     });
 
     test('status-active', function() {
@@ -102,9 +105,6 @@ suite('system/LayoutManager >', function() {
     assert.equal(layoutManager.height, H - 100 - 30 - 50);
     assert.equal(layoutManager.width, W);
     assert.equal(layoutManager.clientWidth, _w);
-    MockLockScreen.locked = false;
     assert.isTrue(layoutManager.match(W, H - 100 - 30 - 50));
-    MockLockScreen.locked = true;
-    assert.equal(layoutManager.height, H);
   });
 });

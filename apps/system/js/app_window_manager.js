@@ -1,9 +1,8 @@
 /* global SettingsListener, homescreenLauncher, KeyboardManager,
-          layoutManager, lockScreen, System */
+          layoutManager, System */
 'use strict';
 
 (function(exports) {
-  var DEBUG = false;
   var screenElement = document.getElementById('screen');
 
   /**
@@ -18,6 +17,8 @@
    * @module AppWindowManager
    */
   var AppWindowManager = {
+    DEBUG: true,
+    CLASS_NAME: 'AppWindowManager',
     continuousTransition: false,
 
     element: document.getElementById('windows'),
@@ -169,6 +170,10 @@
           if (degree === 90 || degree === 270) {
             immediateTranstion = true;
           }
+        } else if (appNext.isHomescreen) {
+          // If there's no active app and next app is homescreen,
+          // open it right away.
+          immediateTranstion = true;
         }
 
         if (appNext.resized &&
@@ -209,7 +214,7 @@
       }
       window.addEventListener('cardviewbeforeshow', this);
       window.addEventListener('launchapp', this);
-      window.addEventListener('launchactivity', this);
+      document.body.addEventListener('launchactivity', this, true);
       window.addEventListener('home', this);
       window.addEventListener('appcreated', this);
       window.addEventListener('appterminated', this);
@@ -233,23 +238,19 @@
       window.addEventListener('showwindow', this);
       window.addEventListener('hidewindowforscreenreader', this);
       window.addEventListener('showwindowforscreenreader', this);
-      window.addEventListener('overlaystart', this);
+      window.addEventListener('attentionopening', this);
       window.addEventListener('homegesture-enabled', this);
       window.addEventListener('homegesture-disabled', this);
       window.addEventListener('system-resize', this);
+      window.addEventListener('orientationchange', this);
+      window.addEventListener('sheetstransitionstart', this);
+      // XXX: PermissionDialog is shared so we need AppWindowManager
+      // to focus the active app after it's closed.
+      window.addEventListener('permissiondialoghide', this);
+      window.addEventListener('appopening', this);
+      window.addEventListener('localized', this);
 
       this._settingsObserveHandler = {
-        // update app name when language setting changes
-        'language.current': {
-          defaultValue: null,
-          callback: function(value) {
-            if (!value) {
-              return;
-            }
-            this.broadcastMessage('localized');
-          }.bind(this)
-        },
-
         // continuous transition controlling
         'continuous-transition.enabled': {
           defaultValue: null,
@@ -306,10 +307,15 @@
       window.removeEventListener('showwindow', this);
       window.removeEventListener('hidewindowforscreenreader', this);
       window.removeEventListener('showwindowforscreenreader', this);
-      window.removeEventListener('overlaystart', this);
+      window.removeEventListener('attentionopening', this);
       window.removeEventListener('homegesture-enabled', this);
       window.removeEventListener('homegesture-disabled', this);
       window.removeEventListener('system-resize', this);
+      window.removeEventListener('orientationchange', this);
+      window.removeEventListener('sheetstransitionstart', this);
+      window.removeEventListener('permissiondialoghide', this);
+      window.removeEventListener('appopening', this);
+      window.removeEventListener('localized', this);
 
       for (var name in this._settingsObserveHandler) {
         SettingsListener.unobserve(
@@ -325,6 +331,12 @@
       this.debug('handling ' + evt.type);
       var activeApp = this._activeApp;
       switch (evt.type) {
+        case 'permissiondialoghide':
+          activeApp && activeApp.broadcast('focus');
+          break;
+        case 'orientationchange':
+          this.broadcastMessage(evt.type);
+          break;
         case 'system-resize':
           this.debug(' Resizing...');
           if (activeApp) {
@@ -367,13 +379,14 @@
           // XXX: There's a race between lockscreenWindow and homescreenWindow.
           // If lockscreenWindow is instantiated before homescreenWindow,
           // we should not display the homescreen here.
-          if (!lockScreen.locked) {
+          if (!System.locked) {
             this.display();
           } else {
             homescreenLauncher.getHomescreen().setVisible(false);
           }
           break;
 
+        case 'appopening':
         case 'appopened':
         case 'homescreenopened':
           // Someone else may open the app,
@@ -412,25 +425,7 @@
           break;
 
         case 'hidewindow':
-          var detail = evt.detail;
-
-          if (activeApp &&
-              activeApp.origin !== homescreenLauncher.origin) {
-            // This is coming from attention screen.
-            // If attention screen has the same origin as our active app,
-            // we cannot turn off its page visibility
-            // because they are sharing the same process and the same docShell,
-            // so turn off page visibility would overwrite the page visibility
-            // of the active attention screen.
-            if (detail && detail.origin &&
-                detail.origin === activeApp.origin) {
-              return;
-            }
-            activeApp.setVisible(false);
-          } else {
-            var home = homescreenLauncher.getHomescreen(); // jshint ignore:line
-            home && home.setVisible(false);
-          }
+          activeApp && activeApp.broadcast('hidewindow', evt.detail);
           break;
 
         case 'hidewindowforscreenreader':
@@ -456,7 +451,7 @@
           }
           break;
 
-        case 'overlaystart':
+        case 'attentionopening':
           // Instantly blur the frame in order to ensure hiding the keyboard
           if (activeApp) {
             if (!activeApp.isOOP()) {
@@ -468,7 +463,7 @@
               // repaint issue.
               // So since the only in-process frame is the browser app
               // let's switch it's visibility as soon as possible when
-              // there is an attention screen and delegate the
+              // there is an attention window and delegate the
               // responsibility to blur the possible focused elements
               // itself.
               activeApp.setVisible(false, true);
@@ -521,6 +516,15 @@
             this._activeApp.getTopMostWindow().blur();
           }
           break;
+        case 'sheetstransitionstart':
+          if (document.mozFullScreen) {
+            document.mozCancelFullScreen();
+          }
+          break;
+
+        case 'localized':
+          this.broadcastMessage('localized');
+          break;
       }
     },
 
@@ -533,7 +537,7 @@
     },
 
     _dumpAllWindows: function() {
-      if (!DEBUG) {
+      if (!this.DEBUG) {
         return;
       }
       console.log('=====DUMPING APP WINDOWS BEGINS=====');
@@ -623,8 +627,8 @@
     },
 
     debug: function awm_debug() {
-      if (DEBUG) {
-        console.log('[AppWindowManager]' +
+      if (this.DEBUG) {
+        console.log('[' + this.CLASS_NAME + ']' +
           '[' + System.currentTime() + ']' +
           Array.slice(arguments).concat());
       }
@@ -709,5 +713,4 @@
   };
 
   exports.AppWindowManager = AppWindowManager;
-  AppWindowManager.init();
 }(window));

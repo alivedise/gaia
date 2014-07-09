@@ -42,11 +42,10 @@ Calendar.ns('Views').MonthsDay = (function() {
 
     changeDate: function(date) {
       Parent.prototype.changeDate.apply(this, arguments);
-      var l10n = navigator.mozL10n;
-      this.currentDate.innerHTML =
-        l10n.get('weekday-' + date.getDay() + '-long') + ', ' +
-        l10n.get('month-' + date.getMonth() + '-short') + ' ' +
-        date.getDate();
+      this.currentDate.innerHTML = Calendar.App.dateFormat.localeFormat(
+        date,
+        navigator.mozL10n.get('months-day-view-header-format')
+      );
 
       var children = this.events.children;
       this.emptyMessage.classList.toggle(
@@ -57,6 +56,7 @@ Calendar.ns('Views').MonthsDay = (function() {
 
     _initEvents: function() {
       this.controller.on('selectedDayChange', this);
+      this.app.store('Calendar').on('calendarVisibilityChange', this);
       this.delegate(this.events, 'click', '[data-id]', function(e, target) {
         Calendar.App.router.show('/event/show/' + target.dataset.id + '/');
       });
@@ -88,9 +88,9 @@ Calendar.ns('Views').MonthsDay = (function() {
         location: event.remote.location,
         attendees: attendees,
         startTime: Calendar.App.dateFormat.localeFormat(
-          event.remote.startDate, navigator.mozL10n.get('shortTimeFormat')),
+          busytime.startDate, navigator.mozL10n.get('shortTimeFormat')),
         endTime: Calendar.App.dateFormat.localeFormat(
-          event.remote.endDate, navigator.mozL10n.get('shortTimeFormat')),
+          busytime.endDate, navigator.mozL10n.get('shortTimeFormat')),
         isAllDay: hour === Calendar.Calc.ALLDAY
       });
     },
@@ -99,6 +99,11 @@ Calendar.ns('Views').MonthsDay = (function() {
       Parent.prototype.handleEvent.apply(this, arguments);
 
       switch (e.type) {
+        case 'calendarVisibilityChange':
+          // we need to re-render the view when calendar visibility changes to
+          // keep event list in sync
+          this.changeDate(this.date, true);
+          break;
         case 'selectedDayChange':
           this.changeDate(e.data[0], true);
           break;

@@ -1,7 +1,7 @@
 'use strict';
-/* global GridItem */
+/* global GaiaGrid */
 
-(function() {
+(function(exports) {
 
   /**
    * Represents a single divider on the homepage.
@@ -15,7 +15,7 @@
 
   Divider.prototype = {
 
-    __proto__: GridItem.prototype,
+    __proto__: GaiaGrid.GridItem.prototype,
 
     x: 0,
     y: 0,
@@ -23,7 +23,9 @@
     /**
      * Height in pixels of each divider.
      */
-    pixelHeight: 70,
+    get pixelHeight() {
+      return (this.grid.layout.cols > 3) ? 50 : 60;
+    },
 
     /**
      * Width in grid units for each divider.
@@ -39,27 +41,36 @@
      */
     render: function(coordinates, index) {
       // Generate the content if we need to
-      if (!this.divider) {
-        var divider = this.divider = document.createElement('div');
+      if (!this.element) {
+        // Divider is a <section> and the rest of items are <div> containers
+        // in order to hide the last divider via :last-of-type pseudo-class
+        var divider = this.element = document.createElement('section');
         divider.className = 'divider';
-        divider.innerHTML = '<span></span>';
+
+        var span = document.createElement('span');
+        divider.appendChild(span);
+
         this.grid.element.appendChild(divider);
       }
 
       var y = this.grid.layout.offsetY;
-      this.divider.style.transform = 'translate(0 ,' + y + 'px)';
+      this.element.style.transform = 'translate(0 ,' + y + 'px)';
 
       this.detail.index = index;
       this.y = y;
     },
 
     remove: function() {
-      if (this.divider) {
-        this.divider.parentNode.removeChild(this.divider);
+      if (this.element) {
+        this.element.parentNode.removeChild(this.element);
       }
+    },
+
+    isDraggable: function() {
+      return false;
     }
   };
 
-  window.Divider = Divider;
+  exports.GaiaGrid.Divider = Divider;
 
-}());
+}(window));

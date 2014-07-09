@@ -4,6 +4,7 @@
 requireApp('system/test/unit/mock_app_window.js');
 requireApp('system/test/unit/mock_search_window.js');
 requireApp('system/shared/test/unit/mocks/mock_settings_listener.js');
+requireApp('system/shared/test/unit/mocks/mock_settings_url.js');
 requireApp('system/test/unit/mock_app_window_manager.js');
 requireApp('system/test/unit/mock_iac_handler.js');
 requireApp('system/js/rocketbar.js');
@@ -13,10 +14,9 @@ var mocksForRocketbar = new MocksHelper([
   'AppWindowManager',
   'SearchWindow',
   'SettingsListener',
+  'SettingsURL',
   'IACPort'
 ]).init();
-
-mocha.globals(['HomeSearchbar', 'SearchWindow', 'Rocketbar']);
 
 suite('system/HomeSearchbar', function() {
   mocksForRocketbar.attachTestHelpers();
@@ -139,6 +139,15 @@ suite('system/HomeSearchbar', function() {
       assert.ok(stub.calledOnce);
     });
 
+    test('lock', function() {
+      var stub = this.sinon.stub(Rocketbar.prototype, 'handleLock');
+      subject.handleEvent({
+        type: 'lockscreen-appopened',
+        target: subject.input
+      });
+      assert.ok(stub.calledOnce);
+    });
+
     test('input', function() {
       var stub = this.sinon.stub(Rocketbar.prototype, 'handleInput');
       subject.handleEvent({
@@ -191,6 +200,40 @@ suite('system/HomeSearchbar', function() {
       assert.ok(stub.calledOnce);
     });
 
+    /*
+     * Bug 1021857 - Ensure an incoming attention screen cancels the
+     * current search, or that accessing the search while there is an
+     * an attention screen brings back the attention screen.
+     * All this is a workaround around the current architecture of
+     * the attention screen, the rocketbar and the search window, that
+     * makes it tricky to have both the minimize attention screen and
+     * the rocketbar results working together on the same screen without
+     * ovetrlapping each other.
+     * Those tests can be removed / fixed once there is a better solution.
+     */
+    test('attentionopening', function() {
+      this.sinon.stub(subject._port, 'postMessage');
+      subject.stop();
+      subject.expand();
+
+      var assertStubs = [
+        this.sinon.stub(subject, 'exitHome'),
+        this.sinon.stub(subject, 'hideResults'),
+        this.sinon.stub(subject, 'deactivate')
+      ];
+
+      assert.ok(subject.screen.classList.contains('rocketbar-expanded'));
+      assert.ok(subject.rocketbar.classList.contains('expanded'));
+
+      window.dispatchEvent(new CustomEvent('attentionopening'));
+
+      assert.ok(!subject.screen.classList.contains('rocketbar-expanded'));
+      assert.ok(!subject.rocketbar.classList.contains('expanded'));
+
+      assertStubs.forEach(function(stub) {
+        assert.ok(stub.calledOnce);
+      });
+    });
   });
 });
 

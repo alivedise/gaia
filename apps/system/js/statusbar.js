@@ -136,9 +136,7 @@ var StatusBar = {
 
   /* For other modules to acquire */
   get height() {
-    if (this.screen.classList.contains('active-statusbar')) {
-      return this.attentionBar.offsetHeight;
-    } else if (document.mozFullScreen ||
+    if (document.mozFullScreen ||
                (AppWindowManager.getActiveApp() &&
                 AppWindowManager.getActiveApp().isFullScreen())) {
       return 0;
@@ -203,15 +201,18 @@ var StatusBar = {
         self.settingValues[settingKey] = false;
       })(settingKey);
     }
-    // Listen to 'attentionscreenshow/hide' from attention_screen.js
-    window.addEventListener('attentionscreenshow', this);
-    window.addEventListener('attentionscreenhide', this);
+    // Listen to events from attention_window
+    window.addEventListener('attentionopening', this);
+    window.addEventListener('attentionclosed', this);
 
     window.addEventListener('utilitytrayshow', this);
     window.addEventListener('utilitytrayhide', this);
 
     // Listen to 'screenchange' from screen_manager.js
     window.addEventListener('screenchange', this);
+
+    // for iac connection
+    window.addEventListener('iac-change-appearance-statusbar', this);
 
     // mozChromeEvent fired from Gecko is earlier been loaded,
     // so we use mozAudioChannelManager to
@@ -239,20 +240,25 @@ var StatusBar = {
     // Listen to 'moztimechange'
     window.addEventListener('moztimechange', this);
 
-    // Listen to 'lock', 'unlock', and 'lockpanelchange' from lockscreen.js in
-    // order to correctly set the visibility of the statusbar clock depending
-    // on the active lockscreen panel
-    window.addEventListener('lock', this);
-    window.addEventListener('unlock', this);
+    // Listen to 'lockscreen-appopened', 'lockscreen-appclosed', and
+    // 'lockpanelchange' in order to correctly set the visibility of
+    // the statusbar clock depending on the active lockscreen panel
+    window.addEventListener('lockscreen-appopened', this);
+    window.addEventListener('lockscreen-appclosed', this);
     window.addEventListener('lockpanelchange', this);
 
     window.addEventListener('appopened', this);
     window.addEventListener('homescreenopened', this.show.bind(this));
 
-    var touchEvents = ['touchstart', 'touchmove', 'touchend'];
-    touchEvents.forEach(function bindEvents(name) {
-      this.topPanel.addEventListener(name, this.panelTouchHandler.bind(this));
+    // We need to preventDefault on mouse events until
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1005815 lands
+    var events = ['touchstart', 'touchmove', 'touchend',
+                  'mousedown', 'mousemove', 'mouseup'];
+    events.forEach(function bindEvents(name) {
+      this.topPanel.addEventListener(name, this.panelHandler.bind(this));
     }, this);
+
+    this.statusbarIcons.addEventListener('wheel', this);
 
     this.systemDownloadsCount = 0;
     this.setActive(true);
@@ -273,7 +279,7 @@ var StatusBar = {
         this.setActive(evt.detail.screenEnabled);
         break;
 
-      case 'lock':
+      case 'lockscreen-appopened':
         // Hide the clock in the statusbar when screen is locked
         //
         // It seems no need to detect the locked value because
@@ -282,17 +288,17 @@ var StatusBar = {
         this.toggleTimeLabel(false);
         break;
 
-      case 'unlock':
+      case 'lockscreen-appclosed':
         // Display the clock in the statusbar when screen is unlocked
         this.toggleTimeLabel(true);
         break;
 
-      case 'attentionscreenshow':
+      case 'attentionopening':
         this.toggleTimeLabel(true);
         this.show();
         break;
 
-      case 'attentionscreenhide':
+      case 'attentionclosed':
         // Hide the clock in the statusbar when screen is locked
         this.toggleTimeLabel(!this.isLocked());
         var app = AppWindowManager.getActiveApp();
@@ -420,6 +426,17 @@ var StatusBar = {
       case 'moznetworkdownload':
         this.update.networkActivity.call(this);
         break;
+
+      case 'wheel':
+        if (evt.deltaMode === evt.DOM_DELTA_PAGE && evt.deltaY &&
+          evt.deltaY < 0 && !this.isLocked()) {
+          window.dispatchEvent(new CustomEvent('statusbarwheel'));
+        }
+        break;
+
+      case 'iac-change-appearance-statusbar':
+        this.setAppearance(evt.detail);
+        break;
     }
   },
 
@@ -429,7 +446,7 @@ var StatusBar = {
   _touchStart: null,
   _touchForwarder: new TouchForwarder(),
   _shouldForwardTap: false,
-  panelTouchHandler: function sb_panelTouchHandler(evt) {
+  panelHandler: function sb_panelHandler(evt) {
 
     // Do not forward events if FTU is running
     if (FtuLauncher.isFtuRunning()) {
@@ -739,14 +756,20 @@ var StatusBar = {
           // "Carrier" / "Carrier (Roaming)" (EVDO)
           // Show signal strength of data call as EVDO only supports data call.
           this.updateSignalIcon(icon, data);
-        } else if (voice.connected || self.hasActiveCall()) {
+        } else if (voice.connected || self.hasActiveCall() &&
+            navigator.mozTelephony.active.serviceId === index) {
           // "Carrier" / "Carrier (Roaming)"
+          // If voice.connected is false but there is an active call, we should
+          // check whether the service id of that call equals the current index
+          // of the target sim card. If yes, that means the user is making an
+          // emergency call using the target sim card. In such case we should
+          // also display the signal bar as the normal cases.
           this.updateSignalIcon(icon, voice);
         } else if (simslot.isLocked()) {
           // SIM locked
           // We check if the sim card is locked after checking hasActiveCall
-          // because we still need to show the siganl bars in this case even
-          // the sim card is locked.
+          // because we still need to show the siganl bars in the case of
+          // making emergency calls when the sim card is locked.
           icon.hidden = true;
         } else {
           // "No Network" / "Emergency Calls Only (REASON)" / trying to connect
@@ -1028,7 +1051,7 @@ var StatusBar = {
     icon.setAttribute('aria-label', navigator.mozL10n.get(connInfo.roaming ?
       'statusbarSignalRoaming' : 'statusbarSignal', {
         level: icon.dataset.level,
-        operator: connInfo.network.shortName
+        operator: connInfo.network && connInfo.network.shortName
       }
     ));
   },
@@ -1082,6 +1105,22 @@ var StatusBar = {
       this.clock.stop();
     }
     icon.hidden = !enable;
+  },
+
+  /*
+   * It changes the appearance of the status bar. The values supported are
+   * "opaque" and "semi-transparent"
+   */
+  setAppearance: function sb_setAppearance(value) {
+    switch (value) {
+      case 'opaque':
+        this.background.classList.add('opaque');
+        break;
+
+      case 'semi-transparent':
+        this.background.classList.remove('opaque');
+        break;
+    }
   },
 
   updateNotification: function sb_updateNotification(count) {
@@ -1197,23 +1236,16 @@ var StatusBar = {
     this.background = document.getElementById('statusbar-background');
     this.statusbarIcons = document.getElementById('statusbar-icons');
     this.screen = document.getElementById('screen');
-    this.attentionBar = document.getElementById('attention-bar');
     this.topPanel = document.getElementById('top-panel');
   },
 
   // To reduce the duplicated code
   isLocked: function() {
-    return 'undefined' !== typeof window.lockScreen &&
-      window.lockScreen.locked;
+    return System.locked;
   }
 };
 
-if (navigator.mozL10n.readyState == 'complete' ||
-    navigator.mozL10n.readyState == 'interactive') {
-  StatusBar.init();
-} else {
-  window.addEventListener('localized', function statusbar_init() {
-    window.removeEventListener('localized', statusbar_init);
-    StatusBar.init();
-  });
+// unit tests call init() manually
+if (navigator.mozL10n) {
+  navigator.mozL10n.once(StatusBar.init.bind(StatusBar));
 }

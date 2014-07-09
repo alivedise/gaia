@@ -13,7 +13,7 @@ class TestPlay3GPVideo(GaiaTestCase):
         GaiaTestCase.setUp(self)
 
         # add video to storage
-        self.push_resource('VID_0001.3gp', destination='DCIM/100MZLLA')
+        self.push_resource('VID_0001.3gp')
 
     def test_play_3gp_video(self):
         """https://moztrap.mozilla.org/manage/case/2478/"""
@@ -35,7 +35,7 @@ class TestPlay3GPVideo(GaiaTestCase):
         time.sleep(2)
 
         # We cannot tap the toolbar so let's just enable it with javascript
-        fullscreen_video.display_controls_with_js()
+        fullscreen_video.show_controls()
 
         # The elapsed time > 0:00 denote the video is playing
         zero_time = time.strptime('00:00', '%M:%S')
