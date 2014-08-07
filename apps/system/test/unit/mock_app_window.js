@@ -14,13 +14,20 @@
       }
       this.config = config;
     }
-    this.instanceID = 'mock-app-' + _id++;
+    this.instanceID = this.prefix + _id++;
     this.groupID = this.instanceID;
     MockAppWindowHelper.mInstances.push(this);
     MockAppWindowHelper.mLatest = this;
   };
   MockAppWindow.prototype = {
+    prefix: 'mock-app-',
     isHomescreen: false,
+    get browserContainer() {
+      if (!this._browserContainer) {
+        this._browserContainer = document.createElement('div');
+      }
+      return this._browserContainer;
+    },
     get element() {
       if (!this._element) {
         this._element = document.createElement('div');
@@ -67,6 +74,7 @@
     canGoBack: function() {},
     back: function() {},
     reload: function() {},
+    stop: function() {},
     isBrowser: function() {},
     isCertified: function() {},
     navigate: function() {},
@@ -99,7 +107,12 @@
     transform: function() {},
     hideContextMenu: function() {},
     lockOrientation: function() {},
-    isVisible: function() {}
+    isVisible: function() {},
+    hasPermission: function() { return false; },
+    requestForeground: function() {},
+    isHidden: function() { return false; },
+    '_resize': function() {},
+    isForeground: function() {}
   };
   MockAppWindow.mTeardown = function() {
     MockAppWindowHelper.mInstances = [];

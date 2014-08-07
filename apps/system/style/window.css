@@ -1,4 +1,4 @@
-.appWindow[transition-state="closed"]:not(.fadeout):not(.homescreen) {
+.appWindow[transition-state="closed"]:not(.fadeout):not(.homescreen):not(.attentionWindow) {
   opacity: 0;
   transform: translateX(0);
 }
@@ -22,7 +22,7 @@
 
 /* mozbrowser iframe layout */
 
-.appWindow > iframe {
+.appWindow iframe {
   border: none;
 }
 
@@ -32,7 +32,15 @@
   background-size: auto 0.3rem;
 }
 
-.appWindow:not(.homescreen):not(.searchWindow).render > iframe {
+.appWindow:not(.homescreen):not(.searchWindow).render > div.browser-container {
+  background-color: #fff;
+}
+
+.appWindow:not(.homescreen):not(.searchWindow).light.render > div.browser-container {
+  background-color: #f2f2f2;
+}
+
+.appWindow:not(.homescreen):not(.searchWindow).render > div.browser-container > iframe {
   background-color: #fff;
 }
 
@@ -196,7 +204,7 @@
   transition: transform 0.25s cubic-bezier(0.7, 0.0, 1.0, 1.0);
 }
 
-.appWindow > iframe {
+.appWindow iframe {
   visibility: visible;
 }
 
@@ -279,16 +287,20 @@
 }
 
 /****************** Screenshot Overlay ******************/
-.appWindow > .screenshot-overlay {
-  visibility: hidden;
+.appWindow .screenshot-overlay {
   pointer-events: none;
+  height: 100%;
 
   /* We need this to resize hi-res screenshot */
   background-size: cover;
 }
 
-.appWindow > .screenshot-overlay.visible {
-  visibility: visible;
+.appWindow.scrollable .screenshot-overlay {
+  background-color: inherit;
+}
+
+.appWindow.scrollable:not(.active) .screenshot-overlay {
+  margin-top: 4.6rem;
 }
 
 .appWindow > .identification-overlay {
@@ -350,7 +362,7 @@
   overflow: hidden;
 }
 
-.appWindow > iframe.hidden {
+.appWindow iframe.hidden {
   visibility: hidden;
 }
 
@@ -372,10 +384,6 @@
   z-index: 1024;
 }
 
-.appWindow > .screenshot-overlay {
-  z-index: 1023;
-}
-
 .appWindow > .chrome {
   z-index: 5;
 }
@@ -392,12 +400,24 @@
   animation: slideRight 0.3s forwards cubic-bezier(0.7, 0.0, 1.0, 1.0);
 }
 
-.appWindow.slideup {
-  animation: slideUp 0.3s forwards cubic-bezier(0.7, 0.0, 1.0, 1.0);
+.appWindow.slide-from-bottom {
+  animation: slideFromDown 0.3s forwards cubic-bezier(0.7, 0.0, 1.0, 1.0);
 }
 
-.appWindow.slidedown {
-  animation: slideDown 0.3s forwards cubic-bezier(0.7, 0.0, 1.0, 1.0);
+.appWindow.slide-to-bottom {
+  animation: slideToDown 0.3s forwards cubic-bezier(0.7, 0.0, 1.0, 1.0);
+}
+
+.appWindow.slide-from-top {
+  animation: slideFromUp 0.3s forwards cubic-bezier(0.7, 0.0, 1.0, 1.0);
+}
+
+#windows.slow-transition .appWindow.slide-from-top {
+  animation: slideFromUp 3s forwards cubic-bezier(0.7, 0.0, 1.0, 1.0);
+}
+
+.appWindow.slide-to-top {
+  animation: slideToUp 0.3s forwards cubic-bezier(0.7, 0.0, 1.0, 1.0);
 }
 
 .appWindow.in-from-left {
@@ -414,7 +434,7 @@
 }
 
 .appWindow > .contextmenu {
-  z-index: 2;
+  z-index: 11;
 }
 
 @keyframes inFromLeft {
@@ -437,32 +457,14 @@
   animation: slideDown 0.3s forwards cubic-bezier(0.7, 0.0, 1.0, 1.0);
 }
 
-@keyframes slideUp {
+@keyframes slideFromDown {
   0%   { transform: translateY(calc(100%)); }
   100% { transform: translateY(0); }
 }
 
-@keyframes slideDown {
+@keyframes slideToDown {
   0%   { transform: translateY(0); }
   100% { transform: translateY(calc(100%)); }
-}
-
-.appWindow.in-from-left {
-  animation: inFromLeft 0.3s forwards cubic-bezier(0.7, 0.0, 1.0, 1.0);
-}
-
-.appWindow.out-to-right {
-  animation: outToRight 0.3s forwards cubic-bezier(0.7, 0.0, 1.0, 1.0);
-}
-
-@keyframes slideUp {
-  0%   { transform: translateY(100%); }
-  100% { transform: translateY(0); }
-}
-
-@keyframes slideDown {
-  0%   { transform: translateY(0); }
-  100% { transform: translateY(100%); }
 }
 
 @keyframes inFromLeft {
@@ -482,8 +484,8 @@
 }
 
 /* Task Manager */
-#screen.task-manager:not(.active-statusbar):not(.software-button-enabled) > #windows > .appWindow.in-task-manager,
-#screen.task-manager:not(.active-statusbar):not(.software-button-enabled):not(:-moz-full-screen-ancestor) > #windows > .appWindow.in-task-manager:not(.fullscreen-app) {
+#screen.task-manager:not(.software-button-enabled) > #windows > .appWindow.in-task-manager:not(.attentionWindow),
+#screen.task-manager:not(.software-button-enabled):not(:-moz-full-screen-ancestor) > #windows > .appWindow.in-task-manager:not(.fullscreen-app):not(.attentionWindow) {
   /* XXX sfoster - watch specificify here
      Position values are 1/2 because of scaling */
   top: calc(25% + 2.5rem);
@@ -494,15 +496,29 @@
   will-change: transform;
 }
 
+@keyframes slideFromUp {
+  0%   { transform: translateY(calc(-100%)); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes slideToUp {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(calc(-100%)); }
+}
+
 /* Edges */
-#windows > .appWindow:not(.homescreen):not(.lockScreenWindow) {
+#windows > .appWindow:not(.homescreen):not(.lockScreenWindow):not(.attentionWindow) {
   /* not in the viewport */
   transform: translateX(-100%);
   opacity: 1;
 }
 
-#windows > .appWindow:not(.lockScreenWindow):not(.active) {
+#windows > .appWindow:not(.lockScreenWindow):not(.attentionWindow):not(.active) {
   will-change: transform;
+}
+
+.appWindow.attentionWindow.hidden {
+  display: none;
 }
 
 #screen:-moz-full-screen-ancestor > #windows .appWindow.active {
@@ -543,4 +559,18 @@
 
 #screen.locked #windows .appWindow.active iframe {
   transition-property: none;
+}
+
+.appWindow.attentionWindow[transition-state="closed"] > div.browser-container {
+  pointer-events: none;
+}
+
+.appWindow.attentionWindow[transition-state="closed"]:not(.in-utility-tray) {
+  border-width: 0 0 0.2rem 0;
+  border-style: solid;
+  border-image: linear-gradient(to left, #00adad, #a2d7e7, #00adad) 0 0 100% 0;
+}
+
+.appWindow.attentionWindow[transition-state="closed"].in-utility-tray {
+  border-width: 0;
 }

@@ -526,13 +526,9 @@ Camera.prototype.setPictureSize = function(size, options) {
 
   // Don't do waste time re-configuring the
   // hardware if the pictureSize hasn't changed.
-  if (this.pictureSize) {
-    var sameWidth = size.width === this.pictureSize.width;
-    var sameHeight = size.height === this.pictureSize.height;
-    if (sameWidth && sameHeight) {
-      debug('pictureSize didn\'t change');
-      return;
-    }
+  if (this.isPictureSize(size)) {
+    debug('pictureSize didn\'t change');
+    return;
   }
 
   this.mozCamera.setPictureSize(size);
@@ -544,6 +540,13 @@ Camera.prototype.setPictureSize = function(size, options) {
 
   debug('pictureSize changed');
   return this;
+};
+
+Camera.prototype.isPictureSize = function(size) {
+  if (!this.pictureSize) { return false; }
+  var sameWidth = size.width === this.pictureSize.width;
+  var sameHeight = size.height === this.pictureSize.height;
+  return sameWidth && sameHeight;
 };
 
 /**
@@ -572,7 +575,7 @@ Camera.prototype.setRecorderProfile = function(key, options) {
   var configure = !(options && options.configure === false);
 
   // Exit if not changed
-  if (this.recorderProfile === key) {
+  if (this.isRecorderProfile(key)) {
     debug('recorderProfile didn\'t change');
     return;
   }
@@ -582,6 +585,10 @@ Camera.prototype.setRecorderProfile = function(key, options) {
 
   debug('recorderProfile changed: %s', key);
   return this;
+};
+
+Camera.prototype.isRecorderProfile = function(key) {
+  return key === this.recorderProfile;
 };
 
 /**
@@ -1197,10 +1204,22 @@ Camera.prototype.setCamera = function(camera) {
  */
 Camera.prototype.setMode = function(mode) {
   debug('setting mode to: %s', mode);
-  if (this.mode === mode) { return; }
+  if (this.isMode(mode)) { return; }
   this.mode = mode;
   this.configure();
   return this;
+};
+
+/**
+ * States if the camera is currently
+ * set to the passed mode.
+ *
+ * @param  {String}  mode  ['picture'|'video']
+ * @return {Boolean}
+ * @public
+ */
+Camera.prototype.isMode = function(mode) {
+  return this.mode === mode;
 };
 
 /**

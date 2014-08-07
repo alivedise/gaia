@@ -82,8 +82,9 @@
 
       if (timeout) {
         timer = window.setTimeout(function() {
-          if (invoked)
+          if (invoked) {
             return;
+          }
           self.debug('getScreenshot timeout!');
           invoked = true;
           callback();
@@ -104,6 +105,7 @@
         self.debug('getScreenshot succeed!');
         if (invoked)
           return;
+        self.debug('get screenshot success!!!!');
         invoked = true;
         if (timer)
           window.clearTimeout(timer);
@@ -145,6 +147,12 @@
     forward: function bm_forward() {
       if (this.browser.element) {
         this.browser.element.goForward();
+      }
+    },
+
+    stop: function bm_stop() {
+      if (this.browser.element) {
+        this.browser.element.stop();
       }
     },
 

@@ -170,6 +170,8 @@ var FindMyDevice = {
           var reason = event.data;
           if (reason === IAC_API_WAKEUP_REASON_ENABLED_CHANGED) {
             DUMP('enabled state changed, trying to reach the server');
+            // Ensure the retry counter is reset to 0 on enable
+            SettingsHelper('findmydevice.retry-count').set(0);
             this._contactServer();
           } else if (reason === IAC_API_WAKEUP_REASON_STALE_REGISTRATION) {
             DUMP('stale registration, re-registering');
@@ -233,6 +235,8 @@ var FindMyDevice = {
     DUMP('registering: ' + this._registering);
 
     if (this._registering) {
+      this._registering = false;
+      this.endHighPriority('clientLogic');
       return;
     }
 
@@ -252,6 +256,7 @@ var FindMyDevice = {
         // corner case. For now, just give up if this happens, but we still
         // need to notify the user somehow (bug 1013423).
         this._registering = false;
+        this.endHighPriority('clientLogic');
         return;
       }
 
@@ -313,7 +318,7 @@ var FindMyDevice = {
       DUMP('findmydevice push request failed!');
 
       self._registering = false;
-      self._scheduleAlarm('retry');
+      self._countRegistrationRetry();
     };
   },
 
@@ -459,6 +464,8 @@ var FindMyDevice = {
       this._canDisableHelper.set(
         this._loggedIn &&
         this._currentClientID === this._state.clientid);
+    } else {
+      this.endHighPriority('clientLogic');
     }
   },
 
@@ -572,12 +579,23 @@ var FindMyDevice = {
     this._scheduleAlarm('ping');
   },
 
+  _countRegistrationRetry: function fmd_count_registration_retry (){
+    this._scheduleAlarm('retry');
+    if (!this._registered) {
+      var countHelper = SettingsHelper('findmydevice.retry-count');
+
+      countHelper.get(function fmd_get_retry_count(count){
+        countHelper.set((count || 0) + 1);
+      });
+    }
+  },
+
   _handleServerError: function fmd_handle_server_error(err) {
     DUMP('findmydevice request failed with status: ' + err.status);
     if (err.status === 401 && this._registered) {
       this._registeredHelper.set(false);
     } else {
-      this._scheduleAlarm('retry');
+      this._countRegistrationRetry();
     }
   },
 

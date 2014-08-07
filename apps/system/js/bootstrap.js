@@ -9,9 +9,9 @@
          TelephonySettings, SuspendingAppPriorityManager, TTLView,
          MediaRecording, AppWindowFactory, SystemDialogManager,
          applications, Rocketbar, LayoutManager, PermissionManager,
-         HomeSearchbar, SoftwareButtonManager, Accessibility,
+         SoftwareButtonManager, Accessibility,
          TextSelectionDialog, InternetSharing, SleepMenu, AppUsageMetrics,
-         LockScreenNotifications*/
+         LockScreenNotifications, LockScreenPasscodeValidator */
 'use strict';
 
 
@@ -61,6 +61,9 @@ window.addEventListener('load', function startup() {
     // when the screen is locked.
     window.AppWindowManager.init();
 
+    window.layoutManager = new LayoutManager();
+    window.layoutManager.start();
+
     /** @global */
     window.textSelectionDialog = new TextSelectionDialog();
   }
@@ -71,6 +74,12 @@ window.addEventListener('load', function startup() {
       FtuLauncher.retrieve();
     });
     /** @global */
+    if (!window.homescreenLauncher) {
+      // We may have application.ready = true while reloading at firefox nightly
+      // browser. In this case, the window.homescreenLauncher haven't been
+      // created. We should create it and start it in this case.
+      window.homescreenLauncher = new HomescreenLauncher();
+    }
     window.homescreenLauncher.start();
   }
 
@@ -114,15 +123,24 @@ window.addEventListener('load', function startup() {
   window.appWindowFactory.start();
   window.developerHUD = new DeveloperHUD();
   window.developerHUD.start();
+  /** @global */
+  window.attentionWindowManager = new window.AttentionWindowManager();
+  window.attentionWindowManager.start();
   window.dialerAgent = new DialerAgent();
   window.dialerAgent.start();
   window.homeGesture = new HomeGesture();
   window.homeGesture.start();
-  window.homescreenLauncher = new HomescreenLauncher();
-  window.homeSearchbar = new HomeSearchbar();
+  if (!window.homescreenLauncher) {
+    // If application.ready is true, we already create homescreenLauncher in
+    // safelyLaunchFTU(). We should use it. If it is false, we should create it
+    // here.
+    window.homescreenLauncher = new HomescreenLauncher();
+  }
   window.internetSharing = new InternetSharing();
   window.internetSharing.start();
   window.lockScreenNotifications = new LockScreenNotifications();
+  window.lockScreenPasscodeValidator = new LockScreenPasscodeValidator();
+  window.lockScreenPasscodeValidator.start();
   window.layoutManager = new LayoutManager();
   window.layoutManager.start();
   window.permissionManager = new PermissionManager();

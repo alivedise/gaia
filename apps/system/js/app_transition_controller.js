@@ -1,4 +1,4 @@
-/* global SettingsListener, System, SimPinDialog, rocketbar, homeSearchbar */
+/* global SettingsListener, System, SimPinDialog, rocketbar */
 'use strict';
 
 (function(exports) {
@@ -204,7 +204,9 @@
       }
 
       this.resetTransition();
-      this.app.setVisible(false, true);
+      if (this.app.CLASS_NAME !== 'AttentionWindow') {
+        this.app.setVisible(false, true);
+      }
       this.app.element.classList.remove('active');
     };
 
@@ -245,6 +247,7 @@
 
       this.resetTransition();
       this.app.element.removeAttribute('aria-hidden');
+      this.app.show();
       this.app.element.classList.add('active');
       this.app.setVisible(true);
 
@@ -271,8 +274,7 @@
     // XXX: Rocketbar losing input focus
     // See: https://bugzilla.mozilla.org/show_bug.cgi?id=961557
     return (this._transitionState == 'opened' &&
-            !SimPinDialog.visible &&
-            !(rocketbar.active || homeSearchbar.active));
+            !SimPinDialog.visible && !rocketbar.active);
   };
 
   AppTransitionController.prototype.requireOpen = function(animation) {
@@ -319,7 +321,9 @@
         'invoking', 'invoked', 'zoom-in', 'zoom-out', 'fade-in', 'fade-out',
         'transition-opening', 'transition-closing', 'immediate', 'fadeout',
         'slideleft', 'slideright', 'in-from-left', 'out-to-right',
-        'slideup', 'slidedown', 'will-become-active', 'will-become-inactive'];
+        'will-become-active', 'will-become-inactive',
+        'slide-to-top', 'slide-from-top',
+        'slide-to-bottom', 'slide-from-bottom'];
 
       classes.forEach(function iterator(cls) {
         this.app.element.classList.remove(cls);

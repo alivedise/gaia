@@ -1,6 +1,6 @@
 /* global AppWindow, ScreenLayout, MockOrientationManager,
       LayoutManager, MocksHelper, MockContextMenu,
-      AppChrome, layoutManager */
+      layoutManager, MockPermissionSettings */
 'use strict';
 
 requireApp('system/test/unit/mock_orientation_manager.js');
@@ -11,26 +11,31 @@ requireApp('system/test/unit/mock_context_menu.js');
 requireApp('system/test/unit/mock_applications.js');
 requireApp('system/test/unit/mock_layout_manager.js');
 requireApp('system/test/unit/mock_app_chrome.js');
-requireApp('system/test/unit/mock_app_titlebar.js');
 requireApp('system/test/unit/mock_screen_layout.js');
+requireApp('system/test/unit/mock_app_window.js');
 requireApp('system/test/unit/mock_popup_window.js');
 requireApp('system/test/unit/mock_activity_window.js');
 requireApp('system/test/unit/mock_statusbar.js');
+requireApp('system/shared/test/unit/mocks/mock_permission_settings.js');
 
 var mocksForAppWindow = new MocksHelper([
   'OrientationManager', 'Applications', 'SettingsListener',
-  'ManifestHelper', 'LayoutManager', 'ActivityWindow',
-  'ScreenLayout', 'AppChrome', 'AppTitleBar', 'PopupWindow', 'StatusBar'
+  'ManifestHelper', 'LayoutManager', 'ScreenLayout', 'AppChrome'
 ]).init();
 
 suite('system/AppWindow', function() {
   var stubById;
+  var realPermissionSettings;
   mocksForAppWindow.attachTestHelpers();
   setup(function(done) {
     this.sinon.useFakeTimers();
 
     window.layoutManager = new LayoutManager();
     window.layoutManager.start();
+
+    realPermissionSettings = navigator.mozPermissionSettings;
+    navigator.mozPermissionSettings = MockPermissionSettings;
+    MockPermissionSettings.mSetup();
 
     stubById = this.sinon.stub(document, 'getElementById');
     stubById.returns(document.createElement('div'));
@@ -46,6 +51,7 @@ suite('system/AppWindow', function() {
   });
 
   teardown(function() {
+    navigator.mozPermissionSettings = realPermissionSettings;
     delete window.layoutManager;
 
     stubById.restore();
@@ -116,14 +122,6 @@ suite('system/AppWindow', function() {
     url: 'http://www.fake5/index.html',
     origin: 'http://www.fake5',
     title: 'Fakebook'
-  };
-
-  var fakeChromeConfig = {
-    url: 'http://www.fakeChrome/index.html',
-    origin: 'http://www.fakeChrome',
-    manifest: {
-      chrome: { 'navigation': true }
-    }
   };
 
   var fakeChromeConfigWithoutNavigation = {
@@ -236,42 +234,31 @@ suite('system/AppWindow', function() {
       assert.equal(app1.iframe.style.height, '');
     });
 
-    test('Would get the height of chrome\'s button bar', function() {
-      var stubGetBarHeight =
-        this.sinon.stub(AppChrome.prototype, 'getBarHeight');
-      var spy = this.sinon.spy(window, 'AppChrome');
-      var chromeApp = new AppWindow(fakeChromeConfig);
-      var stubIsActive = this.sinon.stub(chromeApp, 'isActive');
-      stubIsActive.returns(true);
-      chromeApp.resize();
-      assert.isTrue(stubGetBarHeight.called);
-      assert.isTrue(spy.calledWithNew());
-    });
-
     test('No navigation setting in manifest', function() {
       var spy = this.sinon.spy(window, 'AppChrome');
       new AppWindow(fakeChromeConfigWithoutNavigation); // jshint ignore:line
       assert.isFalse(spy.calledWithNew());
     });
 
-    test('No navigation setting in manifest - app - titlebar', function() {
-      var spy = this.sinon.spy(window, 'AppTitleBar');
+    test('No navigation setting in manifest - app - appChrome', function() {
+      var spy = this.sinon.spy(window, 'AppChrome');
       var aw = new AppWindow(fakeChromeConfigWithoutNavigation);
       assert.isFalse(spy.calledWithNew());
       aw.element.dispatchEvent(new CustomEvent('_opened'));
       assert.isTrue(spy.calledWithNew());
     });
 
-    test('No navigation setting in manifest - wrapper - titlebar', function() {
-      var spy = this.sinon.spy(window, 'AppTitleBar');
+    test('No navigation setting in manifest - wrapper - appChrome', function() {
+      var spy = this.sinon.spy(window, 'AppChrome');
       new AppWindow(fakeWrapperConfig); // jshint ignore:line
       assert.isTrue(spy.calledWithNew());
     });
 
-    test('Navigation bar in manifest - titlebar', function() {
-      var spy = this.sinon.spy(window, 'AppTitleBar');
-      new AppWindow(fakeChromeConfigWithNavigationBar); // jshint ignore:line
-      assert.isFalse(spy.calledWithNew());
+    test('Navigation bar in manifest - appChrome', function() {
+      var spy = this.sinon.spy(window, 'AppChrome');
+      var aw = new AppWindow(fakeChromeConfigWithNavigationBar);
+      aw.element.dispatchEvent(new CustomEvent('_opened'));
+      assert.isTrue(spy.calledWithNew());
     });
 
     test('resize to bottom most and top most window', function() {
@@ -861,6 +848,7 @@ suite('system/AppWindow', function() {
     goBack: function() {},
     goForward: function() {},
     reload: function() {},
+    stop: function() {},
     getCanGoForward: function() {
       return {
         onsuccess: function() {},
@@ -931,6 +919,7 @@ suite('system/AppWindow', function() {
       var stubBack = this.sinon.stub(app1.browser.element, 'goBack');
       var stubForward = this.sinon.stub(app1.browser.element, 'goForward');
       var stubReload = this.sinon.stub(app1.browser.element, 'reload');
+      var stubStop = this.sinon.stub(app1.browser.element, 'stop');
 
       app1.focus();
       assert.isTrue(stubFocus.called);
@@ -942,6 +931,8 @@ suite('system/AppWindow', function() {
       assert.isTrue(stubForward.called);
       app1.reload();
       assert.isTrue(stubReload.called);
+      app1.stop();
+      assert.isTrue(stubStop.called);
     });
 
     test('MozBrowser API: getScreenshot', function() {
@@ -1223,6 +1214,19 @@ suite('system/AppWindow', function() {
   });
 
   suite('Event handlers', function() {
+    test('Hidewindow event', function() {
+      var app1 = new AppWindow(fakeAppConfig1);
+      var attention = new AppWindow(fakeAppConfig2);
+      var stubSetVisible = this.sinon.stub(app1, 'setVisible');
+      attention.parentWindow = app1;
+
+      app1.handleEvent({
+        type: '_hidewindow',
+        detail: attention
+      });
+      assert.isFalse(stubSetVisible.called);
+    });
+
     test('ActivityDone event', function() {
       var app1 = new AppWindow(fakeAppConfig1);
       var app2 = new AppWindow(fakeAppConfig2);
@@ -2035,5 +2039,28 @@ suite('system/AppWindow', function() {
       assert.equal(app1.themeColor, '');
       assert.isTrue(stubPublish.calledOnce);
     });
+  });
+
+  test('Should not be killable if it has an attention window', function() {
+    var app1 = new AppWindow(fakeAppConfig1);
+    var attention = new AppWindow(fakeAppConfig1);
+    app1.attentionWindow = attention;
+    assert.isFalse(app1.killable());
+  });
+
+  test('Should not be killable if we are homescreen window', function() {
+    var app1 = new AppWindow(fakeAppConfig1);
+    app1.isHomescreen = true;
+    assert.isFalse(app1.killable());
+  });
+
+  test('Has attention permission', function() {
+    MockPermissionSettings.permissions.attention = 'deny';
+    var app1 = new AppWindow(fakeAppConfig1);
+    assert.isFalse(app1.hasPermission('attention'));
+
+    MockPermissionSettings.permissions.attention = 'allow';
+    var app2 = new AppWindow(fakeAppConfig2);
+    assert.isTrue(app2.hasPermission('attention'));
   });
 });

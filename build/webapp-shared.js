@@ -150,6 +150,9 @@ WebappShared.prototype.pushResource = function(path) {
     if (utils.isSubjectToBranding(file.path)) {
       file.append((this.config.OFFICIAL === '1') ? 'official' : 'unofficial');
     }
+    if (utils.isSubjectToDeviceType(file.path)) {
+      file.append(this.config.GAIA_DEVICE_TYPE);
+    }
   }.bind(this));
 
   if (!file.exists()) {
@@ -240,8 +243,8 @@ WebappShared.prototype.pushElements = function(path) {
 
   var elementName = String(paths.shift());
 
-  // Only handle web components for now (start with gaia_)
-  if (elementName.indexOf('gaia_') !== 0) {
+  // Only handle web components for now (start with gaia)
+  if (elementName.indexOf('gaia') !== 0) {
     return;
   }
 

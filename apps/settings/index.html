@@ -3,6 +3,7 @@
   <head>
     <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
     <meta charset="utf-8">
+    <meta name="theme-color" content="#fff">
     <title>Settings</title>
 
     <!-- Debug/DUMP method support -->
@@ -352,6 +353,7 @@
     <section is="fxa" role="region" id="fxa"></section>
     <!-- Iframe -->
     <section is="frame" role="region" id="frame"></section>
+
     <!-- Main List -->
     <section role="region" id="root" class="current" data-rendered="true">
       <header>
@@ -557,6 +559,18 @@
 
       <panel data-path="panels/root/panel"><panel>
     </section>
+
+    <!-- Warning Dialog :: Incompatible Settings :: USB Storage & USB Tethering & Wifi Tethering -->
+    <form data-type="confirm" role="dialog" class="incompatible-settings-dialog" hidden>
+      <section>
+        <h1 class="is-warning-head" data-l10n-id="is-warning-head">{{newSetting}}</h1>
+        <p class="is-warning-message" data-l10n-id="is-warning-message">Enabling {{newSetting}} will disable {{oldSetting}}. Do you want to enable {{newSetting}}?</p>
+      </section>
+      <menu>
+        <button class="incompatible-settings-cancel-btn" data-l10n-id="cancel">Cancel</button>
+        <button class="incompatible-settings-ok-btn recommend" data-l10n-id="enable">Enable</button>
+      </menu>
+    </form>
 
     <script src="js/startup.js"></script>
   </body>

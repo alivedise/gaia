@@ -1,7 +1,7 @@
 'use strict';
 
 (function(window) {
-  var DEBUG = true;
+  var DEBUG = false;
   var _id = 0;
 
   /**
@@ -23,7 +23,7 @@
    */
   BaseUI.prototype.render = function bu_render() {
     this.publish('willrender');
-    this.containerElement.insertAdjacentHTML('beforeend', this.view());
+    this.containerElement.insertAdjacentHTML('afterbegin', this.view());
     this._fetchElements();
     this._registerEvents();
     this.publish('rendered');

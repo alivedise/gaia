@@ -1,5 +1,5 @@
 /* global MocksHelper, MockGeolocation, MockNavigatormozSetMessageHandler,
-   MockNavigatorSettings, FindMyDevice,
+   MockSettingsHelper, MockNavigatorSettings, FindMyDevice, MockMozAlarms,
    IAC_API_WAKEUP_REASON_LOGIN, IAC_API_WAKEUP_REASON_LOGOUT,
    IAC_API_WAKEUP_REASON_TRY_DISABLE, IAC_API_WAKEUP_REASON_ENABLED_CHANGED
 */
@@ -9,11 +9,13 @@
 require('/shared/test/unit/mocks/mock_dump.js');
 require('/shared/test/unit/mocks/mocks_helper.js');
 require('/shared/test/unit/mocks/mock_navigator_moz_settings.js');
+require('/shared/test/unit/mocks/mock_settings_listener.js');
 require('/shared/test/unit/mocks/mock_settings_helper.js');
 require('/shared/test/unit/mocks/mock_geolocation.js');
 require('/shared/test/unit/mocks/mock_navigator_moz_set_message_handler.js');
 require('/shared/js/findmydevice_iac_api.js');
 require('/shared/test/unit/mocks/mock_l10n.js');
+require('/shared/test/unit/mocks/mock_moz_alarms.js');
 
 var mocksForFindMyDevice = new MocksHelper([
   'Geolocation', 'Dump', 'SettingsHelper'
@@ -24,6 +26,7 @@ suite('FindMyDevice >', function() {
   var realMozId;
   var realMozSettings;
   var realMozSetMessageHandler;
+  var realMozAlarms;
 
   mocksForFindMyDevice.attachTestHelpers();
 
@@ -53,6 +56,9 @@ suite('FindMyDevice >', function() {
     navigator.mozSetMessageHandler = MockNavigatormozSetMessageHandler;
     MockNavigatormozSetMessageHandler.mSetup();
 
+    realMozAlarms = navigator.mozAlarms;
+    navigator.mozAlarms = MockMozAlarms;
+
     // We require findmydevice.js here and not above because
     // we want to make sure all of our dependencies have already
     // been loaded.
@@ -74,6 +80,8 @@ suite('FindMyDevice >', function() {
 
     navigator.mozSetMessageHandler = realMozSetMessageHandler;
     MockNavigatormozSetMessageHandler.mTeardown();
+
+    navigator.mozAlarms = realMozAlarms;
   });
 
   setup(function(done) {
@@ -98,6 +106,51 @@ suite('FindMyDevice >', function() {
       {port: port, keyword: 'findmydevice-wakeup'});
     port.onmessage({data: reason});
   }
+
+  test('ensure retry counter is reset on enable', function() {
+    sendWakeUpMessage(IAC_API_WAKEUP_REASON_ENABLED_CHANGED);
+
+    MockSettingsHelper('findmydevice.retry-count').get(
+      function(val) {
+        assert.equal(val, 0, 'retry count should be 0');
+      });
+  });
+
+  test('retryCount is not incremented on error if registered', function() {
+    FindMyDevice._registered = true;
+    sendWakeUpMessage(IAC_API_WAKEUP_REASON_ENABLED_CHANGED);
+
+    this.sinon.stub(FindMyDevice, 'beginHighPriority');
+    this.sinon.stub(FindMyDevice, 'endHighPriority');
+
+    // simulate 3 failed requests
+    FindMyDevice._handleServerError({status:401});
+    FindMyDevice._handleServerError({status:401});
+    FindMyDevice._handleServerError({status:401});
+
+    MockSettingsHelper('findmydevice.retry-count').get(
+      function(val) {
+        assert.equal(val, 0, 'retry count should be 0');
+      });
+  });
+
+  test('retryCount is incremented on error when not registered', function() {
+    FindMyDevice._registered = false;
+    sendWakeUpMessage(IAC_API_WAKEUP_REASON_ENABLED_CHANGED);
+
+    this.sinon.stub(FindMyDevice, 'beginHighPriority');
+    this.sinon.stub(FindMyDevice, 'endHighPriority');
+
+    // simulate 3 failed requests
+    FindMyDevice._handleServerError({status:401});
+    FindMyDevice._handleServerError({status:401});
+    FindMyDevice._handleServerError({status:401});
+
+    MockSettingsHelper('findmydevice.retry-count').get(
+      function(val) {
+        assert.equal(val, 3, 'retry count should be 3');
+      });
+  });
 
   test('fields from coordinates are included in server response', function() {
     FindMyDevice._registered = true;
@@ -231,5 +284,23 @@ suite('FindMyDevice >', function() {
       {settingValue: false});
     sendWakeUpMessage(IAC_API_WAKEUP_REASON_ENABLED_CHANGED);
     sinon.assert.called(FindMyDevice._reportDisabled);
+  });
+
+  test('wakelocks are released on unregistered clientID change', function() {
+    FindMyDevice._registered = false;
+    this.sinon.stub(FindMyDevice, 'endHighPriority');
+    MockNavigatorSettings.mTriggerObservers('findmydevice.current-clientid',
+        {settingValue: ''});
+    sinon.assert.calledOnce(FindMyDevice.endHighPriority);
+    sinon.assert.calledWith(FindMyDevice.endHighPriority, 'clientLogic');
+  });
+
+  test('wakelocks are released when registering while already registering',
+  function() {
+    this.sinon.stub(FindMyDevice, 'endHighPriority');
+    FindMyDevice._registering = true;
+    FindMyDevice._register();
+    sinon.assert.calledOnce(FindMyDevice.endHighPriority);
+    sinon.assert.calledWith(FindMyDevice.endHighPriority, 'clientLogic');
   });
 });

@@ -31,6 +31,7 @@
     <script defer type="application/javascript" src="/shared/js/settings_url.js"></script>
     <script defer type="application/javascript" src="/shared/js/async_storage.js"></script>
     <script defer type="application/javascript" src="/shared/js/contact_photo_helper.js"></script>
+    <script defer type="application/javascript" src="/shared/js/font_size_utils.js"></script>
 
     <script defer type="application/javascript" src="/shared/js/simple_phone_matcher.js"></script>
     <script defer type="application/javascript" src="/shared/js/dialer/contacts.js"></script>
@@ -64,7 +65,7 @@
     <script defer src="/shared/js/lockscreen_connection_info_manager.js"></script>
   </head>
   <body>
-    <article id="call-screen" data-layout>
+    <article id="call-screen" data-layout class="displayed">
       <div id="lockscreen-header">
         <div id="lockscreen-conn-states">
         </div>
@@ -73,18 +74,12 @@
       </div>
       <article id="calls" data-count="0">
         <section id="handled-call-template" hidden>
-          <div class="switch-calls">
-            <span role="button" id="switch-calls-button">
-            </span>
-          </div>
           <div class="hangup-button" role="button" data-l10n-id="hangup-a11y-button"></div>
           <div class="numberWrapper direction-status-bar">
             <div class="number font-light"></div>
+            <span role="button" id="switch-calls-button"></span>
           </div>
-          <div class="fake-number font-light"></div>
           <div class="additionalContactInfo font-light"></div>
-          <div class="shadow">
-          </div>
           <div class="duration">
             <span class="font-light"></span>
             <div class="total-duration"></div>
@@ -102,7 +97,6 @@
             <div id="group-show"></div>
             <div id="group-call-label" class="number font-light"></div>
           </div>
-          <div class="fake-number font-light"></div>
           <div id="group-call-summary" class="additionalContactInfo font-light"></div>
           <div class="duration">
             <span class="font-light"></span>
@@ -222,7 +216,6 @@
       <section id="incoming-info">
         <div class="incoming-number-info">
           <span id="incoming-number"></span>
-          <span id="fake-incoming-number"></span>
           <span id="incoming-number-additional-info" class="font-light"></span>
         </div>
         <div id="incoming-sim" class="sim"></div>

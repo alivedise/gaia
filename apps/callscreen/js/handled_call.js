@@ -1,5 +1,6 @@
 /* globals CallsHandler, CallScreen, Contacts, ContactPhotoHelper,
-           FontSizeManager, LazyL10n, Utils, Voicemail, AudioCompetingHelper */
+           FontSizeManager, LazyL10n, Utils, Voicemail, TonePlayer,
+           AudioCompetingHelper */
 
 'use strict';
 
@@ -26,6 +27,7 @@ function HandledCall(aCall) {
   this._cachedInfo = '';
   this._cachedAdditionalInfo = '';
   this._removed = false;
+  this._wasConnected = false;
 
   this.node = document.getElementById('handled-call-template').cloneNode(true);
   this.node.id = '';
@@ -42,8 +44,6 @@ function HandledCall(aCall) {
   this.numberNode = this.node.querySelector('.numberWrapper .number');
   this.groupCallNumberNode =
     document.getElementById('group-call-label');
-  this.groupCallFakeNumberNode =
-    document.querySelector('#group-call .fake-number');
   this.additionalInfoNode = this.node.querySelector('.additionalContactInfo');
   this.hangupButton = this.node.querySelector('.hangup-button');
   this.hangupButton.onclick = (function() {
@@ -260,8 +260,10 @@ HandledCall.prototype.formatPhoneNumber =
       scenario = FontSizeManager.SECOND_INCOMING_CALL;
     }
     FontSizeManager.adaptToSpace(
-      scenario, this.numberNode, this.node.querySelector('.fake-number'),
-      false, ellipsisSide);
+      scenario, this.numberNode, false, ellipsisSide);
+    if (this.node.classList.contains('additionalInfo')) {
+      FontSizeManager.ensureFixedBaseline(scenario, this.numberNode);
+    }
 };
 
 HandledCall.prototype.replacePhoneNumber =
@@ -323,6 +325,8 @@ HandledCall.prototype.connected = function hc_connected() {
   CallScreen.syncSpeakerEnabled();
 
   CallScreen.setCallerContactImage();
+
+  this._wasConnected = true;
 };
 
 HandledCall.prototype.disconnected = function hc_disconnected() {
@@ -334,6 +338,12 @@ HandledCall.prototype.disconnected = function hc_disconnected() {
     });
     self._leftGroup = false;
   }
+
+  // Play End call tone only if the call was connected.
+  if (this._wasConnected) {
+    TonePlayer.playSequence([[480, 620, 250]]);
+  }
+  this._wasConnected = false;
 
   this.remove();
 };
