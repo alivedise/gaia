@@ -50,6 +50,7 @@ var UtilityTray = {
     // Firing when the keyboard and the IME switcher shows/hides.
     window.addEventListener('keyboardimeswitchershow', this);
     window.addEventListener('keyboardimeswitcherhide', this);
+    window.addEventListener('imemenushow', this);
 
     window.addEventListener('simpinshow', this);
 
@@ -122,6 +123,10 @@ var UtilityTray = {
         if (!isBlockedApp && this.shown) {
           this.hide();
         }
+        break;
+
+      case 'imemenushow':
+        this.hide();
         break;
 
       // When IME switcher shows, prevent the keyboard's focus getting changed.

@@ -125,12 +125,6 @@
   z-index: 65538;
 }
 
-#screen > [data-z-index-level="keyboards"] {
-  /* It should lower than UtilityTray's, to let the tray overlay it
-     in some situation like selecting a new keyboard. */
-  z-index: 16383;
-}
-
 /* Level 4: Attention window */
 #screen > [data-z-index-level="app"] > .appWindow.attentionWindow.active.top-most {
   z-index: 8193;
@@ -205,10 +199,6 @@
 
 #screen > [data-z-index-level="rocketbar-backdrop"] {
   z-index: 2041;
-}
-
-#screen.locked > [data-z-index-level="keyboards"] {
-  z-index: 65536;
 }
 
 #screen.locked > [data-z-index-level="gesture-panel"] {

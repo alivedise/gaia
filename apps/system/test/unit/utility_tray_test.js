@@ -326,6 +326,18 @@ suite('system/UtilityTray', function() {
     });
   });
 
+  suite('handleEvent: imemenushow', function() {
+    setup(function() {
+      UtilityTray.show();
+    });
+
+    test('should be hidden', function() {
+      fakeEvt = createEvent('imemenushow', false, true, {});
+      UtilityTray.handleEvent(fakeEvt);
+      assert.equal(UtilityTray.shown, false);
+    });
+  });
+
   suite('handleEvent: launchapp', function() {
     setup(function() {
       UtilityTray.show();

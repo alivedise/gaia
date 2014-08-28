@@ -57,6 +57,8 @@
       window.addEventListener('holdhome', this);
 
       this.container.addEventListener('mousedown', this.preventFocusChange);
+
+      window.dispatchEvent(new CustomEvent('imemenushow'));
     },
 
     /**

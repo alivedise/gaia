@@ -148,7 +148,7 @@
             this._topMostWindow.setVisible(true);
           }
           attention.demote();
-          if (this._openedInstances.size < this._instances.length) {
+          if (this._openedInstances.size === 0) {
             this.publish('attention-inactive');
           }
           this.updateAttentionIndicator();

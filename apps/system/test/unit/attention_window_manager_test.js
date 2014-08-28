@@ -233,6 +233,25 @@ suite('system/AttentionWindowManager', function() {
           }));
           assert.isTrue(stubDemoteForAtt1.called);
         });
+
+      test('should publish attention-inactive if no opened instances',
+        function() {
+          var caught = false;
+          window.addEventListener('attention-inactive', function inactive() {
+            window.removeEventListener('attention-inactive', inactive);
+            caught = true;
+          });
+          attentionWindowManager._openedInstances =
+            new Map([[att1, att1], [att2, att2]]);
+          window.dispatchEvent(new CustomEvent('attentionclosed', {
+            detail: att1
+          }));
+          assert.isFalse(caught);
+          window.dispatchEvent(new CustomEvent('attentionclosed', {
+            detail: att2
+          }));
+          assert.isTrue(caught);
+        });
     });
 
     suite('AttentionWindow is requesting to close', function() {
