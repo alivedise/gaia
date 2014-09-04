@@ -775,7 +775,7 @@ var UpdateManager = {
 
   _openDownloadViaDataDialog: function um_downloadViaDataDialog() {
     var _ = navigator.mozL10n.setAttributes;
-    var connections = window.navigator.mozMobileConnections;
+    var connections = System.getAPI('mobileConnections');
     var dataType;
     var sim;
 
