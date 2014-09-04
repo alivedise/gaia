@@ -1,6 +1,6 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-
+/* global System */
 'use strict';
 
 /**
@@ -424,6 +424,12 @@
     window.addEventListener('holdhome', this, true);
     window.addEventListener('ftuopen', this);
     window.addEventListener('timeformatchange', this);
+
+    /* mobile connection state on lock screen */
+    if (System.getAPI('mobileConnections')) {
+      this._lockscreenConnInfoManager =
+        new window.LockScreenConnInfoManager(this.connStates);
+    }
 
     /* media playback widget */
     this.mediaPlaybackWidget =
