@@ -33,7 +33,7 @@
 
   SearchWindow.SUSPENDING_ENABLED = false;
 
-  SearchWindow.prototype._DEBUG = false;
+  SearchWindow.prototype._DEBUG = true;
 
   SearchWindow.prototype.CLASS_NAME = 'Search';
 
