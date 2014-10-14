@@ -169,6 +169,7 @@ var StatusBar = {
     window.addEventListener('ftuskip', this);
     window.addEventListener('ftuopen', this);
     window.addEventListener('apptitlestatechanged', this);
+    window.addEventListener('emergencycallbackstatechanged', this);
   },
 
   addSettingsListener: function sb_addSettingsListener(settingKey) {
@@ -316,6 +317,10 @@ var StatusBar = {
 
   handleEvent: function sb_handleEvent(evt) {
     switch (evt.type) {
+      case 'emergencycallbackstatechanged':
+        this.updateEmergencyCbNotification(evt.detail);
+        break;
+
       case 'screenchange':
         this.setActive(evt.detail.screenEnabled);
         break;
