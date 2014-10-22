@@ -17,7 +17,7 @@
    * @module AppWindowManager
    */
   var AppWindowManager = {
-    DEBUG: false,
+    DEBUG: true,
     CLASS_NAME: 'AppWindowManager',
     continuousTransition: false,
 
