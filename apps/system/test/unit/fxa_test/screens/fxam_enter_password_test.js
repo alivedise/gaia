@@ -162,6 +162,14 @@ suite('Screen: Enter password', function() {
     });
   });
 
+  suite(' > onFocus ', function() {
+    test('input is focused when onFocus is called', function() {
+      this.sinon.stub(FxaModuleEnterPassword.fxaPwInput, 'focus');
+      FxaModuleEnterPassword.onFocus();
+      assert.ok(FxaModuleEnterPassword.fxaPwInput.focus.calledOnce);
+    });
+  });
+
   suite(' > onNext ', function() {
     var showOverlaySpy, showErrorOverlaySpy, hideOverlaySpy;
     setup(function() {

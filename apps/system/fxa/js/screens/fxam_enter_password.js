@@ -139,6 +139,10 @@ var FxaModuleEnterPassword = (function() {
 
   };
 
+  Module.onFocus = function onFocus() {
+    this.fxaPwInput.focus();
+  };
+
   Module.onNext = function onNext(gotoNextStepCallback) {
     FxaModuleOverlay.show('fxa-connecting');
 

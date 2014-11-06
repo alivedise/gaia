@@ -11,7 +11,8 @@ var FxAccountsUI = {
 
   init: function init() {
     var dialogOptions = {
-      onHide: this.reset.bind(this)
+      onHide: this.reset.bind(this),
+      onFocus: this.focus.bind(this)
     };
     if (!this.dialog) {
       this.dialog = new FxAccountsDialog(dialogOptions);
@@ -26,6 +27,13 @@ var FxAccountsUI = {
     this.onsuccessCb = onsuccess;
     this.onerrorCb = onerror;
     this.loadFlow('login');
+  },
+
+  focus: function() {
+    if (!this.iframe) {
+      return;
+    }
+    this.iframe.contentWindow.postMessage('focus', window.location.origin);
   },
 
   // Logout flow.

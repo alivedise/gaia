@@ -23,11 +23,19 @@ var FxaModuleNavigation = {
       false
     );
 
+    window.addEventListener('message', this);
+
     // Load view
     LazyLoader.load('view/view_' + flow + '.js', function loaded() {
       FxaModuleUI.setMaxSteps(View.length);
       window.location.hash = View.start.id;
     }.bind(this));
+  },
+  handleEvent: function(evt) {
+    if (evt.type === 'message' && evt.data === 'focus') {
+      this.currentModule && this.currentModule.onFocus &&
+      this.currentModule.onFocus();
+    }
   },
   hashchangeHandler: function fxam_nav_hashchangeHandler() {
     if (!location.hash) {

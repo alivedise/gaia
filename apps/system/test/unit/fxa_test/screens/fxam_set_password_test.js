@@ -120,6 +120,14 @@ suite('Screen: Set password', function() {
 
   });
 
+  suite(' > onFocus ', function() {
+    test('input is focused when onFocus is called', function() {
+      this.sinon.stub(FxaModuleSetPassword.fxaPwSetInput, 'focus');
+      FxaModuleSetPassword.onFocus();
+      assert.ok(FxaModuleSetPassword.fxaPwSetInput.focus.calledOnce);
+    });
+  });
+
   suite(' > onNext ', function() {
     var showOverlaySpy, showErrorOverlaySpy, hideOverlaySpy;
     setup(function() {

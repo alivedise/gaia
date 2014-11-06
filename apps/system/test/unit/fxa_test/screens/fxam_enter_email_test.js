@@ -125,6 +125,14 @@ suite('Screen: Enter email', function() {
     });
   });
 
+  suite(' > onFocus ', function() {
+    test('input is focused when onFocus is called', function() {
+      this.sinon.stub(FxaModuleEnterEmail.fxaEmailInput, 'focus');
+      FxaModuleEnterEmail.onFocus();
+      assert.ok(FxaModuleEnterEmail.fxaEmailInput.focus.calledOnce);
+    });
+  });
+
   suite(' > onNext ', function() {
     var showOverlaySpy, showErrorOverlaySpy, hideOverlaySpy;
     setup(function() {

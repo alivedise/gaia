@@ -101,6 +101,10 @@ var FxaModuleSetPassword = (function() {
     _enableNext(this.fxaPwSetInput);
   };
 
+  Module.onFocus = function onFocus() {
+    this.fxaPwSetInput.focus();
+  };
+
   Module.onNext = function onNext(gotoNextStepCallback) {
     _showRegistering();
     FxModuleServerRequest.signUp(

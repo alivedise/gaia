@@ -13,7 +13,7 @@
     EVENT_PREFIX: 'hierachy',
     _ui_list: null,
     _topMost: null,
-    DEBUG: true,
+    DEBUG: false,
 
     _start: function() {
       this._ui_list = [];
@@ -53,8 +53,8 @@
       'LockScreenWindowManager',
       'UtilityTray',
       'TaskManager',
-      'SystemDialogManager',
       'Rocketbar',
+      'SystemDialogManager',
       'AppWindowManager'
     ],
 

@@ -157,6 +157,8 @@ var FxaModuleEnterEmail = (function() {
   };
 
   Module.onNext = function onNext(gotoNextStepCallback) {
+    window.removeEventListener('message', this);
+
     FxaModuleOverlay.show('fxa-connecting');
 
     var email = this.fxaEmailInput.value;
@@ -179,6 +181,10 @@ var FxaModuleEnterEmail = (function() {
         }
       }.bind(this),
       this.showErrorResponse);
+  };
+
+  Module.onFocus = function() {
+    this.fxaEmailInput.focus();
   };
 
   Module.onBack = function onBack() {

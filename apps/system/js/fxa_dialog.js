@@ -48,6 +48,14 @@
 
     };
 
+  // Focus the inner input if there is.
+  FxAccountsDialog.prototype.focus =
+    function fxad_focus() {
+      if (this.options.onFocus) {
+        this.options.onFocus();
+      }
+    };
+
   exports.FxAccountsDialog = FxAccountsDialog;
 
 }(window));
