@@ -6,7 +6,7 @@
    * Turn of this flag to debug all BaseModule based modules.
    * @type {Boolean}
    */
-  var GLOBAL_DEBUG = false;
+  var GLOBAL_DEBUG = true;
 
   /**
    * This is used to store the constructors which are created
@@ -14,7 +14,7 @@
    * constructor.name => constructor
    * @type {Object}
    */
-  var AVAILABLE_MODULES = {};
+  window.AVAILABLE_MODULES = {};
 
   /**
    * BaseModule is a class skeleton which helps you to build a module with

@@ -111,6 +111,9 @@
     window.addEventListener('volumedown', this);
     window.addEventListener('mozmemorypressure', this.freeCallscreenWindow);
 
+    if (!window.CallscreenWindow) {
+      return;
+    }
     this._callscreenWindow = new CallscreenWindow();
     this._callscreenWindow.hide();
 

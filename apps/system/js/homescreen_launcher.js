@@ -55,6 +55,16 @@
       return this._ready;
     },
 
+    getReady: function() {
+      return new Promise(function(resolve) {
+        if (this._ready) {
+          resolve();
+        } else {
+          this._queuingRequests.push(resolve);
+        }
+      }.bind(this));
+    },
+
     /**
      * Origin of homescreen.
      *
@@ -105,6 +115,9 @@
           }
           that._ready = true;
           window.dispatchEvent(new CustomEvent('homescreen-ready'));
+          that._queuingRequests.forEach(function(resolve) {
+            resolve();
+          });
         });
     },
 
@@ -120,6 +133,7 @@
      * @memberOf HomescreenLauncher.prototype
      */
     start: function hl_start() {
+      this._queuingRequests = [];
       if (this._started) {
         return;
       }
@@ -147,6 +161,7 @@
      * @memberOf HomescreenLauncher.prototype
      */
     stop: function hl_stop() {
+      this._queuingRequests = [];
       if (typeof(this._instance) !== 'undefined') {
         // XXX: After landing of bug 976986, we should move action of
         // cleaing _instance into a deregister function of

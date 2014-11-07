@@ -39,64 +39,11 @@ window.addEventListener('load', function startup() {
   /**
    * Register global instances and constructors here.
    */
-  function registerGlobalEntries() {
-    /** @global */
-    window.appWindowManager = new AppWindowManager();
+  window.systemDialogManager = window.systemDialogManager ||
+    new SystemDialogManager();
 
-    /** @global */
-    window.activityWindowManager = new ActivityWindowManager();
-    window.activityWindowManager.start();
-
-    /** @global */
-    window.secureWindowManager = window.secureWindowManager ||
-      new SecureWindowManager();
-    /** @global */
-    window.secureWindowFactory = new SecureWindowFactory();
-    /** @global */
-    if (window.SuspendingAppPriorityManager) {
-      window.suspendingAppPriorityManager = new SuspendingAppPriorityManager();
-    }
-    /** @global */
-    window.systemDialogManager = window.systemDialogManager ||
-      new SystemDialogManager();
-
-    /** @global */
-    window.lockScreenWindowManager = new window.LockScreenWindowManager();
-    window.lockScreenWindowManager.start();
-
-    // Let systemDialogManager handle inputmethod-contextchange event before
-    // starting appWindowManager. See bug 1082741.
-    window.appWindowManager.start();
-
-    /** @global */
-    window.textSelectionDialog = new TextSelectionDialog();
-  }
-
-  function safelyLaunchFTU() {
-    window.addEventListener('homescreen-ready', function onHomescreenReady() {
-      window.removeEventListener('homescreen-ready', onHomescreenReady);
-      FtuLauncher.retrieve();
-    });
-    /** @global */
-    if (!window.homescreenLauncher) {
-      // We may have application.ready = true while reloading at firefox nightly
-      // browser. In this case, the window.homescreenLauncher haven't been
-      // created. We should create it and start it in this case.
-      window.homescreenLauncher = new HomescreenLauncher();
-    }
-    window.homescreenLauncher.start();
-  }
-
-  if (applications.ready) {
-    registerGlobalEntries();
-    safelyLaunchFTU();
-  } else {
-    window.addEventListener('applicationready', function appListReady(event) {
-      window.removeEventListener('applicationready', appListReady);
-      registerGlobalEntries();
-      safelyLaunchFTU();
-    });
-  }
+  /** @global */
+  window.textSelectionDialog = new TextSelectionDialog();
 
   /**
    * Enable checkForUpdate after FTU is either done or skipped.
@@ -121,11 +68,6 @@ window.addEventListener('load', function startup() {
 
   ScreenManager.turnScreenOn();
 
-  // To make sure homescreen window manager can intercept webapps-launch event,
-  // we need to move the code here.
-  window.homescreenWindowManager = new HomescreenWindowManager();
-  window.homescreenWindowManager.start();
-
   // Please sort it alphabetically
   window.activities = new Activities();
   window.accessibility = new Accessibility();
@@ -134,8 +76,6 @@ window.addEventListener('load', function startup() {
   window.appMigrator.start();
   window.appUsageMetrics = new AppUsageMetrics();
   window.appUsageMetrics.start();
-  window.appWindowFactory = new AppWindowFactory();
-  window.appWindowFactory.start();
   window.batteryOverlay = new BatteryOverlay();
   window.batteryOverlay.start();
   window.cellBroadcastSystem = new CellBroadcastSystem();
@@ -145,22 +85,12 @@ window.addEventListener('load', function startup() {
   window.developerHUD = new DeveloperHUD();
   window.developerHUD.start();
   /** @global */
-  window.attentionWindowManager = new window.AttentionWindowManager();
-  window.attentionWindowManager.start();
   window.dialerAgent = new DialerAgent();
   window.dialerAgent.start();
-  window.edgeSwipeDetector = new EdgeSwipeDetector();
-  window.edgeSwipeDetector.start();
   window.externalStorageMonitor = new ExternalStorageMonitor();
   window.externalStorageMonitor.start();
   window.homeGesture = new HomeGesture();
   window.homeGesture.start();
-  if (!window.homescreenLauncher) {
-    // If application.ready is true, we already create homescreenLauncher in
-    // safelyLaunchFTU(). We should use it. If it is false, we should create it
-    // here.
-    window.homescreenLauncher = new HomescreenLauncher();
-  }
   window.lockScreenPasscodeValidator = new LockScreenPasscodeValidator();
   window.lockScreenPasscodeValidator.start();
   window.layoutManager = new LayoutManager();
@@ -173,14 +103,11 @@ window.addEventListener('load', function startup() {
   window.places = new Places();
   window.places.start();
   window.remoteDebugger = new RemoteDebugger();
-  window.rocketbar = new Rocketbar();
   window.sleepMenu = new SleepMenu();
   window.sleepMenu.start();
   window.softwareButtonManager = new SoftwareButtonManager();
   window.softwareButtonManager.start();
   window.sourceView = new SourceView();
-  window.taskManager = new TaskManager();
-  window.taskManager.start();
   window.ttlView = new TTLView();
   window.visibilityManager = new VisibilityManager();
   window.visibilityManager.start();

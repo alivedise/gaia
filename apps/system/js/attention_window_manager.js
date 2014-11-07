@@ -58,8 +58,10 @@
     start: function attwm_start() {
       this._instances = [];
       this._openedInstances = new Map();
-      this.attentionIndicator = new AttentionIndicator(this);
-      this.attentionIndicator.start();
+      if (window.attentionIndicator) {
+        this.attentionIndicator = new AttentionIndicator(this);
+        this.attentionIndicator.start();
+      }
       window.addEventListener('attentioncreated', this);
       window.addEventListener('attentionterminated', this);
       window.addEventListener('attentionshown', this);
@@ -256,6 +258,9 @@
       }
     },
     updateAttentionIndicator: function() {
+      if (!this.attentionIndicator) {
+        return;
+      }
       if (this._openedInstances.size == this._instances.length) {
         this.attentionIndicator.hide();
       } else {

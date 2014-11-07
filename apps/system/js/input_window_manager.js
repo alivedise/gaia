@@ -218,7 +218,11 @@
       configs.oop = false;
     }
 
-    var inputWindow = new InputWindow(configs);
+    if (window.InputWindow) {
+      var inputWindow = new InputWindow(configs);
+    } else {
+      
+    }
 
     this._inputWindows[configs.manifestURL] =
       this._inputWindows[configs.manifestURL] || {};
