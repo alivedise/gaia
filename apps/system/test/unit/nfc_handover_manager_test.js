@@ -81,6 +81,11 @@ suite('Nfc Handover Manager Functions', function() {
   });
 
   setup(function() {
+    this.sinon.stub(MockLazyLoader, 'load').returns({
+      then: function(callback) {
+        callback();
+      }
+    });
     spyDefaultAdapter = this.sinon.spy(MockBluetooth, 'getDefaultAdapter');
     spyBluetoothPair = this.sinon.spy(MockBluetooth.defaultAdapter, 'pair');
     settingsCore = BaseModule.instantiate('SettingsCore');
@@ -143,11 +148,6 @@ suite('Nfc Handover Manager Functions', function() {
     });
 
     test('nfc/HandoverSelect', function() {
-      this.sinon.stub(MockLazyLoader, 'load').returns({
-        then: function(callback) {
-          callback();
-        }
-      });
       var spyName = this.sinon.spy(NfcConnectSystemDialog.prototype, 'show');
       var spyPairing = this.sinon.spy(nfcHandoverManager, '_doPairing');
 
@@ -158,11 +158,6 @@ suite('Nfc Handover Manager Functions', function() {
     });
 
     test('nfc/SimplifiedPairingRecord', function() {
-      this.sinon.stub(MockLazyLoader, 'load').returns({
-        then: function(callback) {
-          callback();
-        }
-      });
       var spyName = this.sinon.spy(NfcConnectSystemDialog.prototype, 'show');
       var spyPairing = this.sinon.spy(nfcHandoverManager, '_doPairing');
 
@@ -229,7 +224,9 @@ suite('Nfc Handover Manager Functions', function() {
     test('_handleHandoverSelect() attempts to pair BT devices', function() {
       var handoverSelect = NDEFUtils.encodeHandoverSelect(mac, cps);
       nfcHandoverManager._handleHandoverSelect(handoverSelect);
-      assert.isTrue(spyPairing.calledOnce);
+      console.log(nfcHandoverManager._getBluetoothSSP(handoverSelect));
+      console.log(nfcHandoverManager.sendFileQueue);
+      assert.isTrue(spyPairing.called);
       assert.equal(mac, spyPairing.firstCall.args[0]);
     });
   });
