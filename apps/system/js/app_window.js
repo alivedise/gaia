@@ -13,7 +13,7 @@
 
 (function(exports) {
   // Turn on this flag to debug all windows.
-  var DEBUG = false;
+  var DEBUG = true;
   // Turn on this flag to print all trace in debugging function.
   var TRACE = false;
   var _id = 0;
@@ -1301,6 +1301,10 @@
     } else {
       window.dispatchEvent(evt);
     }
+
+    // Publish a general event because we don't want to implement
+    // a slow regular expression event subscriber.
+    window.dispatchEvent(new CustomEvent('window' + event));
   };
 
   AppWindow.prototype.broadcast = function aw_broadcast(event, detail) {

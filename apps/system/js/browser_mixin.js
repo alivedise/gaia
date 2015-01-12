@@ -183,11 +183,29 @@
       }
     },
 
+    /**
+     * This function will be called by window managers while top most app
+     * window is changed to notify nfc module in gecko.
+     */
+    setNFCFocusApp: function(enable) {
+      if (!this.browser || !this.browser.element ||
+          this.CLASS_NAME === 'InputWindow') {
+        return;
+      }
+      this.debug('setting nfc active => ', enable);
+      try {
+        this.browser.element.setNFCFocus(enable);
+      } catch (err) {
+        this.debug('set nfc active is not implemented');
+      }
+    },
+
     _setActive: function bm__setActive(active) {
       if (this.browser && this.browser.element &&
           'setActive' in this.browser.element) {
         this.debug('setActive on browser element:' + active);
         this.browser.element.setActive(active);
+        this.setNFCFocus(active);
       }
     },
 

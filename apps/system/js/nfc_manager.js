@@ -90,6 +90,8 @@
       window.addEventListener('screenchange', this);
       window.addEventListener('lockscreen-appopened', this);
       window.addEventListener('lockscreen-appclosed', this);
+      window.addEventListener('windowopened', this);
+      window.addEventListener('windowclosed', this);
 
       this._onSettingsChanged = (enabled) => this._nfcSettingsChanged(enabled);
       SettingsListener.observe('nfc.enabled', false, this._onSettingsChanged);
@@ -118,6 +120,8 @@
       window.removeEventListener('activeappchanged', this);
       window.removeEventListener('lockscreen-appopened', this);
       window.removeEventListener('lockscreen-appclosed', this);
+      window.removeEventListener('windowopened', this);
+      window.removeEventListener('windowclosed', this);
 
       SettingsListener.unobserve('nfc.enabled', this._onSettingsChanged);
       SettingsListener.unobserve('nfc.debugging.enabled', this._onDebugChanged);
@@ -202,6 +206,14 @@
     handleEvent: function nm_handleEvent(evt) {
       var state;
       switch (evt.type) {
+        case 'windowopened':
+        case 'windowclosed':
+          if (Service.query('getTopMostUI').name !== 'AppWindowManager') {
+            return;
+          }
+          var topMost = Service.query('getTopMostWindow');
+          topMost.setNFCFocus(true);
+          break;
         case 'lockscreen-appopened': // Fall through
         case 'lockscreen-appclosed':
         case 'screenchange':
