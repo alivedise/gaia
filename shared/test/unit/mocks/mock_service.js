@@ -2,7 +2,7 @@
 'use strict';
 var MockService = {
   mTeardown: function() {
-    this.runningFTU = false;
+    this.mIsFtuRunning = false;
     this.mUpgrading = false;
     this.mBtEnabled = false;
     this.mTopMostUI = null;
@@ -28,8 +28,10 @@ var MockService = {
   },
   query: function(state) {
     switch (state) {
+      case 'getFtuOrigin':
+        return 'app://ftu.gaiamobile.org';
       case 'isFtuRunning':
-        return this.runningFTU;
+        return this.mIsFtuRunning;
       case 'isFtuUpgrading':
         return this.mUpgrading;
       case 'getTopMostWindow':
@@ -63,7 +65,6 @@ var MockService = {
   },
   currentTime: function() {},
   locked: false,
-  runningFTU: false,
   mBtEnabled: false,
   manifestURL: 'app://system.gaiamobile.org/manifest.webapp',
   currentApp: null
