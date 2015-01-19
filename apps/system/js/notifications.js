@@ -544,7 +544,7 @@ var NotificationScreen = {
     // Notification toaster
     if (notify) {
       this.updateToaster(detail, type, dir);
-      if (this.lockscreenPreview || !window.Service.locked) {
+      if (this.lockscreenPreview || !window.Service.query('locked')) {
         this.toaster.classList.add('displayed');
 
         if (this._toasterTimeout) {
@@ -560,7 +560,7 @@ var NotificationScreen = {
 
     // Adding it to the lockscreen if locked and the privacy setting
     // does not prevent it.
-    if (Service.locked && this.lockscreenPreview) {
+    if (Service.query('locked') && this.lockscreenPreview) {
       this.addLockScreenNotification(detail.id,
         notificationNode.cloneNode(true));
     }

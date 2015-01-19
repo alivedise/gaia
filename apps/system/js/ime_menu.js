@@ -81,7 +81,7 @@
      */
     buildMenu: function(items) {
       this.menu.innerHTML = '';
-      var itemTemplate = new Template('ime-menu-item-template');
+      var itemTemplate = new window.Template('ime-menu-item-template');
 
       items.forEach(function traveseItems(item) {
         this.menu.innerHTML += itemTemplate.interpolate({

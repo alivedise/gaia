@@ -1,4 +1,4 @@
-/* global AsyncSemaphore, Bluetooth, CustomDialog, FtuLauncher, ScreenManager,
+/* global AsyncSemaphore, Bluetooth, CustomDialog, Service, ScreenManager,
           SettingsListener, Service, HeadphoneIcon, PlayingIcon, MuteIcon,
           LazyLoader */
 
@@ -10,7 +10,7 @@
    * @class SoundManager
    * @requires AsyncSemaphore
    * @requires Bluetooth
-   * @requires FtuLauncher
+   * @requires Service
    * @requires ScreenManager
    */
   function SoundManager() {
@@ -208,7 +208,7 @@
    * @memberOf SoundManager.prototype
    * @type {AsyncSemaphore}
    */
-  SoundManager.prototype.pendingRequest = new AsyncSemaphore();
+  SoundManager.prototype.pendingRequest = null;
 
   /**
    * To tell if the homescreen is visible.
@@ -248,6 +248,7 @@
    * @returns {SoundManager}
    */
   SoundManager.prototype.start = function sm_start() {
+    this.pendingRequest = new AsyncSemaphore();
     this.element = document.getElementById('volume');
     this.screen = document.getElementById('screen');
     this.overlay = document.getElementById('system-overlay');
@@ -466,8 +467,8 @@
         if (this.defaultVolumeControlChannel !== 'unknown') {
           return this.defaultVolumeControlChannel;
         } else {
-          return this.homescreenVisible || (Service.locked) ||
-            FtuLauncher.isFtuRunning() ? 'notification' : 'content';
+          return this.homescreenVisible || (Service.query('locked')) ||
+            Service.query('isFtuRunning') ? 'notification' : 'content';
         }
     }
   };
