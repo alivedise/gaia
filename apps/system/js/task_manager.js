@@ -1,5 +1,5 @@
 /* global Card, eventSafety, SettingsListener,
-          Service, homescreenLauncher, StackManager, OrientationManager */
+          Service, homescreenLauncher, StackManager */
 
 (function(exports) {
   'use strict';
@@ -152,12 +152,12 @@
 
     this.publish('cardviewbeforeshow');
 
-    screen.mozLockOrientation(OrientationManager.defaultOrientation);
+    screen.mozLockOrientation(Service.query('defaultOrientation'));
     this._placeCards();
     this.setActive(true);
 
     var screenElement = this.screenElement;
-    var activeApp = Service.currentApp;
+    var activeApp = Service.query('AppWindowManager.getActiveApp');
     if (!activeApp) {
       screenElement.classList.add('cards-view');
       return;
@@ -527,7 +527,7 @@
       filter = (evt.detail && evt.detail.filter) || null;
     }
 
-    var app = Service.currentApp;
+    var app = Service.query('AppWindowManager.getActiveApp');
     if (app && !app.isHomescreen) {
       app.getScreenshot(function onGettingRealtimeScreenshot() {
         this.show(filter);

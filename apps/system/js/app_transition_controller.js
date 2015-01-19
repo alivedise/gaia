@@ -1,4 +1,4 @@
-/* global AppWindowManager, SettingsListener, Service */
+/* global SettingsListener, Service */
 'use strict';
 
 (function(exports) {
@@ -93,6 +93,7 @@
   AppTransitionController.prototype.OPENING_TRANSITION_TIMEOUT = 350;
   AppTransitionController.prototype.CLOSING_TRANSITION_TIMEOUT = 350;
   AppTransitionController.prototype.SLOW_TRANSITION_TIMEOUT = 3500;
+  AppTransitionController.prototype._firstTransition = true;
   AppTransitionController.prototype.changeTransitionState =
     function atc_changeTransitionState(evt) {
       var currentState = this._transitionState;
@@ -149,7 +150,7 @@
         }
         this.app.broadcast('closingtimeout');
       },
-      AppWindowManager.slowTransition ? this.SLOW_TRANSITION_TIMEOUT :
+      Service.query('slowTransition') ? this.SLOW_TRANSITION_TIMEOUT :
                               this.CLOSING_TRANSITION_TIMEOUT);
 
       if (!this.app || !this.app.element) {
@@ -178,7 +179,7 @@
       this._openingTimeout = window.setTimeout(function() {
         this.app && this.app.broadcast('openingtimeout');
       }.bind(this),
-      AppWindowManager.slowTransition ? this.SLOW_TRANSITION_TIMEOUT :
+      Service.query('slowTransition') ? this.SLOW_TRANSITION_TIMEOUT :
                               this.OPENING_TRANSITION_TIMEOUT);
       this._waitingForLoad = false;
       this.app.element.classList.add('transition-opening');

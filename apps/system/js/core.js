@@ -1,4 +1,4 @@
-/* global BaseModule */
+/* global BaseModule, ScreenManager, LazyLoader */
 'use strict';
 
 (function(exports) {
@@ -9,18 +9,52 @@
    */
   var Core = function() {
   };
+  Core.IMPORTS = [
+    'js/media_playback.js'
+  ];
 
-  Core.SUB_MODULES = [
-    'HierarchyManager',
+  Core.SIDE_MODULES = [
+    'Notifications',
     'AirplaneMode',
     'NotificationsSystemMessage',
+    'Accessibility',
     'AlarmMonitor',
     'DebuggingMonitor',
-    'NetworkActivity',
     'TimeCore',
     'GeolocationCore',
     'TetheringMonitor',
-    'UsbCore'
+    'UsbCore',
+    'AppMigrator',
+    'TextSelectionDialog',
+    'ExternalStorageMonitor',
+    'StorageWatcher',
+    'RemoteDebugger',
+    'SleepMenu',
+    'AppUsageMetrics',
+    'CellBroadcastSystem',
+    'CpuManager',
+    'HomeGesture',
+    'SourceView',
+    'TtlView',
+    'MediaRecording',
+    'QuickSettings',
+    'Shortcuts',
+    'UsbStorage',
+    'MobileidManager', // nonblocking
+    'FindmydeviceLauncher', // nonblocking
+    'FxaManager', // nonblocking
+    'FxaUi', // nonblocking
+    'NetworkActivity'
+  ];
+
+  Core.SUB_MODULES = [
+    'OrientationManager',
+    'HierarchyManager',
+    'SystemDialogManager',
+    'WallpaperManager',
+    'LayoutManager',
+    'SoftwareButtonManager',
+    'AppCore'
   ];
 
   Core.SERVICES = [
@@ -32,10 +66,12 @@
 
     REGISTRY: {
       'mozTelephony': 'TelephonyMonitor',
-      'mozSettings': 'SettingsCore',
       'mozBluetooth': 'BluetoothCore',
       'mozMobileConnections': 'MobileConnectionCore',
-      'mozNfc': 'NfcCore'
+      'mozNfc': 'NfcCore',
+      'battery': 'BatteryOverlay',
+      'mozWifiManager': 'Wifi',
+      'mozVoicemail': 'Voicemail'
     },
 
     getAPI: function(api) {
@@ -47,7 +83,7 @@
       return false;
     },
 
-    _start: function() {
+    __sub_module_loaded: function() {
       for (var api in this.REGISTRY) {
         this.debug('Detecting API: ' + api +
           ' and corresponding module: ' + this.REGISTRY[api]);
@@ -58,6 +94,40 @@
           this.debug('API: ' + api + ' not found, skpping the handler.');
         }
       }
+
+      var self = this;
+      var idleObserver = {
+        time: 10,
+        onidle: function() {
+          navigator.removeIdleObserver(idleObserver);
+          self._startSideModules();
+          LazyLoader.load([
+            'js/download/download_manager.js',
+            'js/payment.js',
+            'js/identity.js',
+            'js/devtools/logshake.js'
+          ]);
+        }
+      };
+      navigator.addIdleObserver(idleObserver);
+    },
+
+    _start: function() {
+      ScreenManager.turnScreenOn();
+      // We need to be sure to get the focus in order to wake up the screen
+      // if the phone goes to sleep before any user interaction.
+      // Apparently it works because no other window
+      // has the focus at this point.
+      window.focus();
+      // With all important event handlers in place, we can now notify
+      // Gecko that we're ready for certain system services to send us
+      // messages (e.g. the radio).
+      // Note that shell.js starts listen for the mozContentEvent event at
+      // mozbrowserloadstart, which sometimes does not happen till
+      // window.onload.
+      this.publish('mozContentEvent', {
+        type: 'system-message-listener-ready'
+      }, true);
     },
 
     startAPIHandler: function(api, handler) {
@@ -72,6 +142,7 @@
           }
           if (!this[moduleName]) {
             reject();
+            return;
           }
           this[moduleName].start && this[moduleName].start();
           resolve();
