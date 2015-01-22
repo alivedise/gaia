@@ -360,7 +360,7 @@
       if (!nfcdom) {
         return;
       }
-      var activeApp = window.Service.currentApp;
+      var activeApp = window.Service.query('getTopMostWindow');
       var manifestURL = activeApp.getTopMostWindow().manifestURL ||
         window.Service.manifestURL;
 
@@ -397,7 +397,7 @@
       if (!nfcdom) {
         return;
       }
-      var activeApp = window.Service.currentApp;
+      var activeApp = window.Service.query('getTopMostWindow');
       var manifestURL = activeApp.getTopMostWindow().manifestURL ||
         window.Service.manifestURL;
       nfcdom.notifyUserAcceptedP2P(manifestURL);

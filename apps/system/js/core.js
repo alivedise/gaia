@@ -20,7 +20,8 @@
     'TimeCore',
     'GeolocationCore',
     'TetheringMonitor',
-    'UsbCore'
+    'UsbCore',
+    'SystemDialogManager'
   ];
 
   Core.SERVICES = [
@@ -35,7 +36,8 @@
       'mozSettings': 'SettingsCore',
       'mozBluetooth': 'BluetoothCore',
       'mozMobileConnections': 'MobileConnectionCore',
-      'mozNfc': 'NfcCore'
+      'mozNfc': 'NfcCore',
+      'mozApps': 'AppCore'
     },
 
     getAPI: function(api) {

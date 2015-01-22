@@ -377,6 +377,10 @@ var StatusBar = {
       return;
     }
 
+    if (!app) {
+      return;
+    }
+
     // Fetch top-most (or bottom-most) window to figure out color theming.
     var themeWindow =
       useBottomWindow ? app.getBottomMostWindow() : app.getTopMostWindow();
