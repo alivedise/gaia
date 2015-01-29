@@ -1,4 +1,5 @@
-/* global BaseModule, applications, InputWindowManager, KeyboardManager */
+/* global BaseModule, applications, InputWindowManager, KeyboardManager,
+          IACHandler, LazyLoader */
 'use strict';
 
 (function() {
@@ -17,11 +18,11 @@
     'HomescreenWindowManager',
     'LockScreenWindowManager',
     'TrustedWindowManager',
-    'SuspendingAppPriorityManager',
     'SecureWindowFactory',
     'SecureWindowManager',
     'ActivityWindowManager',
-    'PermissionManager'
+    'PermissionManager',
+    'Rocketbar'
   ];
   AppCore.EVENTS = [
     'applicationready'
@@ -47,6 +48,9 @@
         window.inputWindowManager.start();
         /** @global */
         KeyboardManager.init();
+      }
+      if (!IACHandler) {
+        LazyLoader.load(['shared/js/iac_handler.js']);
       }
     }
   });

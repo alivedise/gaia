@@ -26,6 +26,7 @@ var MockService = {
     this.mKeyboardEnabled = false;
     this.mKeyboardHeight = 0;
     this.mGetApp = null;
+    this.mActiveApp = null;
   },
   lowerCapital: function() {
     return 'a';
@@ -40,6 +41,8 @@ var MockService = {
   },
   query: function(state) {
     switch (state) {
+      case 'AppWindowManager.getActiveApp':
+        return this.mActiveApp;
       case 'getApp':
         return this.mGetApp;
       case 'keyboardHeight':

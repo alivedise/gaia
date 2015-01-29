@@ -1,4 +1,4 @@
-/* global BaseModule, ScreenManager */
+/* global BaseModule, ScreenManager, LazyLoader */
 'use strict';
 
 (function(exports) {
@@ -9,8 +9,13 @@
    */
   var Core = function() {
   };
+  Core.IMPORTS = [
+    'js/media_playback.js'
+  ];
 
   Core.SUB_MODULES = [
+    'Notifications', // nonblocking
+    'OrientationManager',
     'Accessibility',
     'HierarchyManager',
     'AirplaneMode',
@@ -27,6 +32,7 @@
     'TextSelectionDialog',
     'WallpaperManager',
     'ExternalStorageMonitor',
+    'StorageWatcher', // nonblocking
     'LayoutManager',
     'SoftwareButtonManager',
     'RemoteDebugger',
@@ -40,7 +46,11 @@
     'MediaRecording',
     'QuickSettings',
     'Shortcuts',
-    'UsbStorage'
+    'UsbStorage',
+    'MobileidManager', // nonblocking
+    'FindmydeviceLauncher', // nonblocking
+    'FxaManager', // nonblocking
+    'FxaUi' // nonblocking
   ];
 
   Core.SERVICES = [
@@ -57,7 +67,9 @@
       'mozMobileConnections': 'MobileConnectionCore',
       'mozNfc': 'NfcCore',
       'mozApps': 'AppCore',
-      'battery': 'BatteryOverlay'
+      'battery': 'BatteryOverlay',
+      'mozWifiManager': 'Wifi',
+      'mozVoicemail': 'Voicemail'
     },
 
     getAPI: function(api) {
@@ -98,6 +110,12 @@
       this.publish('mozContentEvent', {
         type: 'system-message-listener-ready'
       }, true);
+      LazyLoader.load([
+        'js/download/download_manager.js',
+        'js/payment.js',
+        'js/identity.js',
+        'js/devtools/logshake.js'
+      ]);
     },
 
     startAPIHandler: function(api, handler) {
