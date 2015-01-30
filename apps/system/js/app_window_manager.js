@@ -1,5 +1,5 @@
-/* global SettingsListener, inputWindowManager,
-          layoutManager, Service, rocketbar, ShrinkingUI, BaseModule */
+/* global inputWindowManager,
+          layoutManager, Service, ShrinkingUI, BaseModule */
 'use strict';
 
 (function(exports) {
