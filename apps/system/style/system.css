@@ -37,7 +37,6 @@
 @import url('../shared/style/time_selector.css');
 @import url('../shared/style/object_menu.css');
 
-<!-- Include shared web components -->
 @import url('../shared/elements/gaia_progress/style/external.css');
 @import url('../shared/elements/gaia-icons/gaia-icons.css');
 
