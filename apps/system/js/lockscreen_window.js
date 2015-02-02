@@ -1,6 +1,5 @@
 /* globals LockScreenAgent */
 /* global Service */
-/* global OrientationManager */
 'use strict';
 
 (function(exports) {
@@ -253,7 +252,7 @@
           this.orientationLockID = null;
         }
       };
-      if (OrientationManager.isOnRealDevice()) {
+      if (Service.query('isOnRealDevice')) {
         if (this.orientationLockID) {
           // The previous one still present and was not cleared,
           // so do nothing.

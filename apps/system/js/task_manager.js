@@ -1,5 +1,5 @@
 /* global Card, eventSafety, SettingsListener,
-          Service, homescreenLauncher, StackManager, OrientationManager */
+          Service, homescreenLauncher, StackManager */
 
 (function(exports) {
   'use strict';
@@ -152,7 +152,7 @@
 
     this.publish('cardviewbeforeshow');
 
-    screen.mozLockOrientation(OrientationManager.defaultOrientation);
+    screen.mozLockOrientation(Service.query('defaultOrientation'));
     this._placeCards();
     this.setActive(true);
 

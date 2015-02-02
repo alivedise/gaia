@@ -1,7 +1,7 @@
 /* -*- Mode: js; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
-/* global ImageUtils, LazyLoader, OrientationManager */
+/* global ImageUtils, LazyLoader, Service */
 
 'use strict';
 
@@ -228,7 +228,7 @@
 
       // How big (in device pixels) is the screen in its default orientation?
       var screenWidth, screenHeight;
-      if (OrientationManager && !OrientationManager.isDefaultPortrait()) {
+      if (!Service.query('isDefaultPortrait')) {
         // The screen.width and screen.height values depend on how the
         // user is holding the device. If this is a tablet or other
         // device with a screen that defaults to landscape mode, then

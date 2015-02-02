@@ -2,7 +2,6 @@
 /* global Event */
 /* global ScreenLayout */
 /* global SettingsListener */
-/* global OrientationManager */
 /* global Service */
 
 (function(exports) {
@@ -15,7 +14,6 @@
    * @class SoftwareButtonManager
    * @requires ScreenLayout
    * @requires SettingsListener
-   * @requires OrientationManager
    */
   function SoftwareButtonManager() {
     this.isMobile = ScreenLayout.getCurrentLayout('tiny');
@@ -154,7 +152,7 @@
         this.toggle();
       }
 
-      this._currentOrientation = OrientationManager.fetchCurrentOrientation();
+      this._currentOrientation = Service.query('fetchCurrentOrientation');
       window.screen.addEventListener('mozorientationchange', this);
       window.addEventListener('orientationchange', this);
 
@@ -307,7 +305,7 @@
           // mozorientationchange is fired before 'system-resize'
           // so we can adjust width/height before that happens.
           var isPortrait = this._currentOrientation.contains('portrait');
-          var newOrientation = OrientationManager.fetchCurrentOrientation();
+          var newOrientation = Service.query('fetchCurrentOrientation');
           if (isPortrait && newOrientation.contains('landscape')) {
             this.element.style.right = this.element.style.bottom;
             this.element.style.bottom = null;

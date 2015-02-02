@@ -21,6 +21,8 @@
    * @module OrientationManager
    */
   window.OrientationManager = {
+    name: 'OrientationManager',
+
     init: function om_init() {
       this.fetchDefaultOrientation();
       if (SettingsListener) {
@@ -38,6 +40,11 @@
       window.addEventListener('trusteduiclose', this);
       window.addEventListener('shrinking-stop', this);
       window.addEventListener('searchclosing', this);
+      Service.registerState('globalOrientation', this);
+      Service.registerState('defaultOrientation', this);
+      Service.registerState('fetchCurrentOrientation', this);
+      Service.registerState('isDefaultPortrait', this);
+      Service.registerState('isOnRealDevice', this);
     },
 
     handleEvent: function om_handleEvent(evt) {

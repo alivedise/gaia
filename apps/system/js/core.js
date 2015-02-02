@@ -130,6 +130,7 @@
           }
           if (!this[moduleName]) {
             reject();
+            return;
           }
           this[moduleName].start && this[moduleName].start();
           resolve();

@@ -1,5 +1,5 @@
 /* global BaseModule, applications, InputWindowManager, KeyboardManager,
-          IACHandler, LazyLoader */
+          LazyLoader */
 'use strict';
 
 (function() {
@@ -49,7 +49,7 @@
         /** @global */
         KeyboardManager.init();
       }
-      if (!IACHandler) {
+      if (!window.IACHandler) {
         LazyLoader.load(['shared/js/iac_handler.js']);
       }
     }
