@@ -38,14 +38,6 @@
   BaseModule.SUB_MODULES = [];
 
   /**
-   * Where the sub module should be put.
-   * The default value is under the parent module
-   * to avoid global object pollution.
-   * @type {Object}
-   */
-  BaseModule.SUB_MODULE_PARENT = window;
-
-  /**
    * All events of need to be listened.
    * BaseModule will add/remove the event listener in start/stop functions.
    * The function of '_handle_' form in this module will be invoked
@@ -110,36 +102,50 @@
    */
   BaseModule.STATES = [];
 
-  var SubmoduleMixin = {
-    START_SUB_MODULES_ON_START: true,
-    /**
-     * Helper function to load and start the submodules defined in
-     * |this.constructor.SUB_MODULES|.
-     */
-    _startSubModules: function() {
-      if (!this.constructor.SUB_MODULES ||
-          this.constructor.SUB_MODULES.length === 0) {
+  BaseModule.SIDE_MODULES = [];
+
+  var SidemoduleMixin = {
+    _startSideModules: function() {
+      if (!this.constructor.SIDE_MODULES ||
+          this.constructor.SIDE_MODULES.length === 0) {
+        return;
+      }
+
+      var submodules = this.constructor.SIDE_MODULES.slice();
+      var unloaded = [];
+      submodules.forEach(function(submodule) {
+        if (BaseModule.defined(submodule) || window[submodule]) {
+          var name = BaseModule.lowerCapital(submodule);
+          if (!this[name]) {
+            this._initialSideModule(name, submodule);
+          }
+        } else {
+          unloaded.push(submodule);
+        }
+      }, this);
+
+      if (unloaded.length === 0) {
+        this.__side_module_loaded && this.__side_module_loaded();
         return;
       }
 
       this.debug('lazy loading submodules: ' +
-        this.constructor.SUB_MODULES.concat());
-      BaseModule.lazyLoad(this.constructor.SUB_MODULES).then(function() {
+        unloaded.concat());
+      BaseModule.lazyLoad(unloaded).then(function() {
         this.debug('lazy loaded submodules: ' +
-          this.constructor.SUB_MODULES.concat());
-        this.constructor.SUB_MODULES.forEach(function(module) {
+          unloaded.concat());
+        unloaded.forEach(function(module) {
           var moduleName = BaseModule.lowerCapital(module);
-          var parent = this.constructor.SUB_MODULE_PARENT || this;
-          if (!parent[moduleName]) {
-            this._initialSubModule(moduleName, module);
+          if (!this[moduleName]) {
+            this._initialSideModule(moduleName, module);
           }
         }, this);
-        this.__sub_module_loaded && this.__sub_module_loaded();
+        this.__side_module_loaded && this.__side_module_loaded();
       }.bind(this));
     },
 
-    _initialSubModule: function(moduleName, module) {
-      var parent = this.constructor.SUB_MODULE_PARENT || this;
+    _initialSideModule: function(moduleName, module) {
+      var parent = this.constructor.SIDE_MODULE_PARENT || this;
       var constructor = AVAILABLE_MODULES[module] || window[module];
       if (typeof(constructor) == 'function') {
         this.debug('instantiating submodule: ' + moduleName);
@@ -154,16 +160,89 @@
       }
     },
 
+    _stopSideModules: function() {
+      if (!this.constructor.SIDE_MODULES) {
+        return;
+      }
+      this.constructor.SIDE_MODULES.forEach(function(module) {
+        var moduleName = BaseModule.lowerCapital(module);
+        if (this[moduleName]) {
+          this.debug('Stopping submodule: ' + moduleName);
+          this[moduleName].stop && this[moduleName].stop();
+        }
+      }, this);
+    }
+  };
+
+  var SubmoduleMixin = {
+    START_SUB_MODULES_ON_START: true,
+    /**
+     * Helper function to load and start the submodules defined in
+     * |this.constructor.SUB_MODULES|.
+     */
+    _startSubModules: function() {
+      if (!this.constructor.SUB_MODULES ||
+          this.constructor.SUB_MODULES.length === 0) {
+        return;
+      }
+
+      var submodules = this.constructor.SUB_MODULES.slice();
+      var unloaded = [];
+      submodules.forEach(function(submodule) {
+        if (BaseModule.defined(submodule) || window[submodule]) {
+          var name = BaseModule.lowerCapital(submodule);
+          if (!this[name]) {
+            this._initialSubModule(name, submodule);
+          }
+        } else {
+          unloaded.push(submodule);
+        }
+      }, this);
+
+      if (unloaded.length === 0) {
+        this.__sub_module_loaded && this.__sub_module_loaded();
+        return;
+      }
+
+      this.debug('lazy loading submodules: ' +
+        unloaded.concat());
+      BaseModule.lazyLoad(unloaded).then(function() {
+        this.debug('lazy loaded submodules: ' +
+          unloaded.concat());
+        unloaded.forEach(function(module) {
+          var moduleName = BaseModule.lowerCapital(module);
+          if (!this[moduleName]) {
+            this._initialSubModule(moduleName, module);
+          }
+        }, this);
+        this.__sub_module_loaded && this.__sub_module_loaded();
+      }.bind(this));
+    },
+
+    _initialSubModule: function(moduleName, module) {
+      var constructor = AVAILABLE_MODULES[module] || window[module];
+      if (typeof(constructor) == 'function') {
+        this.debug('instantiating submodule: ' + moduleName);
+        this[moduleName] = new constructor(this);
+        // If there is a custom submodule loaded handler, call it.
+        // Otherwise we will start the submodule right away.
+        if (typeof(this['_' + moduleName + '_loaded']) == 'function') {
+          this['_' + moduleName + '_loaded']();
+        } else if (this.lifeCycleState !== 'stopped') {
+          this[moduleName].start && this[moduleName].start();
+        }
+      }
+    },
+
     _stopSubModules: function() {
       if (!this.constructor.SUB_MODULES) {
         return;
       }
       this.constructor.SUB_MODULES.forEach(function(module) {
         var moduleName = BaseModule.lowerCapital(module);
-        var parent = this.constructor.SUB_MODULE_PARENT || this;
-        if (parent[moduleName]) {
+        if (this[moduleName]) {
           this.debug('Stopping submodule: ' + moduleName);
-          parent[moduleName].stop && parent[moduleName].stop();
+          this[moduleName].stop && this.parent[moduleName].stop();
         }
       }, this);
     }
@@ -305,6 +384,10 @@
     }
   };
 
+  BaseModule.defined = function(name) {
+    return !!AVAILABLE_MODULES[name];
+  };
+
   /**
    * Mixin the prototype with give mixin object.
    * @param  {Object} prototype The prototype of a class
@@ -352,6 +435,9 @@
     }
     if (constructor.SUB_MODULES) {
       BaseModule.mixin(constructor.prototype, SubmoduleMixin);
+    }
+    if (constructor.SIDE_MODULES) {
+      BaseModule.mixin(constructor.prototype, SidemoduleMixin);
     }
     if (prototype) {
       BaseModule.mixin(constructor.prototype, prototype);

@@ -4,9 +4,8 @@
 
 (function() {
   // Responsible to load and init the sub system for mozApps.
-  var AppCore = function(app, core) {
+  var AppCore = function(core) {
     this.core = core;
-    this.app = app;
   };
   AppCore.IMPORTS = [
   ];

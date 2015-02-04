@@ -13,28 +13,26 @@
     'js/media_playback.js'
   ];
 
-  Core.SUB_MODULES = [
-    'Notifications', // nonblocking
-    'OrientationManager',
-    'Accessibility',
-    'HierarchyManager',
+  Core.EVENTS = [
+    'ftuopen',
+    'ftuskip'
+  ];
+
+  Core.SIDE_MODULES = [
+    'Notifications',
     'AirplaneMode',
     'NotificationsSystemMessage',
+    'Accessibility',
     'AlarmMonitor',
     'DebuggingMonitor',
-    'NetworkActivity',
     'TimeCore',
     'GeolocationCore',
     'TetheringMonitor',
     'UsbCore',
-    'SystemDialogManager',
     'AppMigrator',
     'TextSelectionDialog',
-    'WallpaperManager',
     'ExternalStorageMonitor',
-    'StorageWatcher', // nonblocking
-    'LayoutManager',
-    'SoftwareButtonManager',
+    'StorageWatcher',
     'RemoteDebugger',
     'SleepMenu',
     'AppUsageMetrics',
@@ -50,7 +48,18 @@
     'MobileidManager', // nonblocking
     'FindmydeviceLauncher', // nonblocking
     'FxaManager', // nonblocking
-    'FxaUi' // nonblocking
+    'FxaUi', // nonblocking
+    'NetworkActivity'
+  ];
+
+  Core.SUB_MODULES = [
+    'OrientationManager',
+    'HierarchyManager',
+    'SystemDialogManager',
+    'WallpaperManager',
+    'LayoutManager',
+    'SoftwareButtonManager',
+    'AppCore'
   ];
 
   Core.SERVICES = [
@@ -66,7 +75,6 @@
       'mozBluetooth': 'BluetoothCore',
       'mozMobileConnections': 'MobileConnectionCore',
       'mozNfc': 'NfcCore',
-      'mozApps': 'AppCore',
       'battery': 'BatteryOverlay',
       'mozWifiManager': 'Wifi',
       'mozVoicemail': 'Voicemail'
@@ -79,6 +87,14 @@
         }
       }
       return false;
+    },
+
+    _handle_ftuopen: function() {
+      this._startSideModules();
+    },
+
+    _handle_ftuskip: function() {
+      this._startSideModules();
     },
 
     __sub_module_loaded: function() {
