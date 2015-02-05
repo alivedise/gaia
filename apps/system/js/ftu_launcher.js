@@ -11,7 +11,8 @@
     'iac-ftucomms',
     'appterminated',
     'lockscreen-appopened',
-    'appopened'
+    'appopened',
+    'osversionready'
   ];
   FtuLauncher.IMPORTS = [
     'shared/js/uuid.js',
@@ -27,6 +28,9 @@
   ];
   FtuLauncher.SUB_MODULES = [
     'NewsletterManager'
+  ];
+  FtuLauncher.SETTINGS = [
+    'ftu.manifestURL'
   ];
   BaseModule.create(FtuLauncher, {
     name: 'FtuLauncher',
@@ -211,10 +215,31 @@
       });
     },
 
+    _handle_osversionready: function() {
+      window.performance.mark('versionGetted');
+      if (this.service.query('isUprading')) {
+        this._isUpgrading = true;
+        this.launch();
+      } else {
+        var self = this;
+
+        window.performance.mark('ftuEnableGetting');
+        window.asyncStorage.getItem('ftu.enabled', function(shouldFTU) {
+          window.performance.mark('ftuEnableGetted');
+          self._isUpgrading = false;
+          // launch full FTU when enabled
+          if (shouldFTU !== false) {
+            self.launch();
+          } else {
+            self.skip();
+          }
+        });
+      }
+    },
+
     // Check if the FTU was executed or not, if not, get a
     // reference to the app and launch it.
     retrieve: function fl_retrieve() {
-      var self = this;
       if (!this._ftuPing) {
         this._ftuPing = new FtuPing();
       }
@@ -222,25 +247,9 @@
       this._ftuPing.ensurePing();
 
       // launch FTU when a version upgrade is detected
-      VersionHelper.getVersionInfo().then(function(versionInfo) {
-        if (versionInfo.isUpgrade()) {
-          self._isUpgrading = true;
-          self.launch();
-        } else {
-          window.asyncStorage.getItem('ftu.enabled', function(shouldFTU) {
-            self._isUpgrading = false;
-            // launch full FTU when enabled
-            if (shouldFTU !== false) {
-              self.launch();
-            } else {
-              self.skip();
-            }
-          });
-        }
-      }, function(err) {
-        dump('VersionHelper failed to lookup version settings, skipping.\n');
-        self.skip();
-      });
+      if (this.service.query('VersionChecker.ready')) {
+        this._handle_osversionready();
+      }
     }
   });
 }());

@@ -9,19 +9,21 @@
   };
   AppCore.IMPORTS = [
   ];
-  AppCore.SUB_MODULES = [
-    'VisibilityManager',
+  AppCore.SIDE_MODULES = [
     'Activities',
-    'AppWindowManager',
     'AttentionWindowManager',
-    'HomescreenWindowManager',
-    'LockScreenWindowManager',
     'TrustedWindowManager',
     'SecureWindowFactory',
     'SecureWindowManager',
     'ActivityWindowManager',
     'PermissionManager',
     'Rocketbar'
+  ];
+  AppCore.SUB_MODULES = [
+    'VisibilityManager',
+    'AppWindowManager',
+    'HomescreenWindowManager',
+    'LockScreenWindowManager'
   ];
   AppCore.EVENTS = [
     'applicationready'
@@ -48,9 +50,21 @@
         /** @global */
         KeyboardManager.init();
       }
-      if (!window.IACHandler) {
-        LazyLoader.load(['shared/js/iac_handler.js']);
-      }
+
+      window.performance.mark('appCoreStart');
+
+      var self = this;
+      var idleObserver = {
+        time: 10,
+        onidle: function() {
+          navigator.removeIdleObserver(idleObserver);
+          self._startSideModules();
+          if (!window.IACHandler) {
+            LazyLoader.load(['shared/js/iac_handler.js']);
+          }
+        }
+      };
+      navigator.addIdleObserver(idleObserver);
     }
   });
 }());

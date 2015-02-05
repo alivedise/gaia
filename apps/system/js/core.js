@@ -59,7 +59,9 @@
     'WallpaperManager',
     'LayoutManager',
     'SoftwareButtonManager',
-    'AppCore'
+    'AppCore',
+    'SettingsCore',
+    'VersionChecker'
   ];
 
   Core.SERVICES = [
@@ -71,7 +73,6 @@
 
     REGISTRY: {
       'mozTelephony': 'TelephonyMonitor',
-      'mozSettings': 'SettingsCore',
       'mozBluetooth': 'BluetoothCore',
       'mozMobileConnections': 'MobileConnectionCore',
       'mozNfc': 'NfcCore',
@@ -89,14 +90,6 @@
       return false;
     },
 
-    _handle_ftuopen: function() {
-      this._startSideModules();
-    },
-
-    _handle_ftuskip: function() {
-      this._startSideModules();
-    },
-
     __sub_module_loaded: function() {
       for (var api in this.REGISTRY) {
         this.debug('Detecting API: ' + api +
@@ -108,6 +101,22 @@
           this.debug('API: ' + api + ' not found, skpping the handler.');
         }
       }
+
+      var self = this;
+      var idleObserver = {
+        time: 10,
+        onidle: function() {
+          navigator.removeIdleObserver(idleObserver);
+          self._startSideModules();
+          LazyLoader.load([
+            'js/download/download_manager.js',
+            'js/payment.js',
+            'js/identity.js',
+            'js/devtools/logshake.js'
+          ]);
+        }
+      };
+      navigator.addIdleObserver(idleObserver);
     },
 
     _start: function() {
@@ -126,12 +135,6 @@
       this.publish('mozContentEvent', {
         type: 'system-message-listener-ready'
       }, true);
-      LazyLoader.load([
-        'js/download/download_manager.js',
-        'js/payment.js',
-        'js/identity.js',
-        'js/devtools/logshake.js'
-      ]);
     },
 
     startAPIHandler: function(api, handler) {

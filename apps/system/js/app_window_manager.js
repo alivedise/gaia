@@ -69,16 +69,18 @@
   AppWindowManager.IMPORTS = [
     'shared/js/tagged.js' // Used by taskCard, maybe everything needs it later
   ];
-  AppWindowManager.SUB_MODULES = [
+  AppWindowManager.SIDE_MODULES = [
     'StackManager',
     'SheetsTransition',
     'EdgeSwipeDetector',
     'TaskManager',
-    'FtuLauncher',
-    'AppWindowFactory',
     'Places',
     'SuspendingAppPriorityManager',
     'AppInstallManager'
+  ];
+  AppWindowManager.SUB_MODULES = [
+    'FtuLauncher',
+    'AppWindowFactory'
   ];
   AppWindowManager.SETTINGS = [
     'continuous-transition.enabled',
@@ -98,6 +100,19 @@
      * @memberOf AppWindowManager
      */
     slowTransition: false,
+
+
+    __sub_module_loaded: function() {
+      var self = this;
+      var idleObserver = {
+        time: 10,
+        onidle: function() {
+          navigator.removeIdleObserver(idleObserver);
+          self._startSideModules();
+        }
+      };
+      navigator.addIdleObserver(idleObserver);
+    },
 
     isActive: function() {
       return (!!this._activeApp &&
@@ -381,6 +396,8 @@
       }
 
       this.service.request('registerHierarchy', this);
+
+      window.performance.mark('appWindowManagerStart');
     },
 
     _stop: function awm_stop() {

@@ -139,6 +139,8 @@
       window.addEventListener('software-button-enabled', this);
       window.addEventListener('software-button-disabled', this);
       Service.registerState('getHomescreen', this);
+
+      window.performance.mark('homescreenLauncherStart');
     },
 
     /**
@@ -221,6 +223,7 @@
       }
       if (typeof this._instance == 'undefined') {
         this._instance = new HomescreenWindow(this._currentManifestURL);
+        window.performance.mark('launchHomescreen');
         return this._instance;
       } else {
         if (ensure) {

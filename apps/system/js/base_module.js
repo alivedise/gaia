@@ -629,8 +629,12 @@
     },
 
     readSetting: function(name) {
-      this.debug('reading ' + name + ' from settings db');
-      return this.service.request('SettingsCore:get', name);
+      if (this._settings && this._settings[name]) {
+        return Promise.resolve(this._settings[name]);
+      } else {
+        this.debug('reading ' + name + ' from settings db');
+        return this.service.request('SettingsCore:get', name);
+      }
     },
 
     /**
