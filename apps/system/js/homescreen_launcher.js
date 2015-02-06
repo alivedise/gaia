@@ -1,5 +1,5 @@
 'use strict';
-/* global Service, applications, SettingsListener, HomescreenWindow */
+/* global Service, HomescreenWindow */
 (function(exports) {
   /**
    * HomescreenLauncher is responsible for launching the homescreen window
@@ -31,7 +31,6 @@
    * Fired when homescreen launcher is done retriving 'homescreen.manifestURL'
    * @event HomescreenLauncher#homescreen-ready
    */
-
   HomescreenLauncher.prototype = {
     name: 'HomescreenLauncher',
 
@@ -84,29 +83,22 @@
       return this._currentManifestURL;
     },
 
-    _fetchSettings: function hl_fetchSettings() {
-      var that = this;
-      SettingsListener.observe('homescreen.manifestURL', '',
-        // XXX: After landing of bug 976986, we should write a deregister
-        // function of onRetrievingHomescreenManifestURL
-        // see https://bugzilla.mozilla.org/show_bug.cgi?id=976998
-        function onRetrievingHomescreenManifestURL(value) {
-          var previousManifestURL = that._currentManifestURL;
-          that._currentManifestURL = value;
-          if (typeof(that._instance) !== 'undefined') {
-            if (previousManifestURL !== '' &&
-                previousManifestURL !== that._currentManifestURL) {
-              that._instance.kill();
-              that._instance = new HomescreenWindow(value);
-              // Dispatch 'homescreen is changed' event.
-              window.dispatchEvent(new CustomEvent('homescreen-changed'));
-            } else {
-              that._instance.ensure();
-            }
-          }
-          that._ready = true;
-          window.dispatchEvent(new CustomEvent('homescreen-ready'));
-        });
+    '_observe_homescreen.manifestURL': function(value) {
+      var previousManifestURL = this._currentManifestURL;
+      this._currentManifestURL = value;
+      if (typeof(this._instance) !== 'undefined') {
+        if (previousManifestURL !== '' &&
+            previousManifestURL !== this._currentManifestURL) {
+          this._instance.kill();
+          this._instance = new HomescreenWindow(value);
+          // Dispatch 'homescreen is changed' event.
+          window.dispatchEvent(new CustomEvent('homescreen-changed'));
+        } else {
+          this._instance.ensure();
+        }
+      }
+      this._ready = true;
+      window.dispatchEvent(new CustomEvent('homescreen-ready'));
     },
 
     _onAppReady: function hl_onAppReady() {
@@ -125,12 +117,6 @@
         return;
       }
       this._started = true;
-      if (applications.ready) {
-        this._fetchSettings();
-      } else {
-        window.addEventListener('applicationready',
-          this._onAppReady.bind(this));
-      }
       window.addEventListener('appopening', this);
       window.addEventListener('appopened', this);
       window.addEventListener('keyboardchange', this);
@@ -140,6 +126,7 @@
       window.addEventListener('software-button-disabled', this);
       Service.registerState('getHomescreen', this);
 
+      Service.register('launch', this);
       window.performance.mark('homescreenLauncherStart');
     },
 
@@ -208,6 +195,11 @@
       }
     },
 
+    launch: function(manifestURL) {
+      this._currentManifestURL = manifestURL;
+      this.getHomescreen();
+    },
+
     /**
      * Get instance of homescreen window singleton
      *
@@ -222,6 +214,7 @@
         return null;
       }
       if (typeof this._instance == 'undefined') {
+        console.trace();
         this._instance = new HomescreenWindow(this._currentManifestURL);
         window.performance.mark('launchHomescreen');
         return this._instance;

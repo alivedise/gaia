@@ -13,11 +13,6 @@
     'js/media_playback.js'
   ];
 
-  Core.EVENTS = [
-    'ftuopen',
-    'ftuskip'
-  ];
-
   Core.SIDE_MODULES = [
     'Notifications',
     'AirplaneMode',
@@ -59,9 +54,7 @@
     'WallpaperManager',
     'LayoutManager',
     'SoftwareButtonManager',
-    'AppCore',
-    'SettingsCore',
-    'VersionChecker'
+    'AppCore'
   ];
 
   Core.SERVICES = [

@@ -11,7 +11,7 @@
 
 (function(exports) {
   // Turn on this flag to debug all windows.
-  var DEBUG = true;
+  var DEBUG = false;
   // Turn on this flag to print all trace in debugging function.
   var TRACE = false;
   var _id = 0;

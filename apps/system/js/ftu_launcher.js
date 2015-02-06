@@ -11,8 +11,7 @@
     'iac-ftucomms',
     'appterminated',
     'lockscreen-appopened',
-    'appopened',
-    'osversionready'
+    'appopened'
   ];
   FtuLauncher.IMPORTS = [
     'shared/js/uuid.js',
@@ -24,7 +23,9 @@
     'getFtuOrigin'
   ];
   FtuLauncher.SERVICES = [
-    'stepReady'
+    'stepReady',
+    'skip',
+    'launch'
   ];
   FtuLauncher.SUB_MODULES = [
     'NewsletterManager'
@@ -118,6 +119,27 @@
       return true;
     },
 
+    launch: function(manifestURL) {
+      this._ftuManifestURL = manifestURL;
+      if (!manifestURL) {
+        dump('FTU manifest cannot be found, skipping.\n');
+        this.skip();
+        return;
+      }
+
+      var ftu = this._ftu = applications.getByManifestURL(manifestURL);
+      if (!ftu) {
+        dump('Opps, bogus FTU manifest.\n');
+        this.skip();
+        return;
+      }
+
+      this._isRunningFirstTime = true;
+      this._ftuOrigin = ftu.origin;
+      // Open FTU
+      ftu.launch();
+    },
+
     respondToHierarchyEvent: function(evt) {
       if (this['_handle_' + evt.type]) {
         return this['_handle_' + evt.type](evt);
@@ -171,33 +193,8 @@
       this.finish();
     },
 
-    launch: function fl_launch() {
-      var self = this;
-      this.readSetting('ftu.manifestURL').then(function(value) {
-        var manifestURL = value;
-
-        self._ftuManifestURL = manifestURL;
-        if (!manifestURL) {
-          dump('FTU manifest cannot be found, skipping.\n');
-          self.skip();
-          return;
-        }
-
-        var ftu = self._ftu = applications.getByManifestURL(manifestURL);
-        if (!ftu) {
-          dump('Opps, bogus FTU manifest.\n');
-          self.skip();
-          return;
-        }
-
-        self._isRunningFirstTime = true;
-        self._ftuOrigin = ftu.origin;
-        // Open FTU
-        ftu.launch();
-      });
-    },
-
     skip: function fl_skip() {
+      window.performance.mark('ftuSkip');
       this._isRunningFirstTime = false;
       this._isUpgrading = false;
       this._skipped = true;
@@ -215,28 +212,6 @@
       });
     },
 
-    _handle_osversionready: function() {
-      window.performance.mark('versionGetted');
-      if (this.service.query('isUprading')) {
-        this._isUpgrading = true;
-        this.launch();
-      } else {
-        var self = this;
-
-        window.performance.mark('ftuEnableGetting');
-        window.asyncStorage.getItem('ftu.enabled', function(shouldFTU) {
-          window.performance.mark('ftuEnableGetted');
-          self._isUpgrading = false;
-          // launch full FTU when enabled
-          if (shouldFTU !== false) {
-            self.launch();
-          } else {
-            self.skip();
-          }
-        });
-      }
-    },
-
     // Check if the FTU was executed or not, if not, get a
     // reference to the app and launch it.
     retrieve: function fl_retrieve() {
@@ -245,11 +220,6 @@
       }
 
       this._ftuPing.ensurePing();
-
-      // launch FTU when a version upgrade is detected
-      if (this.service.query('VersionChecker.ready')) {
-        this._handle_osversionready();
-      }
     }
   });
 }());

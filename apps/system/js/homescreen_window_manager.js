@@ -12,7 +12,6 @@
   function HomescreenWindowManager() {}
   HomescreenWindowManager.EVENTS = [
     'appswitching',
-    'ftuskip',
     'open-app',
     'webapps-launch'
   ];
@@ -45,14 +44,6 @@
       this.getHomescreen().fadeOut();
     },
 
-    _handle_ftuskip: function() {
-      // XXX: There's a race between lockscreenWindow and homescreenWindow.
-      // If lockscreenWindow is instantiated before homescreenWindow,
-      // we should not display the homescreen here.
-      if (this.service.query('locked')) {
-        this.getHomescreen().setVisible(false);
-      }
-    },
     '_handle_open-app': function(evt) {
       this._handle_launch_homescreen(evt);
     },
@@ -75,7 +66,7 @@
      * @memberOf HomescreenWindowManager.prototype
      */
     getHomescreen: function getHomescreen(isHomeEvent) {
-      if (!this.homescreenLauncher || !this.homescreenLauncher.ready) {
+      if (!this.homescreenLauncher) {
         return null;
       }
       var home  = this.homescreenLauncher.getHomescreen(true);

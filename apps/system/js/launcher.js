@@ -1,0 +1,57 @@
+/* global BaseModule */
+'use strict';
+
+(function() {
+  var Launcher = function() {};
+  Launcher.SETTINGS = [
+    'ftu.manifestURL',
+    'homescreen.manifestURL',
+    'deviceinfo.previous_os',
+    'deviceinfo.os',
+    'lockscreen.enabled'
+  ];
+  BaseModule.create(Launcher, {
+    name: 'Launcher',
+    DEBUG: true,
+    ready: function() {
+      this._version = {};
+      return Promise.all([
+        this.readFtu(),
+        this.readSetting('homescreen.manifestURL'),
+        this.readSetting('ftu.manifestURL'),
+        this.readSetting('deviceinfo.os'),
+        this.readSetting('deviceinfo.previous_os')
+      ]).then(function(results) {
+        window.performance.mark('homescreenManifestURL');
+        window.performance.mark('ftuManifestURL');
+        window.performance.mark('versionGetted');
+        if (this.isUpgrading(results[4], results[3])) {
+          this.service.request('FtuLauncher:launch');
+        } else {
+          if (results[0]) {
+            this.service.request('FtuLauncher:launch', results[2]);
+          } else {
+            this.service.request('FtuLauncher:skip');
+            this.service.request('HomescreenLauncher:launch', results[1]);
+          }
+        }
+      }.bind(this));
+    },
+    isUpgrading: function(prev, curr) {
+      var isUpgrade = false;
+      // dont treat lack of previous version info as an upgrade
+      if (prev && curr) {
+        isUpgrade = curr.major > prev.major || curr.minor > prev.minor;
+      }
+      return isUpgrade;
+    },
+    'readFtu': function() {
+      return new Promise(function(resolve) {
+        window.asyncStorage.getItem('ftu.enabled', function(shouldFTU) {
+          window.performance.mark('ftuEnableGetted');
+          resolve(shouldFTU);
+        });
+      });
+    }
+  });
+}());
