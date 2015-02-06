@@ -17,17 +17,17 @@
     _start: function() {
       this._version = {};
     },
-    '_observer_deviceinfo.os': function(value) {
+    '_observe_deviceinfo.os': function(value) {
       var ready = this.ready();
       this._version.current = value;
-      if (!ready && this.ready) {
+      if (!ready && this.ready()) {
         this.publish('ready');
       }
     },
-    '_observer_deviceinfo.previous_os': function(value) {
+    '_observe_deviceinfo.previous_os': function(value) {
       var ready = this.ready();
       this._version.previous = value;
-      if (!ready && this.ready) {
+      if (!ready && this.ready()) {
         this.publish('ready');
       }
     },
