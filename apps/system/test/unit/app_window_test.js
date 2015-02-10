@@ -1201,10 +1201,26 @@ suite('system/AppWindow', function() {
       injectFakeMozBrowserAPI(app1.browser.element);
       var stub_showFrame = this.sinon.stub(app1,
         '_showFrame');
+      this.sinon.stub(app1, 'setNFCFocus');
 
+      MockService.mTopMostWindow = app1;
       app1.setVisible(true);
       assert.isFalse(app1.screenshotOverlay.classList.contains('visible'));
       assert.isTrue(stub_showFrame.called);
+
+      assert.isTrue(app1.setNFCFocus.calledWith(true));
+    });
+
+    test('setVisible: true while we are not top most', function() {
+      var app1 = new AppWindow(fakeAppConfig1);
+      var app2 = new AppWindow(fakeAppConfig2);
+      injectFakeMozBrowserAPI(app1.browser.element);
+      this.sinon.stub(app1, 'setNFCFocus');
+
+      MockService.mTopMostWindow = app2;
+      app1.setVisible(true);
+
+      assert.isFalse(app1.setNFCFocus.called);
     });
 
     test('setVisible: false', function() {
@@ -1212,9 +1228,11 @@ suite('system/AppWindow', function() {
       injectFakeMozBrowserAPI(app1.browser.element);
       var stub_hideFrame = this.sinon.stub(app1,
         '_hideFrame');
+      this.sinon.stub(app1, 'setNFCFocus');
 
       app1.setVisible(false);
       assert.isTrue(stub_hideFrame.called);
+      assert.isTrue(app1.setNFCFocus.calledWith(false));
     });
 
     test('setVisible to front window', function() {
