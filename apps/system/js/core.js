@@ -44,7 +44,10 @@
     'FindmydeviceLauncher', // nonblocking
     'FxaManager', // nonblocking
     'FxaUi', // nonblocking
-    'NetworkActivity'
+    'NetworkActivity',
+    'CrashReporter',
+    'Screenshot',
+    'SoundManager'
   ];
 
   Core.SUB_MODULES = [

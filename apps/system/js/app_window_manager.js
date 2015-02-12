@@ -1,4 +1,4 @@
-/* global Service, ShrinkingUI, BaseModule */
+/* global Service, ShrinkingUI, BaseModule, LazyLoader */
 'use strict';
 
 (function(exports) {
@@ -76,7 +76,9 @@
     'TaskManager',
     'Places',
     'SuspendingAppPriorityManager',
-    'AppInstallManager'
+    'AppInstallManager',
+    'Updatable',
+    'UpdateManager'
   ];
   AppWindowManager.SUB_MODULES = [
     'FtuLauncher',
@@ -457,6 +459,17 @@
       if (this.service.query('getTopMostUI') !== this) {
         return;
       }
+      if (!window.ShrinkingUI) {
+        LazyLoader.load(['shared/js/shrinking_ui.js']).then(
+          this.launchShrinkingUI.call(this)).catch(function(err) {
+            console.error(err);
+          });
+      } else {
+        this.launchShrinkingUI();
+      }
+    },
+
+    launchShrinkingUI: function() {
       var bottomMost = this._activeApp.getBottomMostWindow();
       this.shrinkingUI = new ShrinkingUI(bottomMost.element,
         bottomMost.element.parentNode);

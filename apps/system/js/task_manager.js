@@ -1,4 +1,4 @@
-/* global Card, eventSafety, SettingsListener,
+/* global Card, eventSafety, SettingsListener, LazyLoader,
           Service, homescreenLauncher, StackManager */
 
 (function(exports) {
@@ -332,11 +332,23 @@
       windowWidth: this.windowWidth,
       windowHeight: this.windowHeight
     };
+    if (!window.Card) {
+      LazyLoader.load(['js/card.js', 'js/card_helper.js']).then(
+        this.instantiateCard.call(this, config)).catch(
+          function (err) { console.error(err);
+        });
+    } else {
+      this.instantiateCard(config);
+    }
+  };
+
+  TaskManager.prototype.instantiateCard = function(config) {
     var card = new Card(config);
-    this.cardsByAppID[app.instanceID] = card;
+    this.cardsByAppID[config.app.instanceID] = card;
     this.cardsList.appendChild(card.render());
 
-    if (position <= this.position - 2 || position >= this.position + 2) {
+    if (config.position <= this.position - 2 ||
+        config.position >= this.position + 2) {
       card.element.style.visibility = 'hidden';
     }
   };
