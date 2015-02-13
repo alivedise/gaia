@@ -1,0 +1,82 @@
+'use strict';
+
+(function() {
+  var FILES = [
+    'js/core.js',
+    'js/screen_auto_brightness.js',
+    'js/screen_brightness_transition.js',
+    'js/screen_manager.js',
+    'js/async_semaphore.js',
+    'js/browser_key_event_manager.js',
+    'js/hardware_buttons.js',
+    'js/system_banner.js',
+    'js/ime_menu.js',
+    'js/utility_tray.js',
+    'js/statusbar.js',
+    'js/lockscreen_agent.js',
+    '/shared/js/lockscreen_slide.js',
+    '/shared/js/lockscreen_connection_info_manager.js',
+    'js/lockscreen_notification_builder.js',
+    'js/value_selector/value_picker.js',
+    'js/value_selector/spin_date_picker.js',
+    'js/value_selector/value_selector.js',
+    'shared/js/input_parser.js',
+    'js/value_selector/trusted_ui_value_selector.js',
+    'js/modal_dialog.js',
+    'js/browser_context_menu.js',
+    'js/child_window_factory.js',
+    'js/app_modal_dialog.js',
+    'js/app_chrome.js',
+    'js/attention_toaster.js',
+    'js/app_statusbar.js',
+    'js/app_transition_controller.js',
+    'js/app_authentication_dialog.js',
+    'js/popup_window.js',
+    'js/browser_mixin.js',
+    'js/wrapper_factory.js',
+    'js/homescreen_window.js',
+    'js/activity_window.js',
+    'js/attention_window.js',
+    'js/global_overlay_window.js',
+    'js/trusted_window.js',
+    'js/callscreen_window.js',
+    'js/app_window_manager.js',
+    'js/secure_window.js',
+    'js/system_dialog.js',
+    'js/devtools/devtools_auth_dialog.js',
+    'js/fxa_dialog.js',
+    'js/lockscreen_window.js',
+    'js/lockscreen_input_window.js',
+    'js/input_window.js',
+    'js/ime_switcher.js',
+    'js/input_window_manager.js',
+    'js/input_layouts.js',
+    'js/keyboard_manager.js',
+    'js/touch_forwarder.js',
+    'js/orientation_manager.js',
+    'js/hierarchy_manager.js',
+    'js/system_dialog_manager.js',
+    'js/wallpaper_manager.js',
+    'js/layout_manager.js',
+    'js/software_button_manager.js',
+    'js/ftu_launcher.js',
+    'js/app_window_factory.js',
+    'js/app_window_manager.js',
+    'js/homescreen_window_manager.js',
+    'js/homescreen_launcher.js',
+    'js/search_window.js',
+    'js/settings_core.js',
+    'js/app_core.js',
+    'js/launcher.js'
+  ];
+  LazyLoader.load(FILES).then(function() {
+    window.performance.mark('loadEnd');
+    window.settingsCore = BaseModule.instantiate('SettingsCore');
+    window.settingsCore.start();
+    window.launcher = BaseModule.instantiate('Launcher');
+    window.launcher.ready().then(function() {
+    window.performance.mark('launcherReady');
+    window.core = BaseModule.instantiate('Core');
+    window.core && window.core.start();
+  });
+}());

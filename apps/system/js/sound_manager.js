@@ -208,7 +208,7 @@
    * @memberOf SoundManager.prototype
    * @type {AsyncSemaphore}
    */
-  SoundManager.prototype.pendingRequest = new AsyncSemaphore();
+  SoundManager.prototype.pendingRequest = null;
 
   /**
    * To tell if the homescreen is visible.
@@ -248,6 +248,7 @@
    * @returns {SoundManager}
    */
   SoundManager.prototype.start = function sm_start() {
+    this.pendingRequest = new window.AsyncSemaphore();
     this.element = document.getElementById('volume');
     this.screen = document.getElementById('screen');
     this.overlay = document.getElementById('system-overlay');

@@ -134,6 +134,8 @@
 
     <!--Shared
     <!-- Lazy loaded shared --
+     <script defer src="shared/js/event_safety.js"></script>
+     <script defer src="shared/js/notification_helper.js"></script>
      <script defer src="shared/js/nfc_utils.js"></script>
      <script defer src="shared/js/shrinking_ui.js"></script>
      <script defer src="shared/js/operator_variant_helper.js"></script>
@@ -886,11 +888,9 @@
 
     </div> <!-- end of #screen -->
 
-    <script defer src="shared/js/event_safety.js"></script>
     <script defer src="shared/js/gesture_detector.js"></script>
     <script defer src="shared/js/settings_listener.js"></script>
     <script defer src="shared/js/custom_dialog.js"></script>
-    <script defer src="shared/js/notification_helper.js"></script>
     <script defer src="shared/js/async_storage.js"></script>
     <script defer src="shared/js/mobile_operator.js"></script>
     <script defer src="shared/js/manifest_helper.js"></script>
@@ -910,82 +910,15 @@
     <script defer src="shared/js/date_time_helper.js"></script>
     <script defer src="shared/js/url_helper.js"></script>
 
+    <script defer src="js/wake_lock_manager.js"></script>
     <script defer src="js/service.js"></script>
     <script defer src="js/base_module.js"></script>
     <script defer src="js/base_ui.js"></script>
-    <script defer src="js/core.js"></script>
-    <script defer src="js/wake_lock_manager.js"></script>
-    <script defer src="js/screen_auto_brightness.js"></script>
-    <script defer src="js/screen_brightness_transition.js"></script>
-    <script defer src="js/screen_manager.js"></script>
-    <script defer src="js/bootstrap.js"></script>
-    <script defer src="js/async_semaphore.js"></script>
-    <script defer src="js/browser_key_event_manager.js"></script>
-    <script defer src="js/hardware_buttons.js"></script>
-    <script defer src="js/system_banner.js"></script>
-    <script defer src="js/action_menu.js"></script>
-    <script defer src="js/ime_menu.js"></script>
-    <script defer src="js/utility_tray.js"></script>
     <script defer src="js/base_icon.js"></script>
-    <script defer src="js/statusbar.js"></script>
-    <script defer src="js/lockscreen_agent.js"></script>
-    <script defer src="/shared/js/lockscreen_slide.js"></script>
-    <script defer src="/shared/js/lockscreen_connection_info_manager.js"></script>
-    <script defer src="js/lockscreen_notification_builder.js"></script>
-    <script defer src="js/value_selector/value_picker.js"></script>
-    <script defer src="js/value_selector/spin_date_picker.js"></script>
-    <script defer src="js/value_selector/value_selector.js"></script>
-    <script defer src="shared/js/input_parser.js"></script>
-    <script defer src="js/value_selector/trusted_ui_value_selector.js"></script>
     <script defer src="js/browser_config_helper.js"></script>
     <script defer src="js/browser_frame.js"></script>
-    <script defer src="js/modal_dialog.js"></script>
-
-    <script defer src="js/browser_context_menu.js"></script>
-    <script defer src="js/child_window_factory.js"></script>
-    <script defer src="js/app_modal_dialog.js"></script>
-    <script defer src="js/app_chrome.js"></script>
-    <script defer src="js/attention_toaster.js"></script>
-    <script defer src="js/app_statusbar.js"></script>
-    <script defer src="js/app_transition_controller.js"></script>
-    <script defer src="js/app_authentication_dialog.js"></script>
     <script defer src="js/app_window.js"></script>
-    <script defer src="js/popup_window.js"></script>
-    <script defer src="js/browser_mixin.js"></script>
-    <script defer src="js/wrapper_factory.js"></script>
-    <script defer src="js/homescreen_window.js"></script>
-    <script defer src="js/activity_window.js"></script>
-    <script defer src="js/attention_window.js"></script>
-    <script defer src="js/global_overlay_window.js"></script>
-    <script defer src="js/trusted_window.js"></script>
-    <script defer src="js/callscreen_window.js"></script>
-    <script defer src="js/app_window_manager.js"></script>
-    <script defer src="js/secure_window.js"></script>
-    <script defer src="js/system_dialog.js"></script>
-    <script defer src="js/devtools/devtools_auth_dialog.js"></script>
-    <script defer src="js/fxa_dialog.js"></script>
-    <script defer src="js/lockscreen_window.js"></script>
-    <script defer src="js/lockscreen_input_window.js"></script>
-    <script defer src="js/input_window.js"></script>
-    <script defer src="js/ime_switcher.js"></script>
-    <script defer src="js/input_window_manager.js"></script>
-    <script defer src="js/input_layouts.js"></script>
-    <script defer src="js/keyboard_manager.js"></script>
-    <script defer src="js/touch_forwarder.js"></script>
-    <script defer src="js/orientation_manager.js"></script>
-    <script defer src="js/hierarchy_manager.js"></script>
-    <script defer src="js/system_dialog_manager.js"></script>
-    <script defer src="js/wallpaper_manager.js"></script>
-    <script defer src="js/layout_manager.js"></script>
-    <script defer src="js/software_button_manager.js"></script>
-    <script defer src="js/ftu_launcher.js"></script>
-    <script defer src="js/app_window_factory.js"></script>
-    <script defer src="js/app_window_manager.js"></script>
-    <script defer src="js/homescreen_window_manager.js"></script>
-    <script defer src="js/homescreen_launcher.js"></script>
-    <script defer src="js/search_window.js"></script>
-    <script defer src="js/settings_core.js"></script>
-    <script defer src="js/app_core.js"></script>
-    <script defer src="js/launcher.js"></script>
+    <script defer src="js/action_menu.js"></script>
+    <script defer src="js/startup.js"></script>
   </body>
 </html>
