@@ -1,7 +1,13 @@
+/* global BaseModule, LazyLoader */
 'use strict';
 
 (function() {
   var Startup = {
+    FILES_01: [
+      'js/core.js',
+      'js/launcher.js',
+      'js/settings_core.js'
+    ],
     FILES: [
       'js/core.js',
       'js/screen_brightness_transition.js',
@@ -87,7 +93,7 @@
       });
     },
     _lazyLoad: function() {
-      LazyLoader.load(this.FILES).then(function() {
+      LazyLoader.load(this.FILES_01).then(function() {
         this.bootstrap();
       }.bind(this)).catch(function(err) {
         console.log(err);
