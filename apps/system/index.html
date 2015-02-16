@@ -20,6 +20,7 @@
          in order to catch webapps-registry-ready mozChromeEvent -->
     <script src="js/applications.js"></script>
     <!-- Not deferring the following to show startup logo/animation as soon as possible. -->
+    <script src="js/service.js"></script>
     <script src="js/logo_loader.js"></script>
     <script src="js/init_logo_handler.js"></script>
 
@@ -119,7 +120,6 @@
 
     <link rel="stylesheet" type="text/css" href="style/edges/edges.css">
     <link rel="stylesheet" type="text/css" href="style/entry_sheet/entry_sheet.css">
-    <script defer src="js/entry_sheet.js"></script>
     <link rel="stylesheet" type="text/css" href="style/devtools/developer_hud.css">
     <link rel="stylesheet" type="text/css" href="style/devtools/devtools_auth.css">
     <link rel="stylesheet" type="text/css" href="style/zindex.css">
@@ -161,6 +161,10 @@
      <script defer src="/shared/js/download/download_store.js">
      <script defer src="/shared/js/icons_helper.js">
      <script defer src="shared/js/url_helper.js"></script>
+     <script defer src="shared/js/date_time_helper.js"></script>
+     <script defer src="shared/js/input_parser.js"></script>
+     <script defer src="shared/js/lockscreen_slide.js"></script>
+     <script defer src="shared/js/lockscreen_connection_info_manager.js"></script>
     -->
   </head>
 
@@ -895,23 +899,15 @@
     <script defer src="shared/js/async_storage.js"></script>
     <script defer src="shared/js/mobile_operator.js"></script>
     <script defer src="shared/js/manifest_helper.js"></script>
-    <script defer src="shared/js/icc_helper.js"></script>
-    <script defer src="shared/js/mime_mapper.js"></script>
     <script defer src="shared/js/settings_url.js"></script>
-    <script defer src="shared/js/advanced_timer.js"></script>
     <script defer src="shared/js/lazy_loader.js"></script>
     <script defer src="shared/js/screen_layout.js"></script>
-    <script defer src="shared/js/iac_handler.js"></script>
-    <script defer src="shared/js/apn_helper.js"></script>
     <script defer src="shared/js/tagged.js"></script>
     <script defer src="shared/js/utilities.js"></script>
     <script defer src="shared/js/version_helper.js"></script>
     <script defer src="shared/js/font_size_utils.js"></script>
-    <!-- XXX can be removed while gecko support navigator.mozHour12 API -->
-    <script defer src="shared/js/date_time_helper.js"></script>
 
     <script defer src="js/wake_lock_manager.js"></script>
-    <script defer src="js/service.js"></script>
     <script defer src="js/base_module.js"></script>
     <script defer src="js/base_ui.js"></script>
     <script defer src="js/base_icon.js"></script>

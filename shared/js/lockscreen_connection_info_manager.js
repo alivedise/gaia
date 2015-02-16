@@ -59,7 +59,7 @@
       this._settings = navigator.mozSettings;
 
       this._connStates.hidden = false;
-      SIMSlotManager.getSlots().forEach(function(simslot, index) {
+      window.SIMSlotManager.getSlots().forEach(function(simslot, index) {
         // connection state
         this._connStates.appendChild(this._createConnStateElement());
         simslot.conn.addEventListener('voicechange',
@@ -146,7 +146,7 @@
    */
   LockScreenConnInfoManagerPrototype.updateConnStates =
     function lscs_updateConnStates() {
-      SIMSlotManager.getSlots().forEach((function(simslot) {
+      window.SIMSlotManager.getSlots().forEach((function(simslot) {
         this.updateConnState(simslot);
       }).bind(this));
   };
@@ -199,7 +199,7 @@
       connstate.hidden = false;
 
       // Set sim ID line
-      if (SIMSlotManager.isMultiSIM()) {
+      if (window.SIMSlotManager.isMultiSIM()) {
         simIDLine.hidden = false;
         lineText(simIDLine, 'lockscreen-sim-id', {n: (index + 1)});
       } else {
@@ -233,7 +233,7 @@
       }
 
       // If there is no sim card on the device, we only show one information.
-      if (SIMSlotManager.noSIMCardOnDevice()) {
+      if (window.SIMSlotManager.noSIMCardOnDevice()) {
         if (index === 0) {
           if (voice.emergencyCallsOnly) {
             lineText(nextLine(), 'emergencyCallsOnly');
@@ -244,7 +244,7 @@
         }
         simIDLine.hidden = true;
         return;
-      } else if (SIMSlotManager.noSIMCardConnectedToNetwork()) {
+      } else if (window.SIMSlotManager.noSIMCardConnectedToNetwork()) {
         if (index === 0) {
           lineText(nextLine(), 'emergencyCallsOnly');
         }
@@ -254,7 +254,7 @@
 
       // If there are multiple sim slots and only one sim card inserted, we
       // only show the state of the inserted sim card.
-      if (SIMSlotManager.isMultiSIM() &&
+      if (window.SIMSlotManager.isMultiSIM() &&
           navigator.mozIccManager.iccIds.length == 1 &&
           simslot.isAbsent()) {
         connstate.hidden = true;

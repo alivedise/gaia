@@ -34,7 +34,7 @@
       var dummy = document.createElement('div');
       var _ = navigator.mozL10n ? navigator.mozL10n.get : function(){};
 
-      dummy.innerHTML = Template('ime-menu-template').interpolate({
+      dummy.innerHTML = window.Template('ime-menu-template').interpolate({
         title: this.title,
         cancelLabel: _('cancel'),
         settingsLabel: _('ime-settings')
@@ -82,7 +82,7 @@
      */
     buildMenu: function(items) {
       this.menu.innerHTML = '';
-      var itemTemplate = new Template('ime-menu-item-template');
+      var itemTemplate = new window.Template('ime-menu-item-template');
 
       items.forEach(function traveseItems(item) {
         this.menu.innerHTML += itemTemplate.interpolate({

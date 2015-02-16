@@ -36,7 +36,7 @@ TrustedUiValueSelector.prototype.stop = function() {
 };
 
 TrustedUiValueSelector.prototype.render = function() {
-  this.valueSelector = new ValueSelector(this);
+  this.valueSelector = new window.ValueSelector(this);
 };
 
 TrustedUiValueSelector.prototype.handleEvent = function(evt) {

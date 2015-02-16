@@ -129,7 +129,7 @@
       origin: this.app.origin,
       rearWindow: this.app
     };
-    var childWindow = new PopupWindow(configObject);
+    var childWindow = new window.PopupWindow(configObject);
     childWindow.element.addEventListener('_closing', this);
     childWindow.open();
     return true;
@@ -175,7 +175,7 @@
       configObject.name = '';
       configObject.origin = evt.detail.url;
     }
-    var childWindow = new AppWindow(configObject);
+    var childWindow = new window.AppWindow(configObject);
     childWindow.requestOpen();
     return true;
   };
@@ -193,7 +193,7 @@
     }
 
     var attentionFrame = evt.detail.frameElement;
-    var attention = new AttentionWindow({
+    var attention = new window.AttentionWindow({
       iframe: attentionFrame,
       url: evt.detail.url,
       name: evt.detail.name,
@@ -215,7 +215,7 @@
     }
 
     var overlayFrame = evt.detail.frameElement;
-    var overlay = new GlobalOverlayWindow({
+    var overlay = new window.GlobalOverlayWindow({
       iframe: overlayFrame,
       url: evt.detail.url,
       name: evt.detail.name,
@@ -254,7 +254,7 @@
         top.url == configuration.url) {
       return;
     }
-    var activity = new ActivityWindow(configuration, top);
+    var activity = new window.ActivityWindow(configuration, top);
     activity.element.addEventListener('_closing', this);
     activity.open();
   };
@@ -262,7 +262,7 @@
   ChildWindowFactory.prototype.createTrustedWindow = function(evt) {
     var configuration = evt.detail;
     var top = this.app.getTopMostWindow();
-    var trusted = new TrustedWindow(configuration, top);
+    var trusted = new window.TrustedWindow(configuration, top);
     trusted.element.addEventListener('_closing', this);
     trusted.open();
   };

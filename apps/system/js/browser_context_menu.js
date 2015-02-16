@@ -354,7 +354,7 @@
         callback: this.showWindows.bind(this)
       });
 
-      BookmarksDatabase.get(config.url).then((result) => {
+      window.BookmarksDatabase.get(config.url).then((result) => {
         if (!result) {
           menuData.push({
             id: 'add-to-homescreen',

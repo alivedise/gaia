@@ -8,7 +8,7 @@
     this.containerElement = app.element;
     this.render();
     this._fetchAllElements();
-    this._touchForwarder = new TouchForwarder();
+    this._touchForwarder = new window.TouchForwarder();
     this._touchForwarder.destination = this.app.browser.element;
   };
 

@@ -10,7 +10,8 @@
   IccCore.IMPORTS = [
     'js/icc_events.js',
     'js/icc_worker.js',
-    'shared/js/advanced_timer.js'
+    'shared/js/advanced_timer.js',
+    'shared/js/icc_helper.js'
   ];
   IccCore.SUB_MODULES = [
     'Icc'

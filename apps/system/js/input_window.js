@@ -48,7 +48,7 @@
 
   // use only the transition controller as the sub component
   InputWindow.SUB_COMPONENTS = {
-    'transitionController': AppTransitionController
+    'transitionController': window.AppTransitionController
   };
 
   InputWindow.prototype.containerElement = document.getElementById('keyboards');

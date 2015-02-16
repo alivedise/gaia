@@ -136,7 +136,7 @@ var ScreenManager = {
 
     this.screen = document.getElementById('screen');
 
-    this._screenBrightnessTransition = new ScreenBrightnessTransition();
+    this._screenBrightnessTransition = new window.ScreenBrightnessTransition();
 
     var self = this;
     var power = navigator.mozPower;
@@ -148,7 +148,7 @@ var ScreenManager = {
     // Noted that getting a lock while the screen is off will not
     // turn on the screen, since no frame is considered visible by Gecko when
     // the screen is off. See discussion in bug 818840.
-    this._wakeLockManager = new ScreenWakeLockManager();
+    this._wakeLockManager = new window.ScreenWakeLockManager();
     this._wakeLockManager.onwakelockchange =
       this._reconfigScreenTimeout.bind(this);
     this._wakeLockManager.start();

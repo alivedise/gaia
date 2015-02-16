@@ -528,7 +528,7 @@
       self.element.removeEventListener('transitionend', endBackgroundFade);
     };
     this.element.addEventListener('transitionend', endBackgroundFade);
-    eventSafety(this.element, 'transitionend', endBackgroundFade, 1000);
+    window.eventSafety(this.element, 'transitionend', endBackgroundFade, 1000);
 
     window.requestAnimationFrame(function updateAppColor() {
       if (finishedFade || !self.element) {
@@ -698,7 +698,7 @@
       }
       callback();
     };
-    eventSafety(element, 'transitionend', finish, 250);
+    window.eventSafety(element, 'transitionend', finish, 250);
   };
 
   AppChrome.prototype.collapse = function ac_collapse() {
@@ -779,7 +779,7 @@
       data.options.push({ id: 'origin', text: this.title.textContent });
     }
 
-    ModalDialog.selectOne(data, selected);
+    window.ModalDialog.selectOne(data, selected);
   };
 
   AppChrome.prototype.showWindows = function ac_showWindows() {

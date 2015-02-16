@@ -66,7 +66,7 @@
         if (previousManifestURL !== '' &&
             previousManifestURL !== this._currentManifestURL) {
           this._instance.kill();
-          this._instance = new HomescreenWindow(value);
+          this._instance = new window.HomescreenWindow(value);
           // Dispatch 'homescreen is changed' event.
           this.publish('changed');
         } else {
@@ -161,7 +161,7 @@
       }
       if (typeof this._instance == 'undefined') {
         console.trace();
-        this._instance = new HomescreenWindow(this._currentManifestURL);
+        this._instance = new window.HomescreenWindow(this._currentManifestURL);
         window.performance.mark('launchHomescreen');
         return this._instance;
       } else {

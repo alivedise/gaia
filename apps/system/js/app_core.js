@@ -44,10 +44,10 @@
         if (window.inputWindowManager) {
           return;
         }
-        window.inputWindowManager = new InputWindowManager();
+        window.inputWindowManager = new window.InputWindowManager();
         window.inputWindowManager.start();
         /** @global */
-        KeyboardManager.init();
+        window.KeyboardManager.init();
       }
 
       window.performance.mark('appCoreStart');

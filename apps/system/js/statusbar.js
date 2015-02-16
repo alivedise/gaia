@@ -213,7 +213,9 @@ var StatusBar = {
 
     this.statusbarIcons.addEventListener('wheel', this);
 
-    UtilityTray.init();
+    LazyLoader.load(['js/utility_tray.js']).then(function() {
+      window.UtilityTray.init();
+    });
   },
 
   handleEvent: function sb_handleEvent(evt) {
@@ -533,7 +535,7 @@ var StatusBar = {
     }
 
     // Do not forward events is utility-tray is active
-    if (UtilityTray.active) {
+    if (window.UtilityTray && window.UtilityTray.active) {
       return;
     }
 

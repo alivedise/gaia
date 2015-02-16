@@ -108,7 +108,9 @@
             'js/download/download_manager.js',
             'js/payment.js',
             'js/identity.js',
-            'js/devtools/logshake.js'
+            'js/devtools/logshake.js',
+            'js/entry_sheet.js',
+            'shared/js/date_time_helper.js'
           ]);
         }
       };
@@ -116,7 +118,7 @@
     },
 
     _start: function() {
-      ScreenManager.turnScreenOn();
+      window.ScreenManager && window.ScreenManager.turnScreenOn();
       // We need to be sure to get the focus in order to wake up the screen
       // if the phone goes to sleep before any user interaction.
       // Apparently it works because no other window

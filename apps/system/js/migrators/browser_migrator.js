@@ -217,7 +217,7 @@ BrowserMigrator.prototype = {
       icon: nextBookmark.iconUri
     };
 
-    BookmarksDatabase.add(descriptor).then(() => {
+    window.BookmarksDatabase.add(descriptor).then(() => {
       this._iteratePendingBookmarks();
     });
   }

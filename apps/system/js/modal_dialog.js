@@ -154,7 +154,7 @@ var ModalDialog = {
 
   updateHeight: function sd_updateHeight() {
     var height = (Service.query('LayoutManager.height') || window.innerHeight) -
-      StatusBar.height;
+      window.StatusBar.height;
     this.overlay.style.height = height + 'px';
   },
 

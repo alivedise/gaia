@@ -1,4 +1,4 @@
-/* global SettingsListener, Service, rocketbar */
+/* global SettingsListener, Service */
 'use strict';
 
 (function(exports) {
@@ -12,13 +12,6 @@
     'opening': [null, 'closing', 'opened', 'opened', 'opened', 'closed'],
     'closing': ['opened', null, 'closed', 'closed', 'opened', 'closed']
   };
-
-  var appTransitionSetting = 'app-transition.enabled';
-  var transitionEnabled =
-    SettingsListener.getSettingsLock().get(appTransitionSetting);
-  SettingsListener.observe(appTransitionSetting, true, function(value) {
-    transitionEnabled = value;
-  });
 
   /**
    * AppTransitionController controlls the opening and closing animation
@@ -165,11 +158,7 @@
     };
 
   AppTransitionController.prototype.getAnimationName = function(type) {
-    if (transitionEnabled) {
-      return this.currentAnimation || this[type + 'Animation'] || type;
-    } else {
-      return 'immediate';
-    }
+    return this.currentAnimation || this[type + 'Animation'] || type;
   };
 
 
@@ -289,13 +278,7 @@
   };
 
   AppTransitionController.prototype._shouldFocusApp = function() {
-    // XXX: Rocketbar losing input focus
-    // See: https://bugzilla.mozilla.org/show_bug.cgi?id=961557
-    // XXX: We should let HierarchyManager to manage the focus.
-    // See: https://bugzilla.mozilla.org/show_bug.cgi?id=1079748
-    return (this._transitionState == 'opened' &&
-            !rocketbar.active &&
-            !Service.query('SimLockManager.isActive'));
+    return (!Service.query('SimLockManager.isActive'));
   };
 
   AppTransitionController.prototype.requireOpen = function(animation) {
