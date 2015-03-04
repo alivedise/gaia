@@ -94,7 +94,7 @@
     'app-suspending.enabled'
   ];
   BaseModule.create(AppWindowManager, {
-    DEBUG: false,
+    DEBUG: true,
     name: 'AppWindowManager',
     EVENT_PREFIX: 'appwindowmanager',
     continuousTransition: false,
@@ -351,19 +351,23 @@
         var immediateTranstion = false;
         if (appNext.rotatingDegree === 90 || appNext.rotatingDegree === 270) {
           immediateTranstion = true;
+          this.debug('immediate due to perpendicular 1');
         } else if (appCurrent) {
           var degree = appCurrent.determineClosingRotationDegree();
           if (degree === 90 || degree === 270) {
             immediateTranstion = true;
+            this.debug('immediate due to perpendicular 2');
           }
         } else if (appNext.isHomescreen) {
           // If there's no active app and next app is homescreen,
           // open it right away.
+          this.debug('immediate due to home');
           immediateTranstion = true;
         }
 
         if (appNext.resized &&
             !this.service.query('match', appNext.width, appNext.height)) {
+          this.debug('immediate due to resized');
           immediateTranstion = true;
         }
 

@@ -111,6 +111,8 @@
      * @memberOf LayoutManager
      */
     match: function lm_match(width, height) {
+      console.log(width);
+      console.log(height);
       return (this.width() === width && this.height() === height);
     },
 

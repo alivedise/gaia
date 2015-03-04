@@ -1397,16 +1397,19 @@
     'portrait-primary', 'portrait-secondary', 'portrait',
     'landscape-primary', 'landscape-secondary', 'landscape', 'default'];
 
-  var OrientationRotationTable = {
-    'portrait-primary': [0, 180, 0, 90,
-              270, 90, Service.query('isDefaultPortrait') ? 0 : 90],
-    'landscape-primary': [270, 90, 270, 0,
-              180, 0, Service.query('isDefaultPortrait') ? 270 : 0],
-    'portrait-secondary': [180, 0, 180, 270,
-              90, 270, Service.query('isDefaultPortrait') ? 180 : 270],
-    'landscape-secondary': [90, 270, 90, 180,
-              0, 180, Service.query('isDefaultPortrait') ? 180 : 90]
-  };
+  function findRotationDegree(orientation1, orientation2) {
+    var OrientationRotationTable = {
+      'portrait-primary': [0, 180, 0, 90,
+                270, 90, Service.query('isDefaultPortrait') ? 0 : 90],
+      'landscape-primary': [270, 90, 270, 0,
+                180, 0, Service.query('isDefaultPortrait') ? 270 : 0],
+      'portrait-secondary': [180, 0, 180, 270,
+                90, 270, Service.query('isDefaultPortrait') ? 180 : 270],
+      'landscape-secondary': [90, 270, 90, 180,
+                0, 180, Service.query('isDefaultPortrait') ? 180 : 90]
+    };
+    return OrientationRotationTable[orientation1][orientation2];
+  }
 
   AppWindow.prototype.determineRotationDegree =
     function aw__determineRotationDegree() {
@@ -1416,10 +1419,9 @@
 
       var appOrientation = this.manifest.orientation;
       var orientation = this.determineOrientation(appOrientation);
-      var table =
-        OrientationRotationTable[
-          Service.query('defaultOrientation')];
-      var degree = table[OrientationRotationArray.indexOf(orientation)];
+      var degree = findRotationDegree(
+        Service.query('defaultOrientation'),
+        OrientationRotationArray.indexOf(orientation));
       this.rotatingDegree = degree;
       if (degree == 90 || degree == 270) {
         this.element.classList.add('perpendicular');
@@ -1437,8 +1439,8 @@
       var homeOrientation = Service.query('defaultOrientation');
       var currentOrientation = Service.query('fetchCurrentOrientation');
       this.debug(currentOrientation);
-      var table = OrientationRotationTable[homeOrientation];
-      var degree = table[OrientationRotationArray.indexOf(currentOrientation)];
+      var degree = findRotationDegree(homeOrientation,
+        OrientationRotationArray.indexOf(currentOrientation));
       return Math.abs(360 - degree) % 360;
     };
 
