@@ -72,7 +72,7 @@
 
   HomescreenWindow.prototype.constructor = HomescreenWindow;
 
-  HomescreenWindow.prototype._DEBUG = true;
+  HomescreenWindow.prototype._DEBUG = false;
 
   HomescreenWindow.prototype.CLASS_NAME = 'HomescreenWindow';
 

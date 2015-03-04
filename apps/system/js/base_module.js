@@ -108,6 +108,7 @@
     _startSideModules: function() {
       if (!this.constructor.SIDE_MODULES ||
           this.constructor.SIDE_MODULES.length === 0) {
+        this.debug('no side modules. back.');
         return;
       }
 
@@ -129,10 +130,10 @@
         return;
       }
 
-      this.debug('lazy loading submodules: ' +
+      this.debug('lazy loading side modules: ' +
         unloaded.concat());
       BaseModule.lazyLoad(unloaded).then(function() {
-        this.debug('lazy loaded submodules: ' +
+        this.debug('lazy loaded side modules: ' +
           unloaded.concat());
         unloaded.forEach(function(module) {
           var moduleName = BaseModule.lowerCapital(module);
@@ -141,7 +142,9 @@
           }
         }, this);
         this.__side_module_loaded && this.__side_module_loaded();
-      }.bind(this));
+      }.bind(this)).catch(function(err) {
+        console.error(err);
+      });
     },
 
     _initialSideModule: function(moduleName, module) {

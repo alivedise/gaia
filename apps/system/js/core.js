@@ -1,4 +1,4 @@
-/* global BaseModule, ScreenManager, LazyLoader */
+/* global BaseModule, ScreenManager, LazyLoader, RemoteDebugger */
 'use strict';
 
 (function(exports) {
@@ -14,7 +14,7 @@
   ];
 
   Core.SIDE_MODULES = [
-    'Notifications',
+    'NotificationScreen',
     'AirplaneMode',
     'NotificationsSystemMessage',
     'Accessibility',
@@ -27,8 +27,7 @@
     'AppMigrator',
     'TextSelectionDialog',
     'ExternalStorageMonitor',
-    'StorageWatcher',
-    'RemoteDebugger',
+    'DeviceStorageWatcher',
     'SleepMenu',
     'AppUsageMetrics',
     'CellBroadcastSystem',
@@ -40,10 +39,10 @@
     'QuickSettings',
     'Shortcuts',
     'UsbStorage',
-    'MobileidManager', // nonblocking
+    'MobileIdManager', // nonblocking
     'FindmydeviceLauncher', // nonblocking
-    'FxaManager', // nonblocking
-    'FxaUi', // nonblocking
+    'FxAccountsManager', // nonblocking
+    'FxAccountsUi', // nonblocking
     'NetworkActivity',
     'CrashReporter',
     'Screenshot',
@@ -65,6 +64,7 @@
   ];
 
   BaseModule.create(Core, {
+    DEBUG: true,
     name: 'Core',
 
     REGISTRY: {
@@ -109,9 +109,13 @@
             'js/payment.js',
             'js/identity.js',
             'js/devtools/logshake.js',
+            'js/devtools/remote_debugger.js',
             'js/entry_sheet.js',
             'shared/js/date_time_helper.js'
-          ]);
+          ]).then(function() {
+            this.remoteDebugger = new RemoteDebugger();
+            this.remoteDebugger.start();
+          }.bind(this));
         }
       };
       navigator.addIdleObserver(idleObserver);

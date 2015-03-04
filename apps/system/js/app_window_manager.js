@@ -94,7 +94,7 @@
     'app-suspending.enabled'
   ];
   BaseModule.create(AppWindowManager, {
-    DEBUG: true,
+    DEBUG: false,
     name: 'AppWindowManager',
     EVENT_PREFIX: 'appwindowmanager',
     continuousTransition: false,
@@ -769,14 +769,6 @@
       } else {
         callee.callerWindow = caller;
         caller.calleeWindow = callee;
-      }
-    },
-
-    debug: function awm_debug() {
-      if (this.DEBUG) {
-        console.log('[' + this.name + ']' +
-          '[' + Service.currentTime() + ']' +
-          Array.slice(arguments).concat());
       }
     },
 
