@@ -801,13 +801,13 @@
      '_closed', '_shrinkingstart', '_shrinkingstop'];
 
   AppWindow.SUB_COMPONENTS = {
-    'transitionController': window.AppTransitionController,
-    'modalDialog': window.AppModalDialog,
-    'valueSelector': window.ValueSelector,
-    'authDialog': window.AppAuthenticationDialog,
-    'contextmenu': window.BrowserContextMenu,
-    'childWindowFactory': window.ChildWindowFactory,
-    'statusbar': window.AppStatusbar
+    'transitionController': 'AppTransitionController',
+    'modalDialog': 'AppModalDialog',
+    'valueSelector': 'ValueSelector',
+    'authDialog': 'AppAuthenticationDialog',
+    'contextmenu': 'BrowserContextMenu',
+    'childWindowFactory': 'ChildWindowFactory',
+    'statusbar': 'AppStatusbar'
   };
 
   AppWindow.prototype.openAnimation = 'enlarge';
@@ -834,7 +834,7 @@
       for (var componentName in this.constructor.SUB_COMPONENTS) {
         if (this.constructor.SUB_COMPONENTS[componentName]) {
           this[componentName] =
-            new this.constructor.SUB_COMPONENTS[componentName](this);
+            new window[this.constructor.SUB_COMPONENTS[componentName]](this);
           this[componentName].start && this[componentName].start();
         }
       }

@@ -77,8 +77,8 @@
   CallscreenWindow.prototype.closeAnimation = 'slide-to-top';
 
   CallscreenWindow.SUB_COMPONENTS = {
-    'transitionController': window.AppTransitionController,
-    'attentionToaster': window.AttentionToaster
+    'transitionController': 'AppTransitionController',
+    'attentionToaster': 'AttentionToaster'
   };
 
   CallscreenWindow.REGISTERED_EVENTS =

@@ -176,13 +176,13 @@
   };
 
   ActivityWindow.SUB_COMPONENTS = {
-    'transitionController': window.AppTransitionController,
-    'modalDialog': window.AppModalDialog,
-    'valueSelector': window.ValueSelector,
-    'authDialog': window.AppAuthenticationDialog,
-    'contextmenu': window.BrowserContextMenu,
-    'childWindowFactory': window.ChildWindowFactory,
-    'statusbar': window.AppStatusbar
+    'transitionController': 'AppTransitionController',
+    'modalDialog': 'AppModalDialog',
+    'valueSelector': 'ValueSelector',
+    'authDialog': 'AppAuthenticationDialog',
+    'contextmenu': 'BrowserContextMenu',
+    'childWindowFactory': 'ChildWindowFactory',
+    'statusbar': 'AppStatusbar'
   };
 
   ActivityWindow.REGISTERED_EVENTS = AppWindow.REGISTERED_EVENTS;

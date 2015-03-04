@@ -46,8 +46,8 @@
   LockScreenWindow.prototype.constructor = LockScreenWindow;
 
   LockScreenWindow.SUB_COMPONENTS = {
-    'transitionController': window.AppTransitionController,
-    'statusbar': window.AppStatusbar
+    'transitionController': 'AppTransitionController',
+    'statusbar': 'AppStatusbar'
   };
 
   LockScreenWindow.REGISTERED_EVENTS = AppWindow.REGISTERED_EVENTS;

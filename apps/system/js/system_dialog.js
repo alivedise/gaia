@@ -64,7 +64,7 @@
    * @type {Object}
    */
   SystemDialog.prototype.SUB_COMPONENTS = {
-    'valueSelector': window.ValueSelector
+    'valueSelector': 'ValueSelector'
   };
 
   /**
@@ -77,7 +77,8 @@
       this.debug('installing sub components...');
       for (var componentName in this.SUB_COMPONENTS) {
         if (this.SUB_COMPONENTS[componentName]) {
-          this[componentName] = new this.SUB_COMPONENTS[componentName](this);
+          this[componentName] =
+            new window[this.SUB_COMPONENTS[componentName]](this);
         }
       }
     };

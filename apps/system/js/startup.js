@@ -8,6 +8,7 @@
       'js/launcher.js',
       'js/settings_core.js',
       'js/screen_brightness_transition.js',
+      'js/screen_auto_brightness.js',
       'js/screen_manager.js',
       'js/browser_key_event_manager.js',
       'js/async_semaphore.js',
