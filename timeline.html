@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+  <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+  <script src="d3-timeline.js"></script>
+
+  <style type="text/css">
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: black;
+      shape-rendering: crispEdges;
+    }
+
+    .axis text {
+      font-family: sans-serif;
+      font-size: 10px;
+    }
+
+    .timeline-label {
+      font-family: sans-serif;
+      font-size: 12px;
+    }
+
+    #timeline2 .axis {
+      transform: translate(0px,30px);
+      -ms-transform: translate(0px,30px); /* IE 9 */
+      -webkit-transform: translate(0px,30px); /* Safari and Chrome */
+      -o-transform: translate(0px,30px); /* Opera */
+      -moz-transform: translate(0px,30px); /* Firefox */
+    }
+
+    .coloredDiv {
+      height:20px; width:20px; float:left;
+    }
+  </style>
+  <script type="text/javascript">
+    window.onload = function() {
+      var testData = [{"label":"LogoManager","id":"LogoManager","times":[{"label":"LogoManager","starting_time":"0.013","ending_time":"0.232"}]},{"label":"SettingsCore","id":"SettingsCore","times":[{"label":"SettingsCore","starting_time":"0.376","ending_time":"0.427"}]},{"label":"Launcher","id":"Launcher","times":[{"label":"Launcher","starting_time":"0.385","ending_time":"4.654"}]},{"label":"Scheduler","id":"Scheduler","times":[{"label":"Scheduler","starting_time":"0.520","ending_time":"0.522"}]},{"label":"Core","id":"Core","times":[{"label":"Core","starting_time":"4.655","ending_time":"10.010"}]},{"label":"HierarchyManager","id":"HierarchyManager","times":[{"label":"HierarchyManager","starting_time":"4.795","ending_time":"4.871"}]},{"label":"FeatureDetector","id":"FeatureDetector","times":[{"label":"FeatureDetector","starting_time":"4.804","ending_time":"4.872"}]},{"label":"AppCore","id":"AppCore","times":[{"label":"AppCore","starting_time":"4.837","ending_time":"6.539"}]},{"label":"AudioChannelService","id":"AudioChannelService","times":[{"label":"AudioChannelService","starting_time":"5.183","ending_time":"5.262"}]},{"label":"AppWindowManager","id":"AppWindowManager","times":[{"label":"AppWindowManager","starting_time":"5.190","ending_time":"6.538"}]},{"label":"AudioChannelPolicy","id":"AudioChannelPolicy","times":[{"label":"AudioChannelPolicy","starting_time":"5.253","ending_time":"5.261"}]},{"label":"FtuLauncher","id":"FtuLauncher","times":[{"label":"FtuLauncher","starting_time":"5.562","ending_time":"6.105"}]},{"label":"LockScreenLauncher","id":"LockScreenLauncher","times":[{"label":"LockScreenLauncher","starting_time":"5.567","ending_time":"6.118"}]},{"label":"HomescreenWindowManager","id":"HomescreenWindowManager","times":[{"label":"HomescreenWindowManager","starting_time":"5.572","ending_time":"6.537"}]},{"label":"visuallyLoaded","id":"visuallyLoaded","times":[{"label":"visuallyLoaded","starting_time":0,"ending_time":"6.281"}]},{"label":"HomescreenLauncher","id":"HomescreenLauncher","times":[{"label":"HomescreenLauncher","starting_time":"6.448","ending_time":"6.537"}]},{"label":"BrowserContextMenu","id":"BrowserContextMenu","times":[{"label":"BrowserContextMenu","starting_time":"6.940","ending_time":"8.158"}]},{"label":"CameraTrigger","id":"CameraTrigger","times":[{"label":"CameraTrigger","starting_time":"7.128","ending_time":"7.291"}]},{"label":"AirplaneMode","id":"AirplaneMode","times":[{"label":"AirplaneMode","starting_time":"7.134","ending_time":"8.200"}]},{"label":"NotificationsSystemMessage","id":"NotificationsSystemMessage","times":[{"label":"NotificationsSystemMessage","starting_time":"7.148","ending_time":"7.291"}]},{"label":"AlarmMonitor","id":"AlarmMonitor","times":[{"label":"AlarmMonitor","starting_time":"7.166","ending_time":"7.292"}]},{"label":"DebuggingMonitor","id":"DebuggingMonitor","times":[{"label":"DebuggingMonitor","starting_time":"7.173","ending_time":"7.292"}]},{"label":"TimeCore","id":"TimeCore","times":[{"label":"TimeCore","starting_time":"7.179","ending_time":"7.293"}]},{"label":"GeolocationCore","id":"GeolocationCore","times":[{"label":"GeolocationCore","starting_time":"7.187","ending_time":"7.293"}]},{"label":"TetheringMonitor","id":"TetheringMonitor","times":[{"label":"TetheringMonitor","starting_time":"7.191","ending_time":"7.293"}]},{"label":"UsbCore","id":"UsbCore","times":[{"label":"UsbCore","starting_time":"7.205","ending_time":"7.294"}]},{"label":"NetworkActivity","id":"NetworkActivity","times":[{"label":"NetworkActivity","starting_time":"7.258","ending_time":"7.294"}]},{"label":"CustomDialogService","id":"CustomDialogService","times":[{"label":"CustomDialogService","starting_time":"7.285","ending_time":"7.294"}]},{"label":"Places","id":"Places","times":[{"label":"Places","starting_time":"7.422","ending_time":"8.989"}]},{"label":"TelephonyMonitor","id":"TelephonyMonitor","times":[{"label":"TelephonyMonitor","starting_time":"7.540","ending_time":"7.542"}]},{"label":"BluetoothCore","id":"BluetoothCore","times":[{"label":"BluetoothCore","starting_time":"7.545","ending_time":"8.610"}]},{"label":"MobileConnectionCore","id":"MobileConnectionCore","times":[{"label":"MobileConnectionCore","starting_time":"7.551","ending_time":"10.002"}]},{"label":"NfcCore","id":"NfcCore","times":[{"label":"NfcCore","starting_time":"7.559","ending_time":"9.648"}]},{"label":"BatteryOverlay","id":"BatteryOverlay","times":[{"label":"BatteryOverlay","starting_time":"7.567","ending_time":"8.709"}]},{"label":"Voicemail","id":"Voicemail","times":[{"label":"Voicemail","starting_time":"7.595","ending_time":"9.734"}]},{"label":"AirplaneModeServiceHelper","id":"AirplaneModeServiceHelper","times":[{"label":"AirplaneModeServiceHelper","starting_time":"8.179","ending_time":"8.200"}]},{"label":"Radio","id":"Radio","times":[{"label":"Radio","starting_time":"9.059","ending_time":"9.122"}]},{"label":"CallForwarding","id":"CallForwarding","times":[{"label":"CallForwarding","starting_time":"9.073","ending_time":"9.123"}]},{"label":"EmergencyCallbackManager","id":"EmergencyCallbackManager","times":[{"label":"EmergencyCallbackManager","starting_time":"9.079","ending_time":"9.123"}]},{"label":"EuRoamingManager","id":"EuRoamingManager","times":[{"label":"EuRoamingManager","starting_time":"9.084","ending_time":"9.123"}]},{"label":"SimLockManager","id":"SimLockManager","times":[{"label":"SimLockManager","starting_time":"9.090","ending_time":"9.456"}]},{"label":"TelephonySettings","id":"TelephonySettings","times":[{"label":"TelephonySettings","starting_time":"9.095","ending_time":"9.124"}]},{"label":"OperatorVariantManager","id":"OperatorVariantManager","times":[{"label":"OperatorVariantManager","starting_time":"9.104","ending_time":"9.520"}]},{"label":"IccCore","id":"IccCore","times":[{"label":"IccCore","starting_time":"9.109","ending_time":"10.002"}]},{"label":"NfcManager","id":"NfcManager","times":[{"label":"NfcManager","starting_time":"9.147","ending_time":"9.647"}]},{"label":"NfcHandler","id":"NfcHandler","times":[{"label":"NfcHandler","starting_time":"9.161","ending_time":"9.164"}]},{"label":"NfcHandoverManager","id":"NfcHandoverManager","times":[{"label":"NfcHandoverManager","starting_time":"9.640","ending_time":"9.647"}]},{"label":"fullyLoaded","id":"fullyLoaded","times":[{"label":"fullyLoaded","starting_time":0,"ending_time":"10.010"}]}];
+
+
+      var width = 1000;
+      function timelineRect() {
+        var chart = d3.timeline()
+                      .stack()
+                      .relativeTime()
+                      .margin({left:100, right:30, top:0, bottom:0});
+
+        var svg = d3.select("#timeline1").append("svg").attr("width", width)
+          .datum(testData).call(chart);
+      }
+
+      timelineRect();
+    }
+  </script>
+</head>
+<body>
+  <div>
+    <h3>Startup timeline</h3>
+    <div id="timeline1"></div>
+  </div>
+</body>
+</html>
