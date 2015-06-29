@@ -25,6 +25,7 @@
   App.prototype = {
     // TODO: decrease the files here and move them into specific loader
     FILES: [
+      'js/react-with-addons.min.js',
       'js/wake_lock_manager.js',
       'js/base_ui.js',
       'js/base_icon.js',
