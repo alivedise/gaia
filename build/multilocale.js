@@ -162,7 +162,8 @@ function L10nManager(gaiaDir,
 
     if (useSourceDir) {
       if (isShared) {
-        paths.push(self.gaiaDir);
+        // Shared locales no longer in gaia folder, will be in apps folder.
+        paths.push(webapp.sourceDirectoryFilePath);
       } else {
         paths.push(webapp.sourceDirectoryFilePath);
         paths.push(relPathInApp);
